@@ -1,0 +1,27 @@
+* {
+    box-sizing: border-box;
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    color: #fff;
+    background-color: rgb(36, 36, 40);
+}
+
+main {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+canvas {
+    flex: 1;
+    background-color: rgb(45, 45, 50);
+    background-image: url("data:image/svg+xml,%3Csvg opacity='0.2' fill='black' xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpolygon fill-rule='evenodd' points='0,0 16,0 16,32 32,32 32,16 0,16' /%3E%3C/svg%3E");
+}
