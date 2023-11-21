@@ -83,9 +83,11 @@ export class DrawingApp {
     this.gl.vertexAttribPointer(position, 2, this.gl.FLOAT, false, 0, 0)
     this.setColor(color)
 
-    // do we need to bind again?
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer)
     
+    // credit and reference:
+    // https://webglfundamentals.org/webgl/lessons/webgl-fundamentals.html
+
     // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
     var size = 2;          // 2 components per iteration
     var type = this.gl.FLOAT;   // the data is 32bit floats
