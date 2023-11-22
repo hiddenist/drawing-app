@@ -9,9 +9,5 @@ vec2 normalizeCoords(vec2 coords) {
 }
 
 void main() {
-  gl_Position = vec4(
-    normalizeCoords(position),
-    0.0, 
-    1.0
-  );
+  gl_Position = vec4(normalizeCoords(position), 0.0, 1.0);
 }

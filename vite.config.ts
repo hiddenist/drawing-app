@@ -1,12 +1,7 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from "vite"
 
-import plainText from 'vite-plugin-plain-text'
+import plainText from "vite-plugin-plain-text"
 
 export default defineConfig({
-  plugins: [
-    plainText(
-      ['**/*.glsl'],
-      { namedExport: false },
-    ),
-  ]
+  plugins: [plainText(["**/*.glsl"], { namedExport: false })],
 })
