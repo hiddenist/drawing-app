@@ -1,7 +1,7 @@
 import "./style.css"
 
-import { DrawingApp } from "./DrawingApp"
-import { Color } from "./Color"
+import { DrawingApp } from "./classes/DrawingApp"
+import { Color } from "./classes/Color"
 
 main()
 
@@ -16,8 +16,13 @@ function main() {
   root.appendChild(canvas)
   const webgl = new DrawingApp(canvas)
 
-  webgl.drawLine([0, 0, 1, 1], new Color(255, 0, 0))
-  webgl.drawLine([-1, 1, 1, -1], new Color(255, 255, 0))
-  webgl.drawLine([0, 0, 1, 0], new Color(0, 255, 0))
-  webgl.drawLine([0, 0, 0, 1], new Color(0, 255, 255))
+  webgl.foregroundColor = new Color(255, 0, 0)
+  webgl.drawLine([0, 0, 1, 1])
+  webgl.drawLine([0.5, -0.5, 0.5, 0.5])
+  webgl.foregroundColor = new Color(255, 255, 0)
+  webgl.drawLine([-1, 1, 1, -1])
+  webgl.foregroundColor = new Color(0, 255, 0)
+  webgl.drawLine([0, 0, 1, 0])
+  webgl.foregroundColor = new Color(0, 255, 255)
+  webgl.drawLine([0, 0, 0, 1])
 }
