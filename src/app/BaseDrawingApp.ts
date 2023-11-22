@@ -1,12 +1,9 @@
-import positionVertexSource from "../shaders/position.vertex.glsl"
-import fragmentShaderSource from "../shaders/color.fragment.glsl"
-
-import { Color } from "./Color"
+import { Color } from "../classes/Color"
 import { ColorContext } from "./ColorContext"
-import { WebGLProgramBuilder } from "./WebGLProgramBuilder"
+import { Simple2dProgram } from "../programs/Simple2dProgram/Simple2dProgram"
 
 interface WebGLProgramRecord {
-  simple2d: WebGLProgram
+  simple2d: Simple2dProgram
 }
 
 export class BaseDrawingApp {
@@ -24,7 +21,7 @@ export class BaseDrawingApp {
     this.gl = gl
 
     this.programs = {
-      simple2d: WebGLProgramBuilder.create(gl, positionVertexSource, fragmentShaderSource),
+      simple2d: new Simple2dProgram(gl),
     }
   }
 

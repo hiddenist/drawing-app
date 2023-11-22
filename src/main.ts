@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { LineDrawingApp } from "./classes/LineDrawingApp"
+import { LineDrawingApp } from "./app/LineDrawingApp"
 import { Color } from "./classes/Color"
 
 main()
@@ -28,6 +28,5 @@ function main() {
 
   canvas.addEventListener("click", () => {
     app.clearCanvas()
-    app.drawLine([0, 0, 0, 1])
   })
 }
