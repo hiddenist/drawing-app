@@ -1,7 +1,6 @@
 import "./style.css"
 
-import { LineDrawingApp } from "./classes/LineDrawingApp"
-import { Color } from "./classes/Color"
+import { DrawingApp } from "./app/DrawingApp"
 
 main()
 
@@ -10,24 +9,5 @@ function main() {
   if (!root) {
     throw new Error("Root element not found")
   }
-  const canvas = document.createElement("canvas")
-  canvas.width = 500
-  canvas.height = 500
-  root.appendChild(canvas)
-  const app = new LineDrawingApp(canvas)
-
-  app.color.foreground = new Color(255, 0, 0)
-  app.drawLine([0, 0, 1, 1])
-  app.drawLine([0.5, -0.5, 0.5, 0.5])
-  app.color.foreground = new Color(255, 255, 0)
-  app.drawLine([-1, 1, 1, -1])
-  app.color.foreground = new Color(0, 255, 0)
-  app.drawLine([0, 0, 1, 0])
-  app.color.foreground = new Color(0, 255, 255)
-  app.drawLine([0, 0, 0, 1])
-
-  canvas.addEventListener("click", () => {
-    app.clearCanvas()
-    app.drawLine([0, 0, 0, 1])
-  })
+  new DrawingApp(root, 500, 500)
 }
