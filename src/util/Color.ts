@@ -15,10 +15,18 @@ export class Color {
     /** Alpha as a 0-100 percentage. Defaults to 100. */
     public readonly a = 100,
   ) {
-    this.r = r > 255 ? 255 : r < 0 ? 0 : r
-    this.g = g > 255 ? 255 : g < 0 ? 0 : g
-    this.b = b > 255 ? 255 : b < 0 ? 0 : b
-    this.a = a > 100 ? 100 : a < 0 ? 0 : a
+    if (r < 0 || r > 255) {
+      throw new Error("Out of bounds: Red must be between 0 and 255")
+    }
+    if (g < 0 || g > 255) {
+      throw new Error("Out of bounds: Green must be between 0 and 255")
+    }
+    if (b < 0 || b > 255) {
+      throw new Error("Out of bounds: Blue must be between 0 and 255")
+    }
+    if (a < 0 || a > 100) {
+      throw new Error("Out of bounds: Alpha channel must be between 0 and 100")
+    }
   }
 
   public toVector4(): VectorArray<4> {
