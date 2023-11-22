@@ -1,9 +1,9 @@
 export class WebGLProgramBuilder {
-  private vertexShader: WebGLShader
-  private fragmentShader: WebGLShader
+  protected vertexShader: WebGLShader
+  protected fragmentShader: WebGLShader
 
-  private constructor(
-    private readonly gl: WebGLRenderingContext,
+  protected constructor(
+    protected readonly gl: WebGLRenderingContext,
     vertexShaderSource: string,
     fragmentShaderSource: string,
   ) {
@@ -21,7 +21,7 @@ export class WebGLProgramBuilder {
     return builder.createProgram()
   }
 
-  private createProgram(): WebGLProgram {
+  protected createProgram(): WebGLProgram {
     const program = this.gl.createProgram()
     if (!program) {
       throw new Error("Failed to create program")
@@ -35,7 +35,7 @@ export class WebGLProgramBuilder {
     return program
   }
 
-  private createShader(source: string, type: number): WebGLShader {
+  protected createShader(source: string, type: number): WebGLShader {
     const shader = this.gl.createShader(type)
     if (!shader) {
       throw new Error("Failed to create shader")
