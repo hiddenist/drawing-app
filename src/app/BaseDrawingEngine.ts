@@ -2,7 +2,7 @@ import { BaseProgram } from "../programs/BaseProgram"
 
 export abstract class BaseDrawingEngine<
   Programs extends Record<never, BaseProgram>,
-  ProgramKeys extends keyof Programs = keyof Programs
+  ProgramKeys extends keyof Programs = keyof Programs,
 > {
   protected gl: WebGLRenderingContext
   protected currentProgram?: BaseProgram
