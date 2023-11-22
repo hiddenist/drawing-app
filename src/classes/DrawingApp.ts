@@ -1,5 +1,5 @@
-import positionVertexSource from "./shaders/position.vertex.glsl"
-import fragmentShaderSource from "./shaders/color.fragment.glsl"
+import positionVertexSource from "../shaders/position.vertex.glsl"
+import fragmentShaderSource from "../shaders/color.fragment.glsl"
 
 import { Color } from "./Color"
 import { WebGLProgramBuilder } from "./WebGLProgramBuilder"
