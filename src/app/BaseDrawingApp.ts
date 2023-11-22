@@ -25,6 +25,13 @@ export class BaseDrawingApp {
     }
   }
 
+  public checkError() {
+    const error = this.gl.getError()
+    if (error !== this.gl.NO_ERROR) {
+      throw new Error("WebGL error: " + error)
+    }
+  }
+
   public get color(): ColorContext {
     return this.context.color
   }
@@ -32,13 +39,5 @@ export class BaseDrawingApp {
   public clearCanvas() {
     this.gl.clearColor(0, 0, 0, 0)
     this.gl.clear(this.gl.COLOR_BUFFER_BIT)
-  }
-
-  public setColor(program: WebGLProgram, color: Color) {
-    const colorLocation = this.gl.getUniformLocation(program, "color")
-    if (!colorLocation) {
-      throw new Error("Failed to get color location. Does the specified program have a 'color' uniform?")
-    }
-    this.gl.uniform4fv(colorLocation, color.toVector4())
   }
 }
