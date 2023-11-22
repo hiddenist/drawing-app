@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: "20"
       - name: Build
-        run: pnpm build
+        run: npm run build
         env:
           BASE_URL: ${{ github.event.repository.name }}
       - name: Setup Pages
