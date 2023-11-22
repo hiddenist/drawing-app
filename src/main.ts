@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { DrawingApp } from "./classes/DrawingApp"
+import { LineDrawingApp } from "./classes/LineDrawingApp"
 import { Color } from "./classes/Color"
 
 main()
@@ -14,15 +14,20 @@ function main() {
   canvas.width = 500
   canvas.height = 500
   root.appendChild(canvas)
-  const webgl = new DrawingApp(canvas)
+  const app = new LineDrawingApp(canvas)
 
-  webgl.foregroundColor = new Color(255, 0, 0)
-  webgl.drawLine([0, 0, 1, 1])
-  webgl.drawLine([0.5, -0.5, 0.5, 0.5])
-  webgl.foregroundColor = new Color(255, 255, 0)
-  webgl.drawLine([-1, 1, 1, -1])
-  webgl.foregroundColor = new Color(0, 255, 0)
-  webgl.drawLine([0, 0, 1, 0])
-  webgl.foregroundColor = new Color(0, 255, 255)
-  webgl.drawLine([0, 0, 0, 1])
+  app.color.foreground = new Color(255, 0, 0)
+  app.drawLine([0, 0, 1, 1])
+  app.drawLine([0.5, -0.5, 0.5, 0.5])
+  app.color.foreground = new Color(255, 255, 0)
+  app.drawLine([-1, 1, 1, -1])
+  app.color.foreground = new Color(0, 255, 0)
+  app.drawLine([0, 0, 1, 0])
+  app.color.foreground = new Color(0, 255, 255)
+  app.drawLine([0, 0, 0, 1])
+
+  canvas.addEventListener("click", () => {
+    app.clearCanvas()
+    app.drawLine([0, 0, 0, 1])
+  })
 }
