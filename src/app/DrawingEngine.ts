@@ -21,7 +21,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
 
   public updateDrawing(currentSegment: number[]) {
     if (currentSegment.length > 0) {
-      this.drawLine(currentSegment, { drawType: gl.DYNAMIC_DRAW })
+      this.drawLine(currentSegment, { drawType: this.gl.DYNAMIC_DRAW })
     }
   }
 
