@@ -25,9 +25,9 @@ export class LineDrawingProgram extends BaseProgram {
     return this
   }
 
-  public drawLine(points: number[], color: Color) {
+  public drawLine(points: number[], color: Color, drawType: number = this.gl.STREAM_DRAW) {
     this.createBuffer()
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(points), this.gl.STREAM_DRAW)
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(points), drawType)
 
     this.setColor(color)
 
