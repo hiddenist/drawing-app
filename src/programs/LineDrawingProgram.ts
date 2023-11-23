@@ -25,7 +25,11 @@ export class LineDrawingProgram extends BaseProgram {
     return this
   }
 
-  public drawLine(points: number[], color: Color, { drawType = this.gl.STREAM_DRAW }: DrawLineOptions = {}) {
+  public drawLine(
+    points: number[],
+    color: Color,
+    { drawType = this.gl.STREAM_DRAW, lineMode = this.gl.LINE_STRIP }: DrawLineOptions = {},
+  ) {
     this.createBuffer()
     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(points), drawType)
 
@@ -35,7 +39,7 @@ export class LineDrawingProgram extends BaseProgram {
     this.gl.enableVertexAttribArray(position)
     this.gl.vertexAttribPointer(position, 2, this.gl.FLOAT, false, 0, 0)
 
-    this.gl.drawArrays(this.gl.LINES, 0, points.length / 2)
+    this.gl.drawArrays(lineMode, 0, points.length / 2)
 
     this.checkError()
   }
@@ -46,10 +50,20 @@ export interface DrawLineOptions {
    * The draw type to use when drawing the line. Defaults to `gl.STREAM_DRAW`.
    */
   drawType?: DrawType
+  /**
+   * The line mode to use when drawing the line. Defaults to `gl.LINE_STRIP`.
+   */
+  lineMode?: LineMode
 }
 
 export enum DrawType {
   STATIC_DRAW = WebGLRenderingContext.STATIC_DRAW,
   DYNAMIC_DRAW = WebGLRenderingContext.DYNAMIC_DRAW,
   STREAM_DRAW = WebGLRenderingContext.STREAM_DRAW,
+}
+
+export enum LineMode {
+  LINE_STRIP = WebGLRenderingContext.LINE_STRIP,
+  LINE_LOOP = WebGLRenderingContext.LINE_LOOP,
+  LINES = WebGLRenderingContext.LINES,
 }
