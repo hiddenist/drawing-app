@@ -45,5 +45,11 @@ export interface DrawLineOptions {
   /**
    * The draw type to use when drawing the line. Defaults to `gl.STREAM_DRAW`.
    */
-  drawType?: number
+  drawType?: DrawType
+}
+
+export enum DrawType {
+  STATIC_DRAW = WebGLRenderingContext.STATIC_DRAW,
+  DYNAMIC_DRAW = WebGLRenderingContext.DYNAMIC_DRAW,
+  STREAM_DRAW = WebGLRenderingContext.STREAM_DRAW,
 }
