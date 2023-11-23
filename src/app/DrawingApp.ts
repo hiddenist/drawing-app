@@ -4,6 +4,8 @@ import { DrawingEngine } from "./DrawingEngine"
 export class DrawingApp {
   public readonly canvas: HTMLCanvasElement
   private engine: DrawingEngine
+  private isDrawing: boolean = false
+  private currentSegment: number[] = []
 
   constructor(root: HTMLElement, width: number, height: number, private pixelDensity = window.devicePixelRatio) {
     this.canvas = document.createElement("canvas")
@@ -31,26 +33,43 @@ export class DrawingApp {
   }
 
   private addEventListeners() {
-    window.addEventListener("mousemove", (e) => this.handleMouseMove(e))
-    this.canvas.addEventListener("click", (e) => this.handleClick(e))
+    this.canvas.addEventListener("mousedown", (e) => this.startDrawing(e))
+    this.canvas.addEventListener("mouseup", () => this.stopDrawing())
+    this.canvas.addEventListener("mouseout", () => this.stopDrawing())
+    this.canvas.addEventListener("mousemove", (e) => this.handleMouseMove(e))
   }
 
-  private handleClick(event: MouseEvent) {
-    const { x, y } = this.getMousePosition(event)
+  private startDrawing(event: MouseEvent) {
+    this.isDrawing = true
+    this.addPoint(event.clientX, event.clientY)
+  }
 
-    this.engine.color.setForeground(new Color(255, 0, 0))
-    this.engine.drawLine(getPointsToDrawRectangle(x, y, 20))
-    this.engine.color.setForeground(new Color(255, 255, 0))
-    this.engine.drawLine(getPointsToDrawRectangle(x, y, 30))
-    this.engine.color.setForeground(new Color(0, 255, 0))
-    this.engine.drawLine(getPointsToDrawRectangle(x, y, 40))
+  private stopDrawing() {
+    this.isDrawing = false
   }
 
   private handleMouseMove(event: MouseEvent) {
-    const { x, y } = this.getMousePosition(event)
+    if (!this.isDrawing) {
+      const cursorPoint = this.getMousePosition(event)
+      this.drawCursor(cursorPoint.x, cursorPoint.y)
+      return
+    }
 
+    const currentPoint = this.getMousePosition(event)
+    this.currentSegment.push(currentPoint.x, currentPoint.y)
+    this.engine.updateDrawing(this.currentSegment)
+  }
+
+  private drawCursor(x: number, y: number) {
     this.engine.color.setForeground(Color.WHITE)
     this.engine.drawLine(getPointsToDrawRectangle(x, y, 10))
+  }
+
+  private addPoint(x: number, y: number) {
+    const rect = this.canvas.getBoundingClientRect()
+    const canvasX = x - rect.left
+    const canvasY = y - rect.top
+    this.currentSegment.push(canvasX, canvasY)
   }
 
   private getMousePosition(event: MouseEvent) {
