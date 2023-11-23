@@ -1,5 +1,5 @@
 import { ColorContext } from "./ColorContext"
-import { LineDrawingProgram } from "../programs/LineDrawingProgram"
+import { LineDrawingProgram, DrawLineOptions } from "../programs/LineDrawingProgram"
 import { BaseDrawingEngine } from "./BaseDrawingEngine"
 
 interface AvailablePrograms {
@@ -37,8 +37,8 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     gl.drawArrays(gl.LINE_STRIP, 0, segment.length / 2)
   }
 
-  public drawLine(points: number[]) {
-    this.switchProgram("lineDrawing").drawLine(points, this.color.foreground)
+  public drawLine(points: number[], options?: DrawLineOptions) {
+    this.switchProgram("lineDrawing").drawLine(points, this.color.foreground, options)
   }
 
   public get color(): ColorContext {
