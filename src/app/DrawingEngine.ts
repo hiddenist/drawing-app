@@ -1,5 +1,5 @@
 import { ColorContext } from "./ColorContext"
-import { LineDrawingProgram, DrawLineOptions } from "../programs/LineDrawingProgram"
+import { LineDrawingProgram, DrawLineOptions, DrawType } from "../programs/LineDrawingProgram"
 import { BaseDrawingEngine } from "./BaseDrawingEngine"
 
 interface AvailablePrograms {
@@ -21,7 +21,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
 
   public updateDrawing(currentSegment: number[]) {
     if (currentSegment.length > 0) {
-      this.drawLine(currentSegment, { drawType: this.gl.DYNAMIC_DRAW })
+      this.drawLine(currentSegment, { drawType: DrawType.DYNAMIC_DRAW })
     }
   }
 
