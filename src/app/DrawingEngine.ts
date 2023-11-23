@@ -1,5 +1,5 @@
 import { ColorContext } from "./ColorContext"
-import { LineDrawingProgram } from "../programs/LineDrawingProgram"
+import { LineDrawingProgram, DrawLineOptions, DrawType } from "../programs/LineDrawingProgram"
 import { BaseDrawingEngine } from "./BaseDrawingEngine"
 
 interface AvailablePrograms {
@@ -19,8 +19,14 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     }
   }
 
-  public drawLine(points: number[]) {
-    this.switchProgram("lineDrawing").drawLine(points, this.color.foreground)
+  public updateDrawing(currentSegment: number[]) {
+    if (currentSegment.length > 0) {
+      this.drawLine(currentSegment, { drawType: DrawType.DYNAMIC_DRAW })
+    }
+  }
+
+  public drawLine(points: number[], options?: DrawLineOptions) {
+    this.switchProgram("lineDrawing").drawLine(points, this.color.foreground, options)
   }
 
   public get color(): ColorContext {
