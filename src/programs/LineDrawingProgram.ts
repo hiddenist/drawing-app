@@ -25,7 +25,7 @@ export class LineDrawingProgram extends BaseProgram {
     return this
   }
 
-  public drawLine(points: number[], color: Color, drawType: number = this.gl.STREAM_DRAW) {
+  public drawLine(points: number[], color: Color, { drawType = this.gl.STREAM_DRAW }: DrawLineOptions = {}) {
     this.createBuffer()
     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(points), drawType)
 
@@ -39,4 +39,11 @@ export class LineDrawingProgram extends BaseProgram {
 
     this.checkError()
   }
+}
+
+export interface DrawLineOptions {
+  /**
+   * The draw type to use when drawing the line. Defaults to `gl.STREAM_DRAW`.
+   */
+  drawType?: number
 }
