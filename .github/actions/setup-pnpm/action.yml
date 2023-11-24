@@ -1,14 +1,13 @@
 name: Setup pnpm
 
 description: "Installs Node.js and pnpm, and caches the pnpm store directory to speed up future runs."
+# more info: https://github.com/pnpm/action-setup#use-cache-to-reduce-installation-time
 
 inputs:
   pnpm-version:
     description: "pnpm version"
     required: true
     default: "latest"
-
-# https://github.com/pnpm/action-setup#use-cache-to-reduce-installation-time
 
 runs:
   using: "composite"
@@ -22,6 +21,7 @@ runs:
       uses: pnpm/action-setup@v2
       with:
         run_install: false
+        version: ${{ inputs.pnpm-version }}
 
     - name: Get pnpm store directory
       shell: bash
