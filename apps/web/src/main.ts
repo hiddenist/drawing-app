@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { DrawingApp } from "./app/DrawingApp"
+import { WebDrawingApp } from "@libs/webgl"
 
 main()
 
@@ -9,5 +9,5 @@ function main() {
   if (!root) {
     throw new Error("Root element not found")
   }
-  new DrawingApp(root, 500, 500)
+  new WebDrawingApp(root, 500, 500)
 }
