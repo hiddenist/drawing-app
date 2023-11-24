@@ -1,4 +1,4 @@
-import { Color } from "../util/Color"
+import { Color } from "../utils/Color"
 
 export class ColorContext {
   private colors: [Color, Color] = [Color.BLACK, Color.WHITE]

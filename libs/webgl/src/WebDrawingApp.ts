@@ -1,4 +1,4 @@
-import { Color } from "./util/Color"
+import { Color } from "./utils/Color"
 import { DrawingEngine } from "./engine/DrawingEngine"
 
 export class WebDrawingApp {
