@@ -29,6 +29,15 @@ importers:
 
   libs/webgl: {}
 
+  tools/create-lib:
+    devDependencies:
+      '@schemastore/package':
+        specifier: ^0.0.10
+        version: 0.0.10
+      '@schemastore/tsconfig':
+        specifier: ^0.0.11
+        version: 0.0.11
+
 packages:
 
   /@esbuild/android-arm64@0.19.7:
@@ -481,6 +490,14 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@schemastore/package@0.0.10:
+    resolution: {integrity: sha512-D3LxMCnkgsb4LO5sDKf6E+yahM2SqpEHmkqMPDSJis5Cy/j2MgWo/g/iq0lECK0mrPWfx3hqKm2ZJlqxwbRJQA==}
+    dev: true
+
+  /@schemastore/tsconfig@0.0.11:
+    resolution: {integrity: sha512-glWQsBTycNVlq8ZrdvvEGyvHCmTfJy+inpjby4DokwBEyRj5+SFyjWbh1OkZf1cXbdCzrR/fZAQSm5vS73PaYA==}
+    dev: true
 
   /@types/node@20.9.5:
     resolution: {integrity: sha512-Uq2xbNq0chGg+/WQEU0LJTSs/1nKxz6u1iemLcGomkSnKokbW1fbLqc3HOqCf2JP7KjlL4QkS7oZZTrOQHQYgQ==}
