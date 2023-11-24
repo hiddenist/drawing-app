@@ -38,39 +38,58 @@ export class WebDrawingApp {
   }
 
   private addEventListeners() {
-    this.addListener("pointerdown", this.handlePress)
-    this.addListener("pointermove", this.handleMove)
-    this.addListener("pointerup", this.handleRelease)
+    this.addListener("pointerdown", ({ position }) => {
+      this.engine.setPressed(true, position)
+    })
+    this.addListener("pointermove", ({ position }) => {
+      this.engine.addPosition(position)
+      this.engine.setCursorPosition(position)
+    })
+    this.addListener("pointerup", ({ position }) => {
+      this.engine.setPressed(false, position)
+    })
+    this.addListeners(["pointerout", "pointerleave"], () => {
+      this.engine.setCursorPosition([])
+    })
+  }
+
+  private addListeners<K extends keyof HTMLElementEventMap>(
+    eventNames: Array<K>,
+    handler?: (event: DrawingEvent<HTMLElementEventMap[K]>) => void,
+    element: HTMLElement = this.root,
+  ) {
+    for (const eventName of eventNames) {
+      this.addListener(eventName, handler, element)
+    }
   }
 
   private addListener<K extends keyof HTMLElementEventMap>(
     eventName: K,
-    handler?: (event: HTMLElementEventMap[K]) => void,
+    handler?: (event: DrawingEvent<HTMLElementEventMap[K]>) => void,
     element: HTMLElement = this.root,
   ) {
     element.addEventListener(eventName, (event) => {
       event.preventDefault()
-      handler?.bind(this)(event)
+      handler?.bind(this)({
+        event,
+        position: this.getCanvasPosition(event),
+      })
     })
   }
 
-  private handlePress(event: PointerEvent) {
-    this.engine.setPressed(true, this.getMousePosition(event))
-  }
+  private getCanvasPosition(event: Event): VectorArray<2> {
+    if (!(event instanceof MouseEvent)) {
+      return [NaN, NaN]
+    }
 
-  private handleMove(event: PointerEvent) {
-    const position = this.getMousePosition(event)
-    this.engine.addPosition(position)
-  }
-
-  private handleRelease(event: PointerEvent) {
-    this.engine.setPressed(false, this.getMousePosition(event))
-  }
-
-  private getMousePosition(event: PointerEvent): VectorArray<2> {
     const rect = this.canvas.getBoundingClientRect()
     const x = event.clientX - rect.left
     const y = event.clientY - rect.top
     return [x * this.pixelDensity, y * this.pixelDensity]
   }
+}
+
+interface DrawingEvent<E extends Event> {
+  event: E
+  position: VectorArray<2>
 }

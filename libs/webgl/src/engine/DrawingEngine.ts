@@ -14,7 +14,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     currentPath: new Path(),
     pathHistory: [] as Array<ReadonlyArray<number>>,
     isDrawing: false,
-    cursorPosition: [0, 0] as Readonly<VectorArray<2>>,
+    cursorPosition: [] as Readonly<VectorArray<2> | []>,
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -37,6 +37,9 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
 
   private drawCursor() {
     const position = this.context.cursorPosition
+    if (position[0] === undefined || position[1] === undefined) {
+      return
+    }
     const cursorSize = 2
     const x = position[0]
     const y = position[1]
@@ -97,11 +100,14 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     this.context.pathHistory.push(path)
   }
 
+  public setCursorPosition(position: typeof this.context.cursorPosition) {
+    this.context.cursorPosition = position
+  }
+
   public addPosition(position: Readonly<VectorArray<2>>) {
     if (this.context.isDrawing) {
       this.context.currentPath.add(position)
     }
-    this.context.cursorPosition = position
     this.updateDrawing()
   }
 }
