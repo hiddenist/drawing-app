@@ -1,0 +1,13 @@
+{
+  "name": "@tools/create-lib",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "generate": "npx tsx src/generate.ts"
+  },
+  "devDependencies": {
+    "@schemastore/package": "^0.0.10",
+    "@schemastore/tsconfig": "^0.0.11"
+  },
+  "main": "src/generate.ts"
+}
