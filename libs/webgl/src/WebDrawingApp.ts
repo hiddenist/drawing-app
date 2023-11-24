@@ -1,7 +1,7 @@
-import { Color } from "../util/Color"
-import { DrawingEngine } from "./DrawingEngine"
+import { Color } from "./utils/Color"
+import { DrawingEngine } from "./engine/DrawingEngine"
 
-export class DrawingApp {
+export class WebDrawingApp {
   public readonly canvas: HTMLCanvasElement
   private engine: DrawingEngine
   private isDrawing: boolean = false

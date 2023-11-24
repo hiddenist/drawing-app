@@ -1,7 +1,7 @@
 import { WebGLProgramBuilder } from "./WebGLProgramBuilder"
 import positionVertexSource from "./shaders/position.vertex.glsl"
 import fragmentShaderSource from "./shaders/color.fragment.glsl"
-import { Color } from "../util/Color"
+import { Color } from "../utils/Color"
 import { BaseProgram } from "./BaseProgram"
 
 export class LineDrawingProgram extends BaseProgram {

@@ -1,0 +1,6 @@
+{
+  "name": "@libs/webgl",
+  "private": true,
+  "version": "0.0.0",
+  "main": "./src/exports.ts"
+}
