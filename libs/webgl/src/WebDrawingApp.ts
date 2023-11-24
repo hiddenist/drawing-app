@@ -4,7 +4,7 @@ import { VectorArray } from "./types/arrays"
 
 export class WebDrawingApp {
   public readonly canvas: HTMLCanvasElement
-  private engine: DrawingEngine
+  public readonly engine: DrawingEngine
 
   constructor(
     private readonly root: HTMLElement,

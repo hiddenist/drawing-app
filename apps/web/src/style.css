@@ -28,3 +28,17 @@ canvas {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   cursor: none;
 }
+
+@media (max-width: 564px) {
+  main {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+@media (max-height: 564px) {
+  main {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
