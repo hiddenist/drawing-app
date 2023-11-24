@@ -9,8 +9,7 @@ concurrency:
 
 jobs:
   # Single deploy job since we're just deploying
-  typecheck:
-    name: Type check
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
