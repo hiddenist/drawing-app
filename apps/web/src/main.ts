@@ -9,5 +9,7 @@ function main() {
   if (!root) {
     throw new Error("Root element not found")
   }
-  new WebDrawingApp(root, 500, 500)
+  const width = Math.min(window.innerWidth, 500)
+  const height = Math.min(window.innerHeight, 500)
+  new WebDrawingApp(root, width, height)
 }

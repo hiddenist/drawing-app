@@ -26,7 +26,7 @@ export class LineDrawingProgram extends BaseProgram {
   }
 
   public drawLine(
-    points: number[],
+    points: ReadonlyArray<number>,
     color: Color,
     { drawType = this.gl.STREAM_DRAW, lineMode = this.gl.LINE_STRIP }: DrawLineOptions = {},
   ) {

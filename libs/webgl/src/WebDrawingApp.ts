@@ -1,19 +1,24 @@
 import { Color } from "./utils/Color"
 import { DrawingEngine } from "./engine/DrawingEngine"
+import { VectorArray } from "./types/arrays"
 
 export class WebDrawingApp {
   public readonly canvas: HTMLCanvasElement
-  private engine: DrawingEngine
-  private isDrawing: boolean = false
-  private currentSegment: number[] = []
+  public readonly engine: DrawingEngine
 
-  constructor(root: HTMLElement, width: number, height: number, private pixelDensity = window.devicePixelRatio) {
+  constructor(
+    private readonly root: HTMLElement,
+    width: number,
+    height: number,
+    private pixelDensity = window.devicePixelRatio,
+  ) {
     this.canvas = document.createElement("canvas")
     root.appendChild(this.canvas)
     this.resizeCanvas(width, height)
 
     this.engine = new DrawingEngine(this.canvas)
     this.engine.clearCanvas()
+    this.engine.color.setForeground(Color.WHITE)
 
     this.addEventListeners()
   }
@@ -33,75 +38,58 @@ export class WebDrawingApp {
   }
 
   private addEventListeners() {
-    this.canvas.addEventListener("mousedown", (e) => this.startDrawing(e))
-    this.canvas.addEventListener("mouseup", () => this.stopDrawing())
-    this.canvas.addEventListener("mouseout", () => this.stopDrawing())
-    this.canvas.addEventListener("mousemove", (e) => this.handleMouseMove(e))
+    this.addListener("pointerdown", ({ position }) => {
+      this.engine.setPressed(true, position)
+    })
+    this.addListener("pointermove", ({ position }) => {
+      this.engine.addPosition(position)
+      this.engine.setCursorPosition(position)
+    })
+    this.addListener("pointerup", ({ position }) => {
+      this.engine.setPressed(false, position)
+    })
+    this.addListeners(["pointerout", "pointerleave"], () => {
+      this.engine.setCursorPosition([])
+    })
   }
 
-  private startDrawing(event: MouseEvent) {
-    this.isDrawing = true
-    this.addPoint(event.clientX, event.clientY)
+  private addListeners<K extends keyof HTMLElementEventMap>(
+    eventNames: Array<K>,
+    handler?: (event: DrawingEvent<HTMLElementEventMap[K]>) => void,
+    element: HTMLElement = this.root,
+  ) {
+    for (const eventName of eventNames) {
+      this.addListener(eventName, handler, element)
+    }
   }
 
-  private stopDrawing() {
-    this.isDrawing = false
+  private addListener<K extends keyof HTMLElementEventMap>(
+    eventName: K,
+    handler?: (event: DrawingEvent<HTMLElementEventMap[K]>) => void,
+    element: HTMLElement = this.root,
+  ) {
+    element.addEventListener(eventName, (event) => {
+      event.preventDefault()
+      handler?.bind(this)({
+        event,
+        position: this.getCanvasPosition(event),
+      })
+    })
   }
 
-  private handleMouseMove(event: MouseEvent) {
-    if (!this.isDrawing) {
-      const cursorPoint = this.getMousePosition(event)
-      this.drawCursor(cursorPoint.x, cursorPoint.y)
-      return
+  private getCanvasPosition(event: Event): VectorArray<2> {
+    if (!(event instanceof MouseEvent)) {
+      return [NaN, NaN]
     }
 
-    const currentPoint = this.getMousePosition(event)
-    this.currentSegment.push(currentPoint.x, currentPoint.y)
-    this.engine.updateDrawing(this.currentSegment)
-  }
-
-  private drawCursor(x: number, y: number) {
-    this.engine.color.setForeground(Color.WHITE)
-    this.engine.drawLine(getPointsToDrawRectangle(x, y, 10))
-  }
-
-  private addPoint(x: number, y: number) {
-    const rect = this.canvas.getBoundingClientRect()
-    const canvasX = x - rect.left
-    const canvasY = y - rect.top
-    this.currentSegment.push(canvasX, canvasY)
-  }
-
-  private getMousePosition(event: MouseEvent) {
     const rect = this.canvas.getBoundingClientRect()
     const x = event.clientX - rect.left
     const y = event.clientY - rect.top
-    return { x: x * this.pixelDensity, y: y * this.pixelDensity }
+    return [x * this.pixelDensity, y * this.pixelDensity]
   }
 }
 
-function getPointsToDrawRectangle(x: number, y: number, width: number, height = width) {
-  const halfWidth = width / 2
-  const halfHeight = height / 2
-  return [
-    x - halfWidth,
-    y - halfHeight,
-    x + halfWidth,
-    y - halfHeight,
-
-    x + halfWidth,
-    y - halfHeight,
-    x + halfWidth,
-    y + halfHeight,
-
-    x + halfWidth,
-    y + halfHeight,
-    x - halfWidth,
-    y + halfHeight,
-
-    x - halfWidth,
-    y + halfHeight,
-    x - halfWidth,
-    y - halfHeight,
-  ].map((n) => Math.floor(n))
+interface DrawingEvent<E extends Event> {
+  event: E
+  position: VectorArray<2>
 }
