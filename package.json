@@ -1,12 +1,12 @@
 {
-  "name": "test",
+  "name": "drawing-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "dev": "pnpm --filter web run dev",
+    "build": "pnpm --filter web run build",
+    "preview": "pnpm --filter web run preview"
   },
   "devDependencies": {
     "@types/node": "^20.9.4",
