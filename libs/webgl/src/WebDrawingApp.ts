@@ -1,11 +1,10 @@
 import { Color } from "./utils/Color"
 import { DrawingEngine } from "./engine/DrawingEngine"
+import { VectorArray } from "./types/arrays"
 
 export class WebDrawingApp {
   public readonly canvas: HTMLCanvasElement
   private engine: DrawingEngine
-  private isDrawing: boolean = false
-  private currentSegment: number[] = []
 
   constructor(root: HTMLElement, width: number, height: number, private pixelDensity = window.devicePixelRatio) {
     this.canvas = document.createElement("canvas")
@@ -14,6 +13,7 @@ export class WebDrawingApp {
 
     this.engine = new DrawingEngine(this.canvas)
     this.engine.clearCanvas()
+    this.engine.color.setForeground(Color.WHITE)
 
     this.addEventListeners()
   }
@@ -33,75 +33,27 @@ export class WebDrawingApp {
   }
 
   private addEventListeners() {
-    this.canvas.addEventListener("mousedown", (e) => this.startDrawing(e))
-    this.canvas.addEventListener("mouseup", () => this.stopDrawing())
-    this.canvas.addEventListener("mouseout", () => this.stopDrawing())
-    this.canvas.addEventListener("mousemove", (e) => this.handleMouseMove(e))
+    this.canvas.addEventListener("mousedown", (e) => this.handleMouseDown(e))
+    this.canvas.addEventListener("mouseup", (e) => this.handleMouseUp(e))
+    window.addEventListener("mousemove", (e) => this.handleMouseMove(e))
   }
 
-  private startDrawing(event: MouseEvent) {
-    this.isDrawing = true
-    this.addPoint(event.clientX, event.clientY)
+  private handleMouseUp(event: MouseEvent) {
+    this.engine.setPressed(false, this.getMousePosition(event))
   }
 
-  private stopDrawing() {
-    this.isDrawing = false
+  private handleMouseDown(event: MouseEvent) {
+    this.engine.setPressed(true, this.getMousePosition(event))
   }
 
   private handleMouseMove(event: MouseEvent) {
-    if (!this.isDrawing) {
-      const cursorPoint = this.getMousePosition(event)
-      this.drawCursor(cursorPoint.x, cursorPoint.y)
-      return
-    }
-
-    const currentPoint = this.getMousePosition(event)
-    this.currentSegment.push(currentPoint.x, currentPoint.y)
-    this.engine.updateDrawing(this.currentSegment)
+    this.engine.setPosition(this.getMousePosition(event))
   }
 
-  private drawCursor(x: number, y: number) {
-    this.engine.color.setForeground(Color.WHITE)
-    this.engine.drawLine(getPointsToDrawRectangle(x, y, 10))
-  }
-
-  private addPoint(x: number, y: number) {
-    const rect = this.canvas.getBoundingClientRect()
-    const canvasX = x - rect.left
-    const canvasY = y - rect.top
-    this.currentSegment.push(canvasX, canvasY)
-  }
-
-  private getMousePosition(event: MouseEvent) {
+  private getMousePosition(event: MouseEvent): VectorArray<2> {
     const rect = this.canvas.getBoundingClientRect()
     const x = event.clientX - rect.left
     const y = event.clientY - rect.top
-    return { x: x * this.pixelDensity, y: y * this.pixelDensity }
+    return [x * this.pixelDensity, y * this.pixelDensity]
   }
-}
-
-function getPointsToDrawRectangle(x: number, y: number, width: number, height = width) {
-  const halfWidth = width / 2
-  const halfHeight = height / 2
-  return [
-    x - halfWidth,
-    y - halfHeight,
-    x + halfWidth,
-    y - halfHeight,
-
-    x + halfWidth,
-    y - halfHeight,
-    x + halfWidth,
-    y + halfHeight,
-
-    x + halfWidth,
-    y + halfHeight,
-    x - halfWidth,
-    y + halfHeight,
-
-    x - halfWidth,
-    y + halfHeight,
-    x - halfWidth,
-    y - halfHeight,
-  ].map((n) => Math.floor(n))
 }
