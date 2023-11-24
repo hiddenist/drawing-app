@@ -18,6 +18,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
-  },
-  "references": [{ "path": "./apps/web" }, { "path": "./libs/webgl" }]
+  }
 }
