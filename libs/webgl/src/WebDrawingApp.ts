@@ -6,7 +6,12 @@ export class WebDrawingApp {
   public readonly canvas: HTMLCanvasElement
   private engine: DrawingEngine
 
-  constructor(root: HTMLElement, width: number, height: number, private pixelDensity = window.devicePixelRatio) {
+  constructor(
+    private readonly root: HTMLElement,
+    width: number,
+    height: number,
+    private pixelDensity = window.devicePixelRatio
+  ) {
     this.canvas = document.createElement("canvas")
     root.appendChild(this.canvas)
     this.resizeCanvas(width, height)
@@ -33,24 +38,24 @@ export class WebDrawingApp {
   }
 
   private addEventListeners() {
-    this.canvas.addEventListener("mousedown", (e) => this.handleMouseDown(e))
-    this.canvas.addEventListener("mouseup", (e) => this.handleMouseUp(e))
-    window.addEventListener("mousemove", (e) => this.handleMouseMove(e))
+    this.root.addEventListener("pointerdown", (e) => this.handleMouseDown(e))
+    this.root.addEventListener("pointermove", (e) => this.handleMouseUp(e))
+    this.root.addEventListener("pointerup", (e) => this.handleMouseMove(e))
   }
 
-  private handleMouseUp(event: MouseEvent) {
-    this.engine.setPressed(false, this.getMousePosition(event))
-  }
-
-  private handleMouseDown(event: MouseEvent) {
+  private handleMouseDown(event: PointerEvent) {
     this.engine.setPressed(true, this.getMousePosition(event))
   }
 
-  private handleMouseMove(event: MouseEvent) {
+  private handleMouseMove(event: PointerEvent) {
     this.engine.setPosition(this.getMousePosition(event))
   }
 
-  private getMousePosition(event: MouseEvent): VectorArray<2> {
+  private handleMouseUp(event: PointerEvent) {
+    this.engine.setPressed(false, this.getMousePosition(event))
+  }
+
+  private getMousePosition(event: PointerEvent): VectorArray<2> {
     const rect = this.canvas.getBoundingClientRect()
     const x = event.clientX - rect.left
     const y = event.clientY - rect.top
