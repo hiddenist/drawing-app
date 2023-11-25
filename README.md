@@ -28,13 +28,13 @@ This repository is a monorepo managed by `pnpm`. Dependencies that are installed
 To install a new package to the workspace root, you have to use the `--workspace-root` or `-w` flag.
 
 ```sh
-pnpm i [dependency-name] -w
+pnpm -w i [dependency-name] --save-dev
 ```
 
 `pnpm` operations, including installed dependencies, can be scoped to a specific workspace package using the `--filter` flag:
 
 ```sh
-pnpm --filter [package-name] i [dependency-name]
+pnpm --filter [package-name] i [dependency-name]  --save-dev
 ```
 
 > ![INFO] Read more about `pnpm` workspaces: https://pnpm.io/workspaces
