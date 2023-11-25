@@ -38,14 +38,23 @@ export class WebDrawingApp {
   }
 
   private addEventListeners() {
-    this.addListener("pointerdown", ({ position }) => {
+    this.addListener("pointerdown", ({ position, event }) => {
+      if (event.isPrimary === false) {
+        return
+      }
       this.engine.setPressed(true, position)
       this.canvas.style.setProperty("cursor", "none")
     })
-    this.addListener("pointermove", ({ position }) => {
+    this.addListener("pointermove", ({ position, event }) => {
+      if (event.isPrimary === false) {
+        return
+      }
       this.engine.addPosition(position)
     })
-    this.addListener("pointerup", ({ position }) => {
+    this.addListener("pointerup", ({ position, event }) => {
+      if (event.isPrimary === false) {
+        return
+      }
       this.engine.setPressed(false, position)
       this.canvas.style.removeProperty("cursor")
     })
