@@ -19,6 +19,7 @@ main {
   align-items: center;
   overflow: auto;
   flex: 1;
+  padding: 1rem 0;
 }
 
 main canvas {
@@ -42,4 +43,10 @@ aside canvas {
   box-sizing: content-box;
   border: 1px solid rgb(25, 25, 28);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 800px) {
+  body {
+    flex-direction: column;
+  }
 }
