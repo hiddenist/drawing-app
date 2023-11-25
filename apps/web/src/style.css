@@ -70,14 +70,9 @@ aside canvas {
   }
   body.picker-open aside {
     flex: 1;
-    padding: 0;
-    width: 100vw;
-    height: 100vh;
   }
   body.picker-open aside canvas {
     display: block;
-    align-self: stretch;
-    justify-self: stretch;
   }
   body.picker-open main {
     display: none;
