@@ -45,8 +45,29 @@ aside canvas {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
+.picker-open-button {
+  display: none;
+}
+
 @media (max-width: 800px) {
   body {
     flex-direction: column;
+    overflow: hidden;
+  }
+
+  .picker-open-button {
+    display: inherit;
+  }
+  aside {
+    padding-top: 0;
+  }
+  aside canvas {
+    display: none;
+  }
+  aside canvas.picker-open {
+    display: block;
+    position: fixed;
+    bottom: 1rem;
+    left: calc(50% - 255px / 2);
   }
 }
