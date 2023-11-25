@@ -1,5 +1,5 @@
 import { CreateLibOptions } from "../../types/CreateLibOptions"
 
-export default function generate(_options: CreateLibOptions) {
-  return 'export * from "./lib/hello"'
+export default function generate(options: CreateLibOptions) {
+  return `export * from "./lib/${options.libFolderName}"`
 }
