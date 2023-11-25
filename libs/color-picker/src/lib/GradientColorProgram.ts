@@ -35,6 +35,7 @@ export class GradientColorProgram extends BaseProgram {
     const { gl } = this
     this.useProgram()
     this.createBuffer()
+    this.syncCanvasSize()
 
     const position = this.gl.getAttribLocation(this.program, "a_position")
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0)

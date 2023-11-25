@@ -18,6 +18,9 @@ export class ColorPicker {
 
     openPickerButton.addEventListener("click", () => {
       document.body.classList.toggle("picker-open")
+      if (document.body.classList.contains("picker-open")) {
+        this.program.draw()
+      }
     })
     canvas.addEventListener("click", (e) => {
       const color = this.getCanvasColor(e)
@@ -26,10 +29,8 @@ export class ColorPicker {
     })
   }
 
-  private createCanvas(width = 255, height = 255) {
+  private createCanvas() {
     const canvas = document.createElement("canvas")
-    canvas.width = width
-    canvas.height = height
     const gl = canvas.getContext("webgl")
     if (!gl) {
       throw new Error("Could not get canvas context")

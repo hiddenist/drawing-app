@@ -43,6 +43,8 @@ aside canvas {
   box-sizing: content-box;
   border: 1px solid rgb(25, 25, 28);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  height: 256px;
+  width: 256px;
 }
 
 .open-picker-button {
@@ -68,9 +70,14 @@ aside canvas {
   }
   body.picker-open aside {
     flex: 1;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
   }
   body.picker-open aside canvas {
     display: block;
+    align-self: stretch;
+    justify-self: stretch;
   }
   body.picker-open main {
     display: none;
