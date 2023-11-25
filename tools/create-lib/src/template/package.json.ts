@@ -8,7 +8,7 @@ export default function generate(options: Required<CreateLibOptions>) {
     version: options.version,
     description: options.description,
     private: options.isPrivate,
-    main: `${path.join(".", "src", options.mainFileName)}`,
+    main: `./src/${options.mainFileName}`,
   }
 
   return JSON.stringify(packageJson, null, 2)
