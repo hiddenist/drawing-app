@@ -1,6 +1,6 @@
-import { Color } from "./utils/Color"
+import { Color } from "@libs/shared"
 import { DrawingEngine } from "./engine/DrawingEngine"
-import { VectorArray } from "./types/arrays"
+import { Vec2 } from "@libs/shared"
 
 export class WebDrawingApp {
   public readonly canvas: HTMLCanvasElement
@@ -77,7 +77,7 @@ export class WebDrawingApp {
     })
   }
 
-  private getCanvasPosition(event: Event): VectorArray<2> {
+  private getCanvasPosition(event: Event): Vec2 {
     if (!(event instanceof MouseEvent)) {
       return [NaN, NaN]
     }
@@ -91,5 +91,5 @@ export class WebDrawingApp {
 
 interface DrawingEvent<E extends Event> {
   event: E
-  position: VectorArray<2>
+  position: Vec2
 }

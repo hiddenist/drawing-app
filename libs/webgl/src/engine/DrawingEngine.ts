@@ -2,7 +2,7 @@ import { ColorContext } from "./ColorContext"
 import { LineDrawingProgram, DrawLineOptions, DrawType } from "../programs/LineDrawingProgram"
 import { BaseDrawingEngine } from "./BaseDrawingEngine"
 import { Path } from "./Path"
-import { VectorArray } from "../types/arrays"
+import type { Vec2 } from "@libs/shared"
 
 interface AvailablePrograms {
   lineDrawing: LineDrawingProgram
@@ -14,7 +14,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     currentPath: new Path(),
     pathHistory: [] as Array<ReadonlyArray<number>>,
     isDrawing: false,
-    cursorPosition: [] as Readonly<VectorArray<2> | []>,
+    cursorPosition: [] as Readonly<Vec2 | []>,
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -82,7 +82,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     this.gl.clear(this.gl.COLOR_BUFFER_BIT)
   }
 
-  public setPressed(pressed: boolean, position: Readonly<VectorArray<2>>) {
+  public setPressed(pressed: boolean, position: Readonly<Vec2>) {
     this.context.isDrawing = pressed
     if (pressed) {
       this.context.currentPath.add(position)
@@ -104,7 +104,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     this.context.cursorPosition = position
   }
 
-  public addPosition(position: Readonly<VectorArray<2>>) {
+  public addPosition(position: Readonly<Vec2>) {
     if (this.context.isDrawing) {
       this.context.currentPath.add(position)
     }

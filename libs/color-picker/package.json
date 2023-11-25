@@ -1,7 +1,8 @@
 {
-  "name": "@libs/webgl",
-  "private": true,
+  "name": "@libs/color-picker",
   "version": "0.0.0",
+  "description": "a webgl-based color picker",
+  "private": false,
   "main": "./src/exports.ts",
   "dependencies": {
     "@libs/shared": "workspace:*"
