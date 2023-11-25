@@ -1,4 +1,4 @@
-import { Color } from "@libs/shared"
+import { Color, getEventPosition } from "@libs/shared"
 import { DrawingEngine } from "./engine/DrawingEngine"
 import { Vec2 } from "@libs/shared"
 
@@ -78,13 +78,7 @@ export class WebDrawingApp {
   }
 
   private getCanvasPosition(event: Event): Vec2 {
-    if (!(event instanceof MouseEvent)) {
-      return [NaN, NaN]
-    }
-
-    const rect = this.canvas.getBoundingClientRect()
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
+    const [x, y] = getEventPosition(event, this.canvas)
     return [x * this.pixelDensity, y * this.pixelDensity]
   }
 }
