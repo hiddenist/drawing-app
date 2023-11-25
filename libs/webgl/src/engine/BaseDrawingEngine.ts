@@ -1,4 +1,4 @@
-import { BaseProgram } from "../programs/BaseProgram"
+import { BaseProgram } from "@libs/shared"
 
 export abstract class BaseDrawingEngine<
   Programs extends Record<never, BaseProgram>,

@@ -2,16 +2,12 @@ import { Color, getEventPosition } from "@libs/shared"
 import { GradientColorProgram } from "./GradientColorProgram"
 
 export class ColorPicker {
-  private readonly gl: WebGLRenderingContext
   private readonly program: GradientColorProgram
-  private readonly canvas: HTMLCanvasElement
 
   constructor(private readonly root: HTMLElement, public readonly onChange: (color: Color) => void) {
     this.onChange = onChange
     const { canvas, gl } = this.createCanvas()
     this.root.appendChild(canvas)
-    this.gl = gl
-    this.canvas = canvas
 
     this.program = new GradientColorProgram(gl)
     this.program.draw()
