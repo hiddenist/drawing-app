@@ -30,4 +30,5 @@ export interface CreateLibOptions {
    * By default, this will format the libName to lowerCamelCase.
    */
   libFunctionName?: string
+  isDryRun?: boolean
 }
