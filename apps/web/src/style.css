@@ -51,7 +51,7 @@ aside canvas {
 
 @media (max-width: 800px) {
   body {
-    flex-direction: column;
+    flex-direction: column-reverse;
     overflow: hidden;
   }
   .open-picker-button {
@@ -61,7 +61,7 @@ aside canvas {
     display: none;
   }
   aside {
-    padding-top: 0;
+    padding-bottom: 0;
   }
   aside canvas {
     display: none;

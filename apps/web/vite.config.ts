@@ -7,4 +7,8 @@ const baseUrl = process.env.BASE_URL ?? "/"
 export default defineConfig({
   base: baseUrl.startsWith("/") ? baseUrl : `/${baseUrl}`,
   plugins: [plainText(["**/*.glsl"], { namedExport: false })],
+  // bind on any IP address
+  server: {
+    host: true,
+  },
 })
