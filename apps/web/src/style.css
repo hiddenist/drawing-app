@@ -54,9 +54,11 @@ aside canvas {
     flex-direction: column;
     overflow: hidden;
   }
-
   .open-picker-button {
     display: inherit;
+  }
+  body.picker-open .open-picker-button {
+    display: none;
   }
   aside {
     padding-top: 0;
@@ -64,10 +66,13 @@ aside canvas {
   aside canvas {
     display: none;
   }
-  aside canvas.picker-open {
+  body.picker-open aside {
+    flex: 1;
+  }
+  body.picker-open aside canvas {
     display: block;
-    position: fixed;
-    bottom: 1rem;
-    left: calc(50% - 255px / 2);
+  }
+  body.picker-open main {
+    display: none;
   }
 }
