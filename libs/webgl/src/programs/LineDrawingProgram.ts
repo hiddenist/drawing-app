@@ -20,7 +20,7 @@ export class LineDrawingProgram extends BaseProgram {
     if (!colorLocation) {
       throw new Error("Failed to get color location. Does the specified program have a 'color' uniform?")
     }
-    this.gl.uniform4fv(colorLocation, color.toVector4())
+    this.gl.uniform4fv(colorLocation, color.vec4)
     return this
   }
 
