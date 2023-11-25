@@ -29,9 +29,6 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
   }
 
   public updateDrawing() {
-    for (const { path, color } of this.context.pathHistory) {
-      this.drawLine(path, { drawType: DrawType.STATIC_DRAW, color })
-    }
     if (this.context.currentPath.points.length > 0) {
       this.drawLine(this.context.currentPath.points, { drawType: DrawType.DYNAMIC_DRAW })
     }

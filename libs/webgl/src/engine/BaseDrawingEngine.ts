@@ -9,7 +9,7 @@ export abstract class BaseDrawingEngine<
   private programs: Programs
 
   constructor(canvas: HTMLCanvasElement, programs: (gl: WebGLRenderingContext) => Programs) {
-    const gl = canvas.getContext("webgl")
+    const gl = canvas.getContext("webgl", { preserveDrawingBuffer: true })
     if (!gl) {
       throw new Error("WebGL not supported")
     }
