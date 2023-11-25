@@ -45,7 +45,7 @@ aside canvas {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-.picker-open-button {
+.open-picker-button {
   display: none;
 }
 
@@ -55,7 +55,7 @@ aside canvas {
     overflow: hidden;
   }
 
-  .picker-open-button {
+  .open-picker-button {
     display: inherit;
   }
   aside {
