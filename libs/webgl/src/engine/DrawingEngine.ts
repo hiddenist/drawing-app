@@ -20,7 +20,6 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     currentPath: new Path(),
     pathHistory: [] as Array<HistoryItem>,
     isDrawing: false,
-    cursorPosition: [] as Readonly<Vec2 | []>,
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -36,42 +35,6 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     if (this.context.currentPath.points.length > 0) {
       this.drawLine(this.context.currentPath.points, { drawType: DrawType.DYNAMIC_DRAW })
     }
-    if (!this.context.isDrawing) {
-      this.drawCursor()
-    }
-  }
-
-  private drawCursor() {
-    const position = this.context.cursorPosition
-    if (position[0] === undefined || position[1] === undefined) {
-      return
-    }
-    const cursorSize = 2
-    const x = position[0]
-    const y = position[1]
-    this.drawLine(
-      [
-        x - cursorSize,
-        y - cursorSize,
-
-        x - cursorSize,
-        y + cursorSize,
-
-        x + cursorSize,
-        y + cursorSize,
-
-        x + cursorSize,
-        y - cursorSize,
-
-        x - cursorSize,
-        y - cursorSize,
-      ],
-      {
-        drawType: DrawType.DYNAMIC_DRAW,
-        // todo: this doesn't work yet, everything is the same color. do we need to create a new program for the cursor?
-        color: Color.WHITE,
-      },
-    )
   }
 
   public drawLine(
@@ -117,10 +80,6 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     }
     this.drawLine(path, { drawType: DrawType.STATIC_DRAW })
     this.context.pathHistory.push({ path, color: this.color.foreground })
-  }
-
-  public setCursorPosition(position: typeof this.context.cursorPosition) {
-    this.context.cursorPosition = position
   }
 
   public addPosition(position: Readonly<Vec2>) {
