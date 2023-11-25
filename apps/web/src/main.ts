@@ -16,6 +16,6 @@ function main() {
   const height = Math.min(window.innerHeight, 500)
   const app = new WebDrawingApp(canvasRoot, width, height)
   new ColorPicker(sidebarRoot, (color) => {
-    app.engine.color.setForeground(color)
+    app.engine.setColor(color)
   })
 }

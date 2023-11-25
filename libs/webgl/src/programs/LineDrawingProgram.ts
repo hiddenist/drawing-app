@@ -26,8 +26,7 @@ export class LineDrawingProgram extends BaseProgram {
 
   public drawLine(
     points: ReadonlyArray<number>,
-    color: Color,
-    { drawType = this.gl.STREAM_DRAW, lineMode = this.gl.LINE_STRIP }: DrawLineOptions = {},
+    { drawType = this.gl.STREAM_DRAW, lineMode = this.gl.LINE_STRIP, color }: DrawLineOptions,
   ) {
     this.createBuffer()
     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(points), drawType)
@@ -53,6 +52,10 @@ export interface DrawLineOptions {
    * The line mode to use when drawing the line. Defaults to `gl.LINE_STRIP`.
    */
   lineMode?: LineMode
+  /*
+   * The color to use when drawing the line.
+   */
+  color: Color
 }
 
 export enum DrawType {

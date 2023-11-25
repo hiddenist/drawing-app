@@ -3,16 +3,22 @@ import { LineDrawingProgram, DrawLineOptions, DrawType } from "../programs/LineD
 import { BaseDrawingEngine } from "./BaseDrawingEngine"
 import { Path } from "./Path"
 import type { Vec2 } from "@libs/shared"
+import { Color } from "@libs/shared"
 
 interface AvailablePrograms {
   lineDrawing: LineDrawingProgram
+}
+
+interface HistoryItem {
+  path: ReadonlyArray<number>
+  color: Color
 }
 
 export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
   protected context = {
     color: new ColorContext(),
     currentPath: new Path(),
-    pathHistory: [] as Array<ReadonlyArray<number>>,
+    pathHistory: [] as Array<HistoryItem>,
     isDrawing: false,
     cursorPosition: [] as Readonly<Vec2 | []>,
   }
@@ -24,8 +30,8 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
   }
 
   public updateDrawing() {
-    for (const path of this.context.pathHistory) {
-      this.drawLine(path, { drawType: DrawType.STATIC_DRAW })
+    for (const { path, color } of this.context.pathHistory) {
+      this.drawLine(path, { drawType: DrawType.STATIC_DRAW, color })
     }
     if (this.context.currentPath.points.length > 0) {
       this.drawLine(this.context.currentPath.points, { drawType: DrawType.DYNAMIC_DRAW })
@@ -48,33 +54,46 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
         x - cursorSize,
         y - cursorSize,
 
-        x + cursorSize,
-        y - cursorSize,
-
-        x + cursorSize,
-        y + cursorSize,
-
         x - cursorSize,
         y + cursorSize,
+
+        x + cursorSize,
+        y + cursorSize,
+
+        x + cursorSize,
+        y - cursorSize,
 
         x - cursorSize,
         y - cursorSize,
       ],
       {
         drawType: DrawType.DYNAMIC_DRAW,
+        // todo: this doesn't work yet, everything is the same color. do we need to create a new program for the cursor?
+        color: Color.WHITE,
       },
     )
   }
 
-  public drawLine(points: ReadonlyArray<number>, options?: DrawLineOptions) {
+  public drawLine(
+    points: ReadonlyArray<number>,
+    { color = this.color.foreground, ...options }: Partial<DrawLineOptions> = {},
+  ) {
     if (points.length === 2) {
       points = [...points, ...points.map((p) => p + 1)]
     }
-    this.getProgram("lineDrawing").drawLine(points, this.color.foreground, options)
+    this.getProgram("lineDrawing").drawLine(points, {
+      ...options,
+
+      color: this.color.foreground,
+    })
   }
 
-  public get color(): ColorContext {
+  private get color(): ColorContext {
     return this.context.color
+  }
+
+  public setColor(color: Color) {
+    this.color.setForeground(color)
   }
 
   public clearCanvas() {
@@ -97,7 +116,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
       return
     }
     this.drawLine(path, { drawType: DrawType.STATIC_DRAW })
-    this.context.pathHistory.push(path)
+    this.context.pathHistory.push({ path, color: this.color.foreground })
   }
 
   public setCursorPosition(position: typeof this.context.cursorPosition) {

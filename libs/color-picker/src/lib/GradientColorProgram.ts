@@ -17,13 +17,13 @@ export class GradientColorProgram extends BaseProgram {
     return this
   }
 
-  public getColorAtPosition(position: Vec2): Color {
+  public getColorAtPosition([x, y]: Vec2): Color {
     const { gl } = this
     const pixelData = new Uint8Array(4)
 
     this.draw()
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1)
-    gl.readPixels(position[0], position[1], 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData)
+    gl.readPixels(x, gl.canvas.height - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData)
     console.log(pixelData)
 
     this.checkError()

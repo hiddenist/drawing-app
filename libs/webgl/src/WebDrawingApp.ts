@@ -18,7 +18,7 @@ export class WebDrawingApp {
 
     this.engine = new DrawingEngine(this.canvas)
     this.engine.clearCanvas()
-    this.engine.color.setForeground(Color.WHITE)
+    this.engine.setColor(Color.WHITE)
 
     this.addEventListeners()
   }
