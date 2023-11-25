@@ -8,13 +8,21 @@ export class ColorPicker {
     this.onChange = onChange
     const { canvas, gl } = this.createCanvas()
     this.root.appendChild(canvas)
+    const openPickerButton = document.createElement("button")
+    openPickerButton.classList.add("open-picker-button")
+    openPickerButton.innerText = "color picker"
+    this.root.appendChild(openPickerButton)
 
     this.program = new GradientColorProgram(gl)
     this.program.draw()
 
+    openPickerButton.addEventListener("click", () => {
+      document.body.classList.toggle("picker-open")
+    })
     canvas.addEventListener("click", (e) => {
       const color = this.getCanvasColor(e)
       this.onChange(color)
+      document.body.classList.remove("picker-open")
     })
   }
 
