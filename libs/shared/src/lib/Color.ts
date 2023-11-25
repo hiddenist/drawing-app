@@ -1,4 +1,4 @@
-import type { VectorArray } from "../types/arrays"
+import { VectorArray } from "../types/arrays"
 
 export class Color {
   static readonly BLACK = new Color(0, 0, 0)

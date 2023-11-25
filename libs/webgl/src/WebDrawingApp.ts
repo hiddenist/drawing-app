@@ -1,6 +1,6 @@
-import { Color } from "./utils/Color"
+import { Color, getEventPosition } from "@libs/shared"
 import { DrawingEngine } from "./engine/DrawingEngine"
-import { VectorArray } from "./types/arrays"
+import { Vec2 } from "@libs/shared"
 
 export class WebDrawingApp {
   public readonly canvas: HTMLCanvasElement
@@ -18,7 +18,7 @@ export class WebDrawingApp {
 
     this.engine = new DrawingEngine(this.canvas)
     this.engine.clearCanvas()
-    this.engine.color.setForeground(Color.WHITE)
+    this.engine.setColor(Color.WHITE)
 
     this.addEventListeners()
   }
@@ -40,20 +40,21 @@ export class WebDrawingApp {
   private addEventListeners() {
     this.addListener("pointerdown", ({ position }) => {
       this.engine.setPressed(true, position)
+      this.canvas.style.setProperty("cursor", "none")
     })
     this.addListener("pointermove", ({ position }) => {
       this.engine.addPosition(position)
-      this.engine.setCursorPosition(position)
     })
     this.addListener("pointerup", ({ position }) => {
       this.engine.setPressed(false, position)
-    })
-    this.addListeners(["pointerout", "pointerleave"], () => {
-      this.engine.setCursorPosition([])
+      this.canvas.style.removeProperty("cursor")
     })
   }
 
-  private addListeners<K extends keyof HTMLElementEventMap>(
+  /**
+   * Add multiple events to one listener.
+   */
+  protected addListeners<K extends keyof HTMLElementEventMap>(
     eventNames: Array<K>,
     handler?: (event: DrawingEvent<HTMLElementEventMap[K]>) => void,
     element: HTMLElement = this.root,
@@ -63,7 +64,7 @@ export class WebDrawingApp {
     }
   }
 
-  private addListener<K extends keyof HTMLElementEventMap>(
+  protected addListener<K extends keyof HTMLElementEventMap>(
     eventName: K,
     handler?: (event: DrawingEvent<HTMLElementEventMap[K]>) => void,
     element: HTMLElement = this.root,
@@ -77,19 +78,13 @@ export class WebDrawingApp {
     })
   }
 
-  private getCanvasPosition(event: Event): VectorArray<2> {
-    if (!(event instanceof MouseEvent)) {
-      return [NaN, NaN]
-    }
-
-    const rect = this.canvas.getBoundingClientRect()
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
+  protected getCanvasPosition(event: Event): Vec2 {
+    const [x, y] = getEventPosition(event, this.canvas)
     return [x * this.pixelDensity, y * this.pixelDensity]
   }
 }
 
 interface DrawingEvent<E extends Event> {
   event: E
-  position: VectorArray<2>
+  position: Vec2
 }

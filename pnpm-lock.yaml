@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@libs/shared':
+        specifier: workspace:*
+        version: link:libs/shared
       '@types/node':
         specifier: ^20.9.4
         version: 20.9.5
@@ -23,11 +26,26 @@ importers:
 
   apps/web:
     dependencies:
+      '@libs/color-picker':
+        specifier: workspace:*
+        version: link:../../libs/color-picker
       '@libs/webgl':
         specifier: workspace:*
         version: link:../../libs/webgl
 
-  libs/webgl: {}
+  libs/color-picker:
+    dependencies:
+      '@libs/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  libs/shared: {}
+
+  libs/webgl:
+    dependencies:
+      '@libs/shared':
+        specifier: workspace:*
+        version: link:../shared
 
   tools/create-lib:
     devDependencies:

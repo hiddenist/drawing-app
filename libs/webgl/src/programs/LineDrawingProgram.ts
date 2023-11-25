@@ -1,8 +1,7 @@
-import { WebGLProgramBuilder } from "./WebGLProgramBuilder"
+import { WebGLProgramBuilder } from "@libs/shared"
 import positionVertexSource from "./shaders/position.vertex.glsl"
 import fragmentShaderSource from "./shaders/color.fragment.glsl"
-import { Color } from "../utils/Color"
-import { BaseProgram } from "./BaseProgram"
+import { Color, BaseProgram } from "@libs/shared"
 
 export class LineDrawingProgram extends BaseProgram {
   constructor(public readonly gl: WebGLRenderingContext) {
@@ -27,8 +26,7 @@ export class LineDrawingProgram extends BaseProgram {
 
   public drawLine(
     points: ReadonlyArray<number>,
-    color: Color,
-    { drawType = this.gl.STREAM_DRAW, lineMode = this.gl.LINE_STRIP }: DrawLineOptions = {},
+    { drawType = this.gl.STREAM_DRAW, lineMode = this.gl.LINE_STRIP, color }: DrawLineOptions,
   ) {
     this.createBuffer()
     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(points), drawType)
@@ -54,6 +52,10 @@ export interface DrawLineOptions {
    * The line mode to use when drawing the line. Defaults to `gl.LINE_STRIP`.
    */
   lineMode?: LineMode
+  /*
+   * The color to use when drawing the line.
+   */
+  color: Color
 }
 
 export enum DrawType {

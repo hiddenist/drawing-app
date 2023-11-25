@@ -1,4 +1,4 @@
-import { VectorArray } from "../types/arrays"
+import { Vec2 } from "@libs/shared"
 
 export class Path {
   protected _points: number[] = []
@@ -7,7 +7,7 @@ export class Path {
     return this._points
   }
 
-  public set points(path: ReadonlyArray<VectorArray<2> | number>) {
+  public set points(path: ReadonlyArray<Vec2 | number>) {
     this._points.splice(0, this._points.length, ...path.flat())
   }
 
