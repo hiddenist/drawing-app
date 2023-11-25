@@ -24,8 +24,6 @@ async function main() {
     const options = processArguments(argv)
     const templates = await getTemplatesFromFolder(options)
 
-    // console.log(templates)
-
     createLibFromTemplateContent(templates, options)
   } catch (error) {
     if (error instanceof ArgumentError) {
@@ -54,7 +52,6 @@ async function getTemplatesFromFolder(
 
   const templateDir = path.join(__dirname, options.templateFolder ?? "template", folderName ?? "")
   const files = fs.readdirSync(templateDir)
-  console.log(folderName, files)
   const templateStructure = await Promise.all(
     files.map(async (fileName) => {
       const filePath = path.join(templateDir, fileName)
@@ -65,9 +62,6 @@ async function getTemplatesFromFolder(
       }
       const templatedFile = await generateTemplateFromFile(options, formatters, modulePath, fileLocation)
 
-      if (fileName === "__mainFileName__.ts") {
-        console.log(fileName, { filePath, fileLocation, templatedFile })
-      }
       return {
         ...templatedFile,
         depth,
@@ -81,7 +75,6 @@ async function getTemplatesFromFolder(
     }
     return a.fileName.localeCompare(b.fileName)
   })
-  console.log(templates)
   return templates
 }
 

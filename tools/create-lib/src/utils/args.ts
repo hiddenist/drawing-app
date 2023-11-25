@@ -58,7 +58,7 @@ export function processArguments(argv: ReadonlyArray<string>): Required<CreateLi
     libName,
     description,
     packageName: `@libs/${toKebabCase(libName)}`,
-    mainFileName: "src/exports.ts",
+    mainFileName: "exports.ts",
     templateFolder: "template",
     isPrivate: isPrivate ?? true,
     version: version || "0.0.0",

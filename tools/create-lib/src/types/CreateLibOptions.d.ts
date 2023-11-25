@@ -14,7 +14,7 @@ export interface CreateLibOptions {
    */
   isPrivate?: boolean
   /**
-   * @default "src/exports.ts"
+   * @default "exports.ts"
    */
   mainFileName?: string
   /**
