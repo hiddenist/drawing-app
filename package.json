@@ -8,7 +8,8 @@
     "build": "pnpm --filter web run build",
     "preview": "pnpm --filter web run preview",
     "typecheck": "tsc --noEmit && echo Type-check passed && exit 0 || exit 1",
-    "create:lib": "pnpm --filter @tools/create-lib generate"
+    "create:lib": "pnpm --filter @tools/create-lib generate",
+    "test": "vitest"
   },
   "devDependencies": {
     "@libs/shared": "workspace:*",

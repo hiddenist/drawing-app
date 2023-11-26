@@ -1,4 +1,4 @@
-name: Lint
+name: Test
 
 on:
   push:
@@ -8,8 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Single deploy job since we're just deploying
-  lint:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,5 +22,8 @@ jobs:
         env:
           BASE_URL: ${{ github.event.repository.name }}
 
-      - name: Type check
+      - name: Verify TypeScript types
         run: pnpm typecheck
+
+      - name: Run unit tests
+        run: pnpm test
