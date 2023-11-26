@@ -226,15 +226,16 @@ export class Color {
     return `rgba(${this.r}, ${this.g}, ${this.b}, ${this.alphaPercent / 100})`
   }
   get hex(): string {
-    return `#${this.r.toString(16)}${this.g.toString(16)}${this.b.toString(16)}`
+    const toHex = (n: number): string => n.toString(16).padStart(2, "0")
+    return `#${toHex(this.r)}${toHex(this.g)}${toHex(this.b)}`
   }
   get hsl(): string {
     const [h, s, l] = this.getHslaValues()
-    return `hsl(${h}, ${s}%, ${l}%)`
+    return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`
   }
   get hsla(): string {
     const [h, s, l, a] = this.getHslaValues()
-    return `hsla(${h}, ${s}%, ${l}%, ${a})`
+    return `hsla(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%, ${a})`
   }
 
   public toString(): string {
@@ -255,7 +256,7 @@ export class Color {
     const min = Math.min(redPercent, greenPercent, bluePercent)
     const lightness = (max + min) / 2
 
-    if (max === min) return [0, 0, lightness, this.a]
+    if (max === min) return [0, 0, lightness * 100, this.a / 255]
 
     const delta = max - min
     let hue = 0
