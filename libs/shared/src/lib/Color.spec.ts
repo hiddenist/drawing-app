@@ -122,6 +122,17 @@ const testData: ReadonlyArray<{
     hslaArray: [0, 59, 41, 1],
     hslaString: "hsla(0, 59%, 41%, 1)",
   },
+  {
+    colorName: "Gray",
+    colorObject: new Color(128, 128, 128),
+    rgbaArray: [128, 128, 128, 255],
+    rgbString: "rgb(128, 128, 128)",
+    rgbaString: "rgba(128, 128, 128, 1)",
+    hexString: "#808080",
+    hslString: "hsl(0, 0%, 50%)",
+    hslaArray: [0, 0, 50, 1],
+    hslaString: "hsla(0, 0%, 50%, 1)",
+  },
 ]
 
 const toStringResultType = "rgbaString"
