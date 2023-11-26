@@ -135,7 +135,7 @@ describe("Color", () => {
 
   it.each([0, 4, 25, 32, 50, 64, 100])("should be able to generate colors with alpha at %i%", (alpha) => {
     for (const {
-      colorName,q
+      colorName,
       rgbaArray: [r, g, b],
       hslaArray: [h, s, l],
     } of testData) {
