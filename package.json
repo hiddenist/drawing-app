@@ -7,14 +7,16 @@
     "dev": "pnpm --filter web run dev",
     "build": "pnpm --filter web run build",
     "preview": "pnpm --filter web run preview",
-    "typecheck": "tsc --noEmit",
-    "create:lib": "pnpm --filter @tools/create-lib generate"
+    "typecheck": "tsc --noEmit && echo Type-check passed && exit 0 || exit 1",
+    "create:lib": "pnpm --filter @tools/create-lib generate",
+    "test": "vitest"
   },
   "devDependencies": {
+    "@libs/shared": "workspace:*",
     "@types/node": "^20.9.4",
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
     "vite-plugin-plain-text": "^1.4.2",
-    "@libs/shared": "workspace:*"
+    "vitest": "^0.34.6"
   }
 }

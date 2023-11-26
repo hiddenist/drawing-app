@@ -1,7 +1,7 @@
 {
-  "extends": "./tsconfig.base.json",
-  "exclude": [
-    "**/node_modules",
+  "extends": "./tsconfig.json",
+  "include": [
+    "vitest.config.ts",
     "**/*.spec.ts",
     "**/*.test.ts",
     "**/*.spec.d.ts",

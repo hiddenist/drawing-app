@@ -1,19 +1,17 @@
-import { Vec2 } from "../exports"
-
 export function getEventPosition(
   event: Event,
   /**
    * If not provided, the position will be relative to the event target.
    */
   relativeToElement?: HTMLElement,
-): Vec2 {
+): [x: number, y: number] {
   if (!(event instanceof MouseEvent)) {
-    return [NaN, NaN]
+    throw new Error("Event must be a MouseEvent")
   }
 
   const target = relativeToElement ?? event.target
   if (!(target instanceof HTMLElement)) {
-    return [NaN, NaN]
+    throw new Error("Target element must be an HTMLElement")
   }
 
   const rect = target.getBoundingClientRect()
