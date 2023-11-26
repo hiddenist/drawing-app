@@ -1,28 +1,32 @@
-export type StaticLengthArray<N extends number, T, R extends readonly T[] = []> = R["length"] extends N
+/**
+ * An array with a static length.
+ */
+export type ArrayOfLength<N extends number, T, R extends T[] = []> = R["length"] extends N
   ? R
-  : StaticLengthArray<N, T, [T, ...tail: R]>
+  : ArrayOfLength<N, T, [T, ...tail: R]>
 
-export type FlattenArray<T extends any[]> = T extends [infer F, ...infer R]
+/**
+ * The type of an array after it's been flattened.
+ */
+export type FlatArray<T extends any[]> = T extends [infer F, ...infer R]
   ? F extends any[]
-    ? [...FlattenArray<F>, ...FlattenArray<R>]
-    : [F, ...FlattenArray<R>]
-  : []
+    ? [...FlatArray<F>, ...FlatArray<R>]
+    : [F, ...FlatArray<R>]
+  : T
 
-export type VectorArray<Size extends number> = StaticLengthArray<Size, number>
+/**
+ * An array of numbers with a static length.
+ */
+export type VectorArray<Size extends number> = ArrayOfLength<Size, number>
 
-export type MatrixArray<Rows extends number, Cols extends number = Rows> = StaticLengthArray<Rows, VectorArray<Cols>>
-export type FlatMatrixArray<Rows extends number, Cols extends number = Rows> = FlattenArray<MatrixArray<Rows, Cols>>
+type Vec2 = VectorArray<2>
 
-export type Vec2 = VectorArray<2>
-export type Vec3 = VectorArray<3>
-export type Vec4 = VectorArray<4>
+/**
+ * A two dimensional array of numbers with static lengths.
+ */
+export type MatrixArray<Rows extends number, Cols extends number = Rows> = ArrayOfLength<Rows, VectorArray<Cols>>
 
-export type Mat2 = FlatMatrixArray<2>
-export type Mat3 = FlatMatrixArray<3>
-export type Mat4 = FlatMatrixArray<4>
-export type Mat2x3 = FlatMatrixArray<2, 3>
-export type Mat3x2 = FlatMatrixArray<3, 2>
-export type Mat2x4 = FlatMatrixArray<2, 4>
-export type Mat4x2 = FlatMatrixArray<4, 2>
-export type Mat3x4 = FlatMatrixArray<3, 4>
-export type Mat4x3 = FlatMatrixArray<4, 3>
+/**
+ * A flattened two dimensional array of numbers with static lengths.
+ */
+export type FlatMatrixArray<Rows extends number, Cols extends number = Rows> = FlatArray<MatrixArray<Rows, Cols>>

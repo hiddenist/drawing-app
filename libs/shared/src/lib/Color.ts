@@ -1,4 +1,4 @@
-import { Vec4, VectorArray } from "../types/arrays"
+import { VectorArray } from "../types/arrays"
 
 export type RbgaArray = [
   /** Red as an 8 bit number (0 to 255) */
@@ -65,7 +65,7 @@ export class Color {
     }
 
     if (typeof firstParam === "string") {
-      const color: Vec4 = Color.fromString(firstParam)
+      const color: RbgaArray = Color.fromString(firstParam)
       this.vector[0] = color[0]
       this.vector[1] = color[1]
       this.vector[2] = color[2]
@@ -96,7 +96,7 @@ export class Color {
     throw new Error("Invalid color object")
   }
 
-  protected static fromString(color: string): Vec4 {
+  protected static fromString(color: string): RbgaArray {
     if (color.startsWith("#")) return Color.fromHex(color)
     if (color.startsWith("rgb(")) return Color.fromRgb(color)
     if (color.startsWith("rgba(")) return Color.fromRgba(color)
@@ -105,7 +105,7 @@ export class Color {
     throw new Error("Invalid color string")
   }
 
-  protected static fromHex(hex: string): Vec4 {
+  protected static fromHex(hex: string): RbgaArray {
     if (hex.length === 4) {
       const fullHex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
       return this.fromHex(fullHex)
