@@ -127,25 +127,6 @@ const testData: ReadonlyArray<{
 const toStringResultType = "rgbaString"
 
 describe("Color", () => {
-  it("should be able to create a color from a short hex string", () => {
-    const color = new Color("#abc")
-    expect(color.rgba).toBe("rgba(170, 187, 204, 1)")
-    expect(color.hex).toBe("#aabbcc")
-  })
-
-  it.each([0, 4, 25, 32, 50, 64, 100])("should be able to generate colors with alpha at %i%", (alpha) => {
-    for (const {
-      colorName,
-      rgbaArray: [r, g, b],
-      hslaArray: [h, s, l],
-    } of testData) {
-      const colorFromRgb = new Color(r, g, b, (alpha / 100) * 255)
-      expect(colorFromRgb.alphaPercent, `${colorName} from rgba`).toBe(alpha)
-      const colorFromHsla = new Color(`hsla(${h}, ${s}%, ${l}%, ${alpha / 100})`)
-      expect(colorFromHsla.alphaPercent, `${colorName} from hsla`).toBe(alpha)
-    }
-  })
-
   it("should create a color with RGBA values", () => {
     for (const {
       [toStringResultType]: toStringResult,
@@ -157,6 +138,72 @@ describe("Color", () => {
       expect(color.g).toBe(g)
       expect(color.b).toBe(b)
       expect(color.a).toBe(a)
+    }
+  })
+
+  it("should return an rgba string with toString", () => {
+    for (const { colorObject, rgbaString, colorName } of testData) {
+      expect(colorObject.toString(), colorName).toBe(rgbaString)
+    }
+    expect(toStringResultType).toBe("rgbaString")
+  })
+
+  it("should return a Uint8ClampedArray with the vec4 parameter", () => {
+    expect(Color.WHITE.vec4).toBeInstanceOf(Uint8ClampedArray)
+  })
+
+  it("should return the red channel value with r", () => {
+    for (const {
+      colorObject,
+      rgbaArray: [r],
+      colorName,
+    } of testData) {
+      expect(colorObject.r, colorName).toBe(r)
+    }
+  })
+
+  it("should return the green channel value with g", () => {
+    for (const {
+      colorObject,
+      rgbaArray: [_, g],
+      colorName,
+    } of testData) {
+      expect(colorObject.g, colorName).toBe(g)
+    }
+  })
+
+  it("should return the blue channel value with b", () => {
+    for (const {
+      colorObject,
+      rgbaArray: [_, __, b],
+      colorName,
+    } of testData) {
+      expect(colorObject.b, colorName).toBe(b)
+    }
+  })
+
+  it("should return the alpha channel value with a", () => {
+    for (const {
+      colorObject,
+      rgbaArray: [_, __, ___, a],
+      colorName,
+    } of testData) {
+      expect(colorObject.a, colorName).toBe(a)
+    }
+  })
+
+  it.each([0, 4, 25, 32, 50, 64, 100])("should be able to be generated with and return alpha at %i%", (alpha) => {
+    for (const {
+      colorName,
+      rgbaArray: [r, g, b],
+      hslaArray: [h, s, l],
+    } of testData) {
+      const a = (alpha / 100) * 255
+      const colorFromRgb = new Color(r, g, b, a)
+      expect(colorFromRgb.alphaPercent, `${colorName} from rgba`).toBe(alpha)
+      expect(Math.round(colorFromRgb.a), `${colorName} from rgba`).toBe(Math.round(a))
+      const colorFromHsla = new Color(`hsla(${h}, ${s}%, ${l}%, ${alpha / 100})`)
+      expect(colorFromHsla.alphaPercent, `${colorName} from hsla`).toBe(alpha)
     }
   })
 
@@ -188,6 +235,12 @@ describe("Color", () => {
     }
   })
 
+  it("should be able to create a color from a short hex string", () => {
+    const color = new Color("#abc")
+    expect(color.rgba).toBe("rgba(170, 187, 204, 1)")
+    expect(color.hex).toBe("#aabbcc")
+  })
+
   it.each(testSet)("should be able to create $method string from colors", ({ method, key }) => {
     for (const { colorObject, colorName, [key]: expected } of testData) {
       expect(colorObject[method], colorName).toBe(expected)
@@ -213,5 +266,11 @@ describe("Color", () => {
       expect(copiedColor).toEqual(colorObject)
       expect(copiedColor).not.toBe(colorObject)
     }
+  })
+
+  it("should have the right colors for constant values", () => {
+    expect(Color.BLACK.hex).toBe("#000000")
+    expect(Color.WHITE.hex).toBe("#ffffff")
+    expect(Color.TRANSPARENT.rgba).toBe("rgba(0, 0, 0, 0)")
   })
 })

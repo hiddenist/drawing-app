@@ -91,103 +91,6 @@ export class Color {
     return new Color(this.vector)
   }
 
-  protected static from(color: Color): Color {
-    if (color instanceof Color) return color.copy()
-    throw new Error("Invalid color object")
-  }
-
-  protected static fromString(color: string): RbgaArray {
-    if (color.startsWith("#")) return Color.fromHex(color)
-    if (color.startsWith("rgb(")) return Color.fromRgb(color)
-    if (color.startsWith("rgba(")) return Color.fromRgba(color)
-    if (color.startsWith("hsl(")) return Color.fromHsl(color)
-    if (color.startsWith("hsla(")) return Color.fromHsla(color)
-    throw new Error("Invalid color string")
-  }
-
-  protected static fromHex(hex: string): RbgaArray {
-    if (hex.length === 4) {
-      const fullHex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
-      return this.fromHex(fullHex)
-    }
-
-    const [r, g, b] = hex
-      .slice(1)
-      .match(/.{2}/g)!
-      .map((c) => parseInt(c, 16))
-    return [r, g, b, 255]
-  }
-
-  protected static fromRgb(rgb: string): RbgaArray {
-    const [r, g, b] = rgb
-      .slice(4, -1)
-      .split(",")
-      .map((c) => parseInt(c.trim()))
-    return [r, g, b, 255]
-  }
-
-  protected static fromRgba(rgba: string): RbgaArray {
-    const sliced = rgba
-      .slice(5, -1)
-      .split(",")
-      .map((s) => s.trim())
-    const [r, g, b] = sliced.map((c) => parseInt(c))
-    const a = Color.parseAlphaString(sliced[3])
-    return [r, g, b, a * 255]
-  }
-
-  protected static fromHsl(hsl: string): RbgaArray {
-    const [h, s, l] = hsl
-      .slice(4, -1)
-      .split(",")
-      .map((c) => parseInt(c.trim()))
-    return Color.fromHslaValues(h, s, l)
-  }
-
-  protected static fromHsla(hsla: string): RbgaArray {
-    const sliced = hsla
-      .slice(5, -1)
-      .split(",")
-      .map((s) => s.trim())
-    const [h, s, l] = sliced.map((c) => parseInt(c))
-    return Color.fromHslaValues(h, s, l, parseFloat(sliced[3]))
-  }
-
-  protected static parseAlphaString(alpha: string): number {
-    if (alpha.endsWith("%")) return parseFloat(alpha) / 100
-    return parseFloat(alpha)
-  }
-
-  protected static fromHslaValues(h: number, s: number, l: number, a = 1): RbgaArray {
-    const hue = h / 360
-    const saturation = s / 100
-    const lightness = l / 100
-
-    let red = lightness
-    let green = lightness
-    let blue = lightness
-
-    if (saturation !== 0) {
-      const q = lightness < 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation
-      const p = 2 * lightness - q
-
-      const hueToColorValue = (p: number, q: number, t: number): number => {
-        if (t < 0) t += 1
-        if (t > 1) t -= 1
-        if (t < 1 / 6) return p + (q - p) * 6 * t
-        if (t < 1 / 2) return q
-        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
-        return p
-      }
-
-      red = hueToColorValue(p, q, hue + 1 / 3)
-      green = hueToColorValue(p, q, hue)
-      blue = hueToColorValue(p, q, hue - 1 / 3)
-    }
-
-    return [Math.round(red * 255), Math.round(green * 255), Math.round(blue * 255), a * 255]
-  }
-
   /*
    * Red as an 8 bit number (0 to 255).
    */
@@ -287,5 +190,97 @@ export class Color {
       if (color.vector[i] !== this.vector[i]) return false
     }
     return true
+  }
+
+  protected static fromString(color: string): RbgaArray {
+    if (color.startsWith("#")) return Color.fromHex(color)
+    if (color.startsWith("rgb(")) return Color.fromRgb(color)
+    if (color.startsWith("rgba(")) return Color.fromRgba(color)
+    if (color.startsWith("hsl(")) return Color.fromHsl(color)
+    if (color.startsWith("hsla(")) return Color.fromHsla(color)
+    throw new Error("Invalid color string")
+  }
+
+  protected static fromHex(hex: string): RbgaArray {
+    if (hex.length === 4) {
+      const fullHex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+      return this.fromHex(fullHex)
+    }
+
+    const [r, g, b] = hex
+      .slice(1)
+      .match(/.{2}/g)!
+      .map((c) => parseInt(c, 16))
+    return [r, g, b, 255]
+  }
+
+  protected static fromRgb(rgb: string): RbgaArray {
+    const [r, g, b] = rgb
+      .slice(4, -1)
+      .split(",")
+      .map((c) => parseInt(c.trim()))
+    return [r, g, b, 255]
+  }
+
+  protected static fromRgba(rgba: string): RbgaArray {
+    const sliced = rgba
+      .slice(5, -1)
+      .split(",")
+      .map((s) => s.trim())
+    const [r, g, b] = sliced.map((c) => parseInt(c))
+    const a = Color.parseAlphaString(sliced[3])
+    return [r, g, b, a * 255]
+  }
+
+  protected static fromHsl(hsl: string): RbgaArray {
+    const [h, s, l] = hsl
+      .slice(4, -1)
+      .split(",")
+      .map((c) => parseInt(c.trim()))
+    return Color.fromHslaValues(h, s, l)
+  }
+
+  protected static fromHsla(hsla: string): RbgaArray {
+    const sliced = hsla
+      .slice(5, -1)
+      .split(",")
+      .map((s) => s.trim())
+    const [h, s, l] = sliced.map((c) => parseInt(c))
+    return Color.fromHslaValues(h, s, l, parseFloat(sliced[3]))
+  }
+
+  protected static parseAlphaString(alpha: string): number {
+    if (alpha.endsWith("%")) return parseFloat(alpha) / 100
+    return parseFloat(alpha)
+  }
+
+  protected static fromHslaValues(h: number, s: number, l: number, a = 1): RbgaArray {
+    const hue = h / 360
+    const saturation = s / 100
+    const lightness = l / 100
+
+    let red = lightness
+    let green = lightness
+    let blue = lightness
+
+    if (saturation !== 0) {
+      const q = lightness < 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation
+      const p = 2 * lightness - q
+
+      const hueToColorValue = (p: number, q: number, t: number): number => {
+        if (t < 0) t += 1
+        if (t > 1) t -= 1
+        if (t < 1 / 6) return p + (q - p) * 6 * t
+        if (t < 1 / 2) return q
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
+        return p
+      }
+
+      red = hueToColorValue(p, q, hue + 1 / 3)
+      green = hueToColorValue(p, q, hue)
+      blue = hueToColorValue(p, q, hue - 1 / 3)
+    }
+
+    return [Math.round(red * 255), Math.round(green * 255), Math.round(blue * 255), a * 255]
   }
 }
