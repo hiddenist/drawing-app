@@ -22,4 +22,15 @@ function main() {
       app.engine.setColor(color)
     },
   })
+
+  const weightInput = document.createElement("input")
+  weightInput.type = "range"
+  weightInput.max = 100
+  weightInput.min = 1
+  weightInput.value = app.engine.lineWeight
+  weightInput.addEventListener("change", (e) => {
+    app.engine.setLineWeight(parseInt(weightInput.value))
+  })
+
+  canvasRoot.prepend(weightInput)
 }
