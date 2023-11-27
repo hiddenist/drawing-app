@@ -64,9 +64,8 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     this.color.setForeground(color)
   }
 
-
   public get lineWeight(): number {
-    return this.context.lineWeight;
+    return this.context.lineWeight
   }
 
   public setLineWeight(weight: number): typeof this {
