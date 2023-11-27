@@ -1,4 +1,4 @@
-import { WebGLProgramBuilder } from "@libs/shared"
+import { VectorArray, WebGLProgramBuilder } from "@libs/shared"
 import { Color, BaseProgram } from "@libs/shared"
 import sourceMap from "./shaders/sourceMap"
 
@@ -22,47 +22,40 @@ export class LineDrawingProgram extends BaseProgram {
     return { width: size.width * this.pixelDensity, height: size.height * this.pixelDensity }
   }
 
-  public setColor(color: Color): LineDrawingProgram {
-    const colorLocation = this.gl.getUniformLocation(this.program, "uColor")
-    if (!colorLocation) {
-      throw new Error("Failed to get color location. Does the specified program have a 'color' uniform?")
-    }
-    this.gl.uniform4fv(colorLocation, color.vec4)
+  public setColor(color: Color): typeof this {
+    this.gl.uniform4fv(this.getUniformLocation("uColor"), color.vec4)
     return this
   }
 
-  public drawLine(points: ReadonlyArray<number>, { drawType = this.gl.STREAM_DRAW, color }: DrawLineOptions) {
-    this.setColor(color)
-
-    this.setPositionAttr(points, drawType)
-    this.setNormalsAndMiterAttrs(points, drawType)
-
-    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, points.length / 2)
-
-    this.checkError()
+  protected getUniformLocation(name: string) {
+    const uniformLocation = this.gl.getUniformLocation(this.program, name)
+    if (!uniformLocation) {
+      throw new Error(`Failed to get uniform location. Does the specified program have a '${name}' uniform?`)
+    }
+    return uniformLocation
   }
 
-  protected setNormalsAndMiterAttrs(points: ReadonlyArray<number>, drawType: DrawType): void {
-    const points2d = points.reduce((acc: Array<[number, number]>, val, i) => {
-      if (i % 2 === 0) {
-        acc.push([val, points[i + 1]])
-      }
-      return acc
-    }, [])
+  public drawLine(
+    points: ReadonlyArray<number>,
+    {
+      drawType = this.gl.STREAM_DRAW,
+      color = Color.BLACK,
+      thickness = 10.0,
+      // I don't know what these do
+      projection = [2.0, 2.0, 2.0, 2.0],
+      model = [2.0, 2.0, 2.0, 2.0],
+      view = [2.0, 2.0, 2.0, 2.0],
+    }: DrawLineOptions = {},
+  ) {
+    this.setColor(color)
+    this.gl.uniform1f(this.getUniformLocation("uThickness"), thickness)
+    this.gl.uniform4fv(this.getUniformLocation("uProjection"), projection)
+    this.gl.uniform4fv(this.getUniformLocation("uModel"), model)
+    this.gl.uniform4fv(this.getUniformLocation("uView"), view)
 
-    const normals = points2d.flatMap(([x, y], i, arr) => {
-      const nextPoint = arr[i + 1] || arr[0]
-      const dx = nextPoint[0] - x
-      const dy = nextPoint[1] - y
-      const length = Math.sqrt(dx * dx + dy * dy)
-      const normalX = dy / length
-      const normalY = -dx / length
-      return [normalX, normalY]
-    })
-
-    this.bufferAttribute("aNormal", new Float32Array(normals), drawType, 2) // Use 2 for the size since we have x and y components
-
-    // this.bufferAttribute("aMiter", new Float32Array(miters), drawType, 1)
+    this.setPositionAttr(points, drawType)
+    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, points.length / 2)
+    this.checkError()
   }
 
   protected setPositionAttr(points: ReadonlyArray<number>, drawType: DrawType): void {
@@ -84,9 +77,14 @@ export interface DrawLineOptions {
    */
   drawType?: DrawType
   /*
-   * The color to use when drawing the line.
+   * The color to use when drawing the line. Black if not specified.
    */
-  color: Color
+  color?: Color
+
+  thickness?: number
+  projection?: VectorArray<4>
+  model?: VectorArray<4>
+  view?: VectorArray<4>
 }
 
 export enum DrawType {
