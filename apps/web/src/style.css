@@ -31,7 +31,7 @@ main canvas {
 }
 
 aside {
-  display: grid;
+  display: flex;
   justify-content: center;
   align-items: center;
   overflow: auto;
@@ -47,19 +47,15 @@ aside canvas {
   width: 256px;
 }
 
-.current-color {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.open-picker-button {
+  background: none;
+  border: none;
   height: 32px;
   width: 32px;
   border-radius: 50%;
   margin-bottom: 1rem;
   border: 1px solid #111;
-}
-
-.open-picker-button {
-  display: none;
+  text-indent: -9999px; /* Hides the text */
 }
 
 @media (max-width: 800px) {
@@ -67,13 +63,8 @@ aside canvas {
     flex-direction: column-reverse;
     overflow: hidden;
   }
-  .open-picker-button {
-    display: inherit;
-  }
-  body.picker-open .open-picker-button {
-    display: none;
-  }
   aside {
+    display: grid;
     padding-bottom: 0;
   }
   aside canvas {

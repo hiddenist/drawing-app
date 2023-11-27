@@ -51,7 +51,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     }
     this.getProgram("lineDrawing").drawLine(points, {
       ...options,
-
+      thickness: (options.thickness ?? 5) * this.context.pixelDensity,
       color: this.color.foreground,
     })
   }
@@ -64,6 +64,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     this.color.setForeground(color)
   }
 
+
   public get lineWeight(): number {
     return this.context.lineWeight;
   }
@@ -71,6 +72,10 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
   public setLineWeight(weight: number): typeof this {
     this.context.lineWeight = weight
     return this
+  }
+
+  public getCurrentColor() {
+    return this.color.foreground
   }
 
   public clearCanvas() {
