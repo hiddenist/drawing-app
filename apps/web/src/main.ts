@@ -32,5 +32,5 @@ function main() {
     app.engine.setLineWeight(parseInt(weightInput.value))
   })
 
-  canvasRoot.prepend(weightInput)
+  sidebarRoot.prepend(weightInput)
 }

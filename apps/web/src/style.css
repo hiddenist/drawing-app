@@ -31,7 +31,7 @@ main canvas {
 }
 
 aside {
-  display: flex;
+  display: grid;
   justify-content: center;
   align-items: center;
   overflow: auto;
