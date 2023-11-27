@@ -12,7 +12,7 @@ interface AvailablePrograms {
 interface HistoryItem {
   path: ReadonlyArray<number>
   color: Color
-  lineWeight: number
+  thickness: number
 }
 
 export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
