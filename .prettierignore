@@ -1,0 +1,25 @@
+# Ignore all files and directories unless explicitly included
+*
+
+# Include specific file types
+!*.js
+!*.jsx
+!*.ts
+!*.tsx
+!*.json
+!*.html
+!*.css
+!*.scss
+!*.less
+!*.md
+!*.yaml
+!*.yml
+
+# Include all directories
+!*/
+
+# Always exclude node modules, lock files, etc.
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

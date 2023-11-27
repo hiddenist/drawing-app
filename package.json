@@ -9,7 +9,9 @@
     "preview": "pnpm --filter web run preview",
     "typecheck": "tsc --noEmit && echo Type-check passed && exit 0 || exit 1",
     "create:lib": "pnpm --filter @tools/create-lib generate",
-    "test": "vitest"
+    "test": "vitest",
+    "lint": "prettier --check .",
+    "lint:fix": "prettier --write ."
   },
   "devDependencies": {
     "@libs/shared": "workspace:*",
@@ -17,6 +19,7 @@
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
     "vite-plugin-plain-text": "^1.4.2",
-    "vitest": "^0.34.6"
+    "vitest": "^0.34.6",
+    "prettier": "^3.1.0"
   }
 }

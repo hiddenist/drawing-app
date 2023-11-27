@@ -1,4 +1,4 @@
-name: Test
+name: Verify
 
 on:
   push:
@@ -24,6 +24,9 @@ jobs:
 
       - name: Verify TypeScript types
         run: pnpm typecheck
+
+      - name: Check for linting errors
+        run: pnpm lint
 
       - name: Run unit tests
         run: pnpm test
