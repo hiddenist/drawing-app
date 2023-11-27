@@ -1,9 +1,9 @@
 precision mediump float;
 
-varying vec2 v_resolution;
+varying vec2 vResolution;
 
 void main() {
-  vec2 st = gl_FragCoord.xy / v_resolution;
+  vec2 st = gl_FragCoord.xy / vResolution;
 
   vec3 rgb = clamp(abs(mod(st.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
 
@@ -14,5 +14,4 @@ void main() {
     vec3 fadeToBlack = rgb * st.y * 2.0;
     gl_FragColor = vec4(fadeToBlack, 1.0);
   }
-
 }

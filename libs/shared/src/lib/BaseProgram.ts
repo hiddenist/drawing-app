@@ -10,8 +10,19 @@ export abstract class BaseProgram {
   }
 
   public syncCanvasSize(): typeof this {
-    this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height)
+    const { width, height } = this.getCanvasSize()
+    this.gl.viewport(0, 0, width, height)
     return this
+  }
+
+  public getCanvasSize(): { width: number; height: number } {
+    const canvas = this.gl.canvas
+    if (!(canvas instanceof HTMLElement)) {
+      throw new Error("Could not get canvas size, canvas is not an HTMLCanvasElement")
+    }
+    const boundingRect = canvas.getBoundingClientRect()
+
+    return { width: boundingRect.width, height: boundingRect.height }
   }
 
   public createBuffer(target = this.gl.ARRAY_BUFFER): WebGLBuffer {
