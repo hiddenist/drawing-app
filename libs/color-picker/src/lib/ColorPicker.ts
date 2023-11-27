@@ -4,7 +4,10 @@ import { GradientColorProgram } from "./GradientColorProgram"
 export class ColorPicker {
   private readonly program: GradientColorProgram
 
-  constructor(private readonly root: HTMLElement, public readonly onChange: (color: Color) => void) {
+  constructor(
+    private readonly root: HTMLElement,
+    public readonly onChange: (color: Color) => void,
+  ) {
     this.onChange = onChange
     const { canvas, gl } = this.createCanvas()
     this.root.appendChild(canvas)

@@ -1,4 +1,4 @@
-name: Test
+name: Verify
 
 on:
   push:
@@ -17,13 +17,16 @@ jobs:
       - name: Set up pnpm
         uses: "./.github/actions/setup-pnpm"
 
-      - name: Build
-        run: pnpm build
-        env:
-          BASE_URL: ${{ github.event.repository.name }}
-
       - name: Verify TypeScript types
         run: pnpm typecheck
 
+      - name: Check for linting errors
+        run: pnpm lint
+
       - name: Run unit tests
         run: pnpm test
+
+      - name: Verify that build succeeds
+        run: pnpm build
+        env:
+          BASE_URL: ${{ github.event.repository.name }}
