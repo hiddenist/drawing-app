@@ -59,6 +59,10 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     this.color.setForeground(color)
   }
 
+  public getCurrentColor() {
+    return this.color.foreground
+  }
+
   public clearCanvas() {
     this.gl.clearColor(0, 0, 0, 0)
     this.gl.clear(this.gl.COLOR_BUFFER_BIT)
