@@ -22,21 +22,20 @@ export class WebGLProgramBuilder {
    * @returns The fully resolved GLSL source code for the given file.
    */
   public static buildGlslSource<K extends string>(mutableSourceMap: Record<K, string>, sourceFile: K): string {
+    if (!(sourceFile in mutableSourceMap)) {
+      throw new Error(`Failed to resolve source file '${sourceFile}'`)
+    }
     const rawSource: string = mutableSourceMap[sourceFile]
 
     const resolvedSource = rawSource.replace(
-      /((?:^|;)[\r\n\s]+)#require\s+"(.*)";/g,
+      /((?:^|[;{}])[\r\n\s]*)#require\s+"(.*)";/g,
       (_, beforeRequire, requiredFile) => {
         if (requiredFile === sourceFile) {
           throw new Error(`Circular dependency detected for file '${sourceFile.toString()}'`)
         }
 
-        if (requiredFile in mutableSourceMap) {
-          const requiredSource = WebGLProgramBuilder.buildGlslSource(mutableSourceMap, requiredFile)
-          return `${beforeRequire}${requiredSource}\n`
-        } else {
-          throw new Error(`Failed to resolve required file '${requiredFile}'`)
-        }
+        const requiredSource = WebGLProgramBuilder.buildGlslSource(mutableSourceMap, requiredFile)
+        return `${beforeRequire}${requiredSource}`
       },
     )
 
