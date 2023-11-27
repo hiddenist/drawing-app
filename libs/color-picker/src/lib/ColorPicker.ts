@@ -25,10 +25,20 @@ export class ColorPicker {
         this.program.draw()
       }
     })
-    canvas.addEventListener("click", (e) => {
+    canvas.addEventListener("mouseup", (e) => {
       const color = this.getCanvasColor(e)
       this.onChange(color)
       document.body.classList.remove("picker-open")
+    })
+
+    canvas.addEventListener("mousemove", (e) => {
+      const isClicking = e.buttons === 1
+      if (!isClicking) {
+        return
+      }
+      e.preventDefault()
+      const color = this.getCanvasColor(e)
+      this.onChange(color)
     })
   }
 
