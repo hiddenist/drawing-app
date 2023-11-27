@@ -36,15 +36,26 @@ aside {
   align-items: center;
   overflow: auto;
   padding: 1rem;
+  justify-items: center;
+  gap: 1rem;
 }
 
 aside canvas {
   background: white;
-  box-sizing: content-box;
-  border: 1px solid rgb(25, 25, 28);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   height: 256px;
   width: 256px;
+}
+
+.current-color {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 32px;
+  width: 32px;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  border: 1px solid #111;
 }
 
 .open-picker-button {

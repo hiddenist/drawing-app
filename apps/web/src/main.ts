@@ -15,7 +15,13 @@ function main() {
   const width = Math.min(window.innerWidth, 500)
   const height = Math.min(window.innerHeight, 500)
   const app = new WebDrawingApp(canvasRoot, width, height)
+
+  const currentColor = document.createElement("div")
+  currentColor.classList.add("current-color")
+
   new ColorPicker(sidebarRoot, (color) => {
     app.engine.setColor(color)
+    currentColor.style.backgroundColor = color.rgba
   })
+  sidebarRoot.appendChild(currentColor)
 }

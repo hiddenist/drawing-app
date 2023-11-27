@@ -1,9 +1,10 @@
-attribute vec2 a_position;
-uniform vec2 u_resolution;
+attribute vec2 aPosition;
 
-varying vec2 v_resolution;
+uniform vec2 uResolution;
+
+varying vec2 vResolution;
 
 void main() {
-  v_resolution = u_resolution;
-  gl_Position = vec4(a_position, 1.0, 1.0);
+  vResolution = uResolution;
+  gl_Position = vec4(aPosition, 1.0, 1.0);
 }
