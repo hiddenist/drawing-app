@@ -16,7 +16,7 @@ export class WebDrawingApp {
     root.appendChild(this.canvas)
     this.resizeCanvas(width, height)
 
-    this.engine = new DrawingEngine(this.canvas)
+    this.engine = new DrawingEngine(this.canvas, pixelDensity)
     this.engine.clearCanvas()
     this.engine.setColor(Color.WHITE)
 

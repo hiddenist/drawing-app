@@ -3,7 +3,10 @@ import { Color, BaseProgram } from "@libs/shared"
 import sourceMap from "./shaders/sourceMap"
 
 export class LineDrawingProgram extends BaseProgram {
-  constructor(public readonly gl: WebGLRenderingContext) {
+  constructor(
+    public readonly gl: WebGLRenderingContext,
+    public pixelDensity = 1,
+  ) {
     super(WebGLProgramBuilder.createFromSourceMap(gl, sourceMap, "lines.vertex", "lines.fragment"))
   }
 
@@ -12,6 +15,11 @@ export class LineDrawingProgram extends BaseProgram {
     const canvasSize = this.gl.getUniformLocation(this.program, "uCanvasSize")
     this.gl.uniform2f(canvasSize, this.gl.canvas.width, this.gl.canvas.height)
     return this
+  }
+
+  public getCanvasSize(): { width: number; height: number } {
+    const size = super.getCanvasSize()
+    return { width: size.width * this.pixelDensity, height: size.height * this.pixelDensity }
   }
 
   public setColor(color: Color): LineDrawingProgram {
