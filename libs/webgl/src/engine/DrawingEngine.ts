@@ -12,6 +12,7 @@ interface AvailablePrograms {
 interface HistoryItem {
   path: ReadonlyArray<number>
   color: Color
+  lineWeight: number
 }
 
 export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
@@ -21,6 +22,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     pathHistory: [] as Array<HistoryItem>,
     isDrawing: false,
     pixelDensity: 1,
+    lineWeight: 5,
   }
 
   constructor(canvas: HTMLCanvasElement, pixelDensity = 1) {
@@ -33,7 +35,10 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
 
   public updateDrawing() {
     if (this.context.currentPath.points.length > 0) {
-      this.drawLine(this.context.currentPath.points, { drawType: DrawType.DYNAMIC_DRAW })
+      this.drawLine(
+        this.context.currentPath.points,
+        { drawType: DrawType.DYNAMIC_DRAW, thickness: this.lineWeight }
+      )
     }
   }
 
@@ -59,6 +64,15 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     this.color.setForeground(color)
   }
 
+  public get lineWeight(): number {
+    return this.context.lineWeight;
+  }
+
+  public setLineWeight(weight: number): typeof this {
+    this.context.lineWeight = weight
+    return this
+  }
+
   public clearCanvas() {
     this.gl.clearColor(0, 0, 0, 0)
     this.gl.clear(this.gl.COLOR_BUFFER_BIT)
@@ -79,7 +93,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
       return
     }
     this.drawLine(path, { drawType: DrawType.STATIC_DRAW })
-    this.context.pathHistory.push({ path, color: this.color.foreground })
+    this.context.pathHistory.push({ path, color: this.color.foreground, thickness: this.lineWeight })
   }
 
   public addPosition(position: Readonly<Vec2>) {
