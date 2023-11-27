@@ -17,11 +17,6 @@ jobs:
       - name: Set up pnpm
         uses: "./.github/actions/setup-pnpm"
 
-      - name: Build
-        run: pnpm build
-        env:
-          BASE_URL: ${{ github.event.repository.name }}
-
       - name: Verify TypeScript types
         run: pnpm typecheck
 
@@ -30,3 +25,8 @@ jobs:
 
       - name: Run unit tests
         run: pnpm test
+
+      - name: Verify that build succeeds
+        run: pnpm build
+        env:
+          BASE_URL: ${{ github.event.repository.name }}
