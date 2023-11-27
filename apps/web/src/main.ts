@@ -25,10 +25,10 @@ function main() {
 
   const weightInput = document.createElement("input")
   weightInput.type = "range"
-  weightInput.max = 100
-  weightInput.min = 1
-  weightInput.value = app.engine.lineWeight
-  weightInput.addEventListener("change", (e) => {
+  weightInput.max = "100"
+  weightInput.min = "1"
+  weightInput.value = app.engine.lineWeight.toString()
+  weightInput.addEventListener("change", () => {
     app.engine.setLineWeight(parseInt(weightInput.value))
   })
 
