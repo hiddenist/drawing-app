@@ -46,7 +46,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     }
     this.getProgram("lineDrawing").drawLine(points, {
       ...options,
-
+      thickness: (options.thickness ?? 5) * this.context.pixelDensity,
       color: this.color.foreground,
     })
   }

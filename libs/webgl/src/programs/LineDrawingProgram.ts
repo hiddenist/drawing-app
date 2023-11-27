@@ -40,8 +40,7 @@ export class LineDrawingProgram extends BaseProgram {
     {
       drawType = this.gl.STREAM_DRAW,
       color = Color.BLACK,
-      thickness = 10.0,
-      // I don't know what these do
+      thickness = 5.0,
       projection = [2.0, 2.0, 2.0, 2.0],
       model = [2.0, 2.0, 2.0, 2.0],
       view = [2.0, 2.0, 2.0, 2.0],
@@ -53,8 +52,24 @@ export class LineDrawingProgram extends BaseProgram {
     this.gl.uniform4fv(this.getUniformLocation("uModel"), model)
     this.gl.uniform4fv(this.getUniformLocation("uView"), view)
 
-    this.setPositionAttr(points, drawType)
-    this.gl.drawArrays(this.gl.TRIANGLE_FAN, 0, points.length / 2)
+    const doublePoints = []
+
+    for (let i = 0; i < points.length - 2; i += 2) {
+      const x1 = points[i]
+      const y1 = points[i + 1]
+      const x2 = points[i + 2]
+      const y2 = points[i + 3]
+
+      const angle = Math.atan2(y2 - y1, x2 - x1)
+      const offsetX = (Math.sin(angle) * thickness) / 2
+      const offsetY = (Math.cos(angle) * thickness) / 2
+
+      doublePoints.push(x1 - offsetX, y1 + offsetY)
+      doublePoints.push(x1 + offsetX, y1 - offsetY)
+    }
+
+    this.setPositionAttr(doublePoints, drawType)
+    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, doublePoints.length / 2)
     this.checkError()
   }
 
