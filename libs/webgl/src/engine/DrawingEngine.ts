@@ -20,12 +20,15 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     currentPath: new Path(),
     pathHistory: [] as Array<HistoryItem>,
     isDrawing: false,
+    pixelDensity: 1,
   }
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, pixelDensity = 1) {
     super(canvas, (gl) => ({
-      lineDrawing: new LineDrawingProgram(gl),
+      lineDrawing: new LineDrawingProgram(gl, pixelDensity),
     }))
+
+    this.context.pixelDensity = pixelDensity
   }
 
   public updateDrawing() {
