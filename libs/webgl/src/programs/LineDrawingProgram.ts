@@ -54,7 +54,7 @@ export class LineDrawingProgram extends BaseProgram {
     this.gl.uniform4fv(this.getUniformLocation("uView"), view)
 
     this.setPositionAttr(points, drawType)
-    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, points.length / 2)
+    this.gl.drawArrays(this.gl.TRIANGLE_FAN, 0, points.length / 2)
     this.checkError()
   }
 
