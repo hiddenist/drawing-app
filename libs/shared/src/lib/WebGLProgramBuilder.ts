@@ -12,6 +12,54 @@ export class WebGLProgramBuilder {
     this.fragmentShader = this.createShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
   }
 
+  /**
+   * Recursively builds a GLSL source string from a source map.
+   * The source code may contain `#require "filename";` statements to include other files.
+   * The source map is modified in-place to contain the full source code for each file.
+   *
+   * @param mutableSourceMap The source map to use. This will be modified in-place.
+   * @param sourceFile The file within the source map to build the source for.
+   * @returns The fully resolved GLSL source code for the given file.
+   */
+  public static buildGlslSource<K extends string>(mutableSourceMap: Record<K, string>, sourceFile: K): string {
+    if (!(sourceFile in mutableSourceMap)) {
+      throw new Error(`Failed to resolve source file '${sourceFile}'`)
+    }
+    const rawSource: string = mutableSourceMap[sourceFile]
+
+    const resolvedSource = rawSource.replace(
+      /((?:^|[;{}])[\r\n\s]*)#require\s+"(.*)";/g,
+      (_, beforeRequire, requiredFile) => {
+        if (requiredFile === sourceFile) {
+          throw new Error(`Circular dependency detected for file '${sourceFile.toString()}'`)
+        }
+
+        const requiredSource = WebGLProgramBuilder.buildGlslSource(mutableSourceMap, requiredFile)
+        return `${beforeRequire}${requiredSource}`
+      },
+    )
+
+    mutableSourceMap[sourceFile] = resolvedSource
+
+    return resolvedSource
+  }
+
+  public static createFromSourceMap<T extends string>(
+    gl: WebGLRenderingContext,
+    sourceMap: Readonly<Record<T, string>>,
+    vertexShaderSource: T,
+    fragmentShaderSource: T,
+  ): WebGLProgram {
+    const mutableSource = { ...sourceMap }
+
+    const builder = new WebGLProgramBuilder(
+      gl,
+      WebGLProgramBuilder.buildGlslSource(mutableSource, vertexShaderSource),
+      WebGLProgramBuilder.buildGlslSource(mutableSource, fragmentShaderSource),
+    )
+    return builder.createProgram()
+  }
+
   public static create(
     gl: WebGLRenderingContext,
     vertexShaderSource: string,

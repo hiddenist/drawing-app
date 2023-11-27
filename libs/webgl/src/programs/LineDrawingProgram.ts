@@ -1,22 +1,21 @@
 import { WebGLProgramBuilder } from "@libs/shared"
-import positionVertexSource from "./shaders/position.vertex.glsl"
-import fragmentShaderSource from "./shaders/color.fragment.glsl"
 import { Color, BaseProgram } from "@libs/shared"
+import sourceMap from "./shaders/sourceMap"
 
 export class LineDrawingProgram extends BaseProgram {
   constructor(public readonly gl: WebGLRenderingContext) {
-    super(WebGLProgramBuilder.create(gl, positionVertexSource, fragmentShaderSource))
+    super(WebGLProgramBuilder.createFromSourceMap(gl, sourceMap, "position.vertex", "color.fragment"))
   }
 
   public syncCanvasSize(): typeof this {
     super.syncCanvasSize()
-    const canvasSize = this.gl.getUniformLocation(this.program, "canvasSize")
+    const canvasSize = this.gl.getUniformLocation(this.program, "uCanvasSize")
     this.gl.uniform2f(canvasSize, this.gl.canvas.width, this.gl.canvas.height)
     return this
   }
 
   public setColor(color: Color): LineDrawingProgram {
-    const colorLocation = this.gl.getUniformLocation(this.program, "color")
+    const colorLocation = this.gl.getUniformLocation(this.program, "uColor")
     if (!colorLocation) {
       throw new Error("Failed to get color location. Does the specified program have a 'color' uniform?")
     }
@@ -33,7 +32,7 @@ export class LineDrawingProgram extends BaseProgram {
 
     this.setColor(color)
 
-    const position = this.gl.getAttribLocation(this.program, "position")
+    const position = this.gl.getAttribLocation(this.program, "aPosition")
     this.gl.enableVertexAttribArray(position)
     this.gl.vertexAttribPointer(position, 2, this.gl.FLOAT, false, 0, 0)
 
