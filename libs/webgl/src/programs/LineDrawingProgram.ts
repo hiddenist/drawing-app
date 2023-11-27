@@ -1,7 +1,6 @@
 import { WebGLProgramBuilder } from "@libs/shared"
 import { Color, BaseProgram } from "@libs/shared"
 import sourceMap from "./shaders/sourceMap"
-import getNormals from "polyline-normals"
 
 export class LineDrawingProgram extends BaseProgram {
   constructor(public readonly gl: WebGLRenderingContext) {

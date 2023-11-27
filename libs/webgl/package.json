@@ -4,7 +4,6 @@
   "version": "0.0.0",
   "main": "./src/exports.ts",
   "dependencies": {
-    "@libs/shared": "workspace:*",
-    "polyline-normals": "^2.0.2"
+    "@libs/shared": "workspace:*"
   }
 }
