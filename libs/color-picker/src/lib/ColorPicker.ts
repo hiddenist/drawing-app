@@ -34,7 +34,7 @@ export class ColorPicker {
 
   private createCanvas() {
     const canvas = document.createElement("canvas")
-    const gl = canvas.getContext("webgl")
+    const gl = canvas.getContext("webgl", { preserveDrawingBuffer: true })
     if (!gl) {
       throw new Error("Could not get canvas context")
     }
