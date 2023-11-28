@@ -2,16 +2,35 @@ import { BaseProgram, WebGLProgramBuilder, Vec2, Color } from "@libs/shared"
 import fragmentSource from "../shaders/fragment.glsl"
 import vertexSource from "../shaders/vertex.glsl"
 
-export class GradientColorProgram extends BaseProgram {
+const UNIFORM_NAMES = {
+  uResolution: "uResolution",
+} as const
+const ATTRIBUTE_NAMES = {
+  aPosition: "aPosition",
+} as const
+
+export class GradientColorProgram extends BaseProgram<keyof typeof UNIFORM_NAMES, keyof typeof ATTRIBUTE_NAMES> {
   constructor(gl: WebGLRenderingContext) {
-    super(gl)
-    this.useProgram().syncCanvasSize()
+    super(GradientColorProgram.createContextStatic(gl, GradientColorProgram.createProgramStatic(gl)))
+    this.syncCanvasSize()
     this.gl.clearColor(1, 1, 1, 1)
     this.gl.clear(this.gl.COLOR_BUFFER_BIT)
   }
 
-  protected createProgram(): WebGLProgram {
-    return WebGLProgramBuilder.create(this.gl, vertexSource, fragmentSource)
+  protected static createProgramStatic(gl: WebGLRenderingContext): WebGLProgram {
+    return WebGLProgramBuilder.create(gl, vertexSource, fragmentSource)
+  }
+
+  protected createProgram(gl: WebGLRenderingContext): WebGLProgram {
+    return GradientColorProgram.createProgramStatic(gl)
+  }
+
+  protected static createContextStatic(gl: WebGLRenderingContext, program: WebGLProgram) {
+    return BaseProgram.makeBaseContextFromAttributes(gl, program, UNIFORM_NAMES, ATTRIBUTE_NAMES)
+  }
+
+  protected createContext(context: WebGLRenderingContext, program: WebGLProgram) {
+    return GradientColorProgram.createContextStatic(context, program)
   }
 
   public syncCanvasSize(): typeof this {
@@ -39,13 +58,17 @@ export class GradientColorProgram extends BaseProgram {
   public draw() {
     const { gl } = this
     this.useProgram()
-    this.createBuffer()
+
+    this.bufferAttribute("aPosition", new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), {
+      usage: gl.STATIC_DRAW,
+      size: 2,
+      type: gl.FLOAT,
+      isNormalized: false,
+      stride: 0,
+      offset: 0,
+    })
 
     // fill the canvas:
-    const position = this.gl.getAttribLocation(this.program, "aPosition")
-    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0)
-    gl.enableVertexAttribArray(position)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
     this.checkError()

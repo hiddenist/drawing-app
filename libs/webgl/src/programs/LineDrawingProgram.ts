@@ -1,23 +1,39 @@
 import { WebGLProgramBuilder } from "@libs/shared"
 import { Color, BaseProgram } from "@libs/shared"
-import sourceMap from "./shaders/sourceMap"
+import sourceMap, { uniformNames, attributeNames } from "./shaders/sourceMap"
 
-export class LineDrawingProgram extends BaseProgram {
+const VERTEX_SHADER = "position.vertex"
+const FRAGMENT_SHADER = "color.fragment"
+const UNIFORM_NAMES = { ...uniformNames[VERTEX_SHADER], ...uniformNames[FRAGMENT_SHADER] } as const
+const ATTRIBUTE_NAMES = { ...attributeNames[VERTEX_SHADER] } as const
+
+export class LineDrawingProgram extends BaseProgram<keyof typeof UNIFORM_NAMES, keyof typeof ATTRIBUTE_NAMES> {
   constructor(
     gl: WebGLRenderingContext,
     public pixelDensity = 1,
   ) {
-    super(gl)
+    super(LineDrawingProgram.createContextStatic(gl, LineDrawingProgram.createProgramStatic(gl)))
   }
 
-  protected createProgram(): WebGLProgram {
-    return WebGLProgramBuilder.createFromSourceMap(this.gl, sourceMap, "position.vertex", "color.fragment")
+  protected static createProgramStatic(gl: WebGLRenderingContext): WebGLProgram {
+    return WebGLProgramBuilder.createFromSourceMap(gl, sourceMap, VERTEX_SHADER, FRAGMENT_SHADER)
+  }
+
+  protected createProgram(gl: WebGLRenderingContext): WebGLProgram {
+    return LineDrawingProgram.createProgramStatic(gl)
+  }
+
+  protected static createContextStatic(context: WebGLRenderingContext, program: WebGLProgram) {
+    return BaseProgram.makeBaseContextFromAttributes(context, program, UNIFORM_NAMES, ATTRIBUTE_NAMES)
+  }
+
+  protected createContext(context: WebGLRenderingContext, program: WebGLProgram) {
+    return LineDrawingProgram.createContextStatic(context, program)
   }
 
   public syncCanvasSize(): typeof this {
     super.syncCanvasSize()
-    const canvasSize = this.gl.getUniformLocation(this.program, "uCanvasSize")
-    this.gl.uniform2f(canvasSize, this.gl.canvas.width, this.gl.canvas.height)
+    this.gl.uniform2f(this.getUniformLocation("canvasSize"), this.gl.canvas.width, this.gl.canvas.height)
     return this
   }
 
@@ -27,13 +43,14 @@ export class LineDrawingProgram extends BaseProgram {
   }
 
   protected setColor(color: Color): typeof this {
-    this.gl.uniform4fv(this.getUniformLocation("uColor"), color.vec4)
+    this.gl.uniform4fv(this.getUniformLocation("color"), color.vec4)
     return this
   }
 
   public drawLine(
     points: ReadonlyArray<number>,
     { drawType = this.gl.STREAM_DRAW, color = Color.BLACK, thickness = 5.0 }: DrawLineOptions = {},
+    context = this.currentContext,
   ) {
     this.setColor(color)
 
@@ -53,28 +70,9 @@ export class LineDrawingProgram extends BaseProgram {
       doublePoints.push(x1 + offsetX, y1 - offsetY)
     }
 
-    this.bufferAttribute("aPosition", new Float32Array(doublePoints), drawType, 2)
-    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, doublePoints.length / 2)
+    this.bufferAttribute("position", new Float32Array(doublePoints), { usage: drawType, size: 2 })
+    context.gl.drawArrays(context.gl.TRIANGLE_STRIP, 0, doublePoints.length / 2)
     this.checkError()
-  }
-
-  protected getUniformLocation(
-    name: string,
-    { gl = this.gl, program = this.program }: { gl?: WebGLRenderingContext; program?: WebGLProgram } = {},
-  ): WebGLUniformLocation {
-    const uniformLocation = gl.getUniformLocation(program, name)
-    if (!uniformLocation) {
-      throw new Error(`Failed to get uniform location. Does the specified program have a '${name}' uniform?`)
-    }
-    return uniformLocation
-  }
-
-  protected bufferAttribute(attrName: string, data: Readonly<Float32Array>, drawType: DrawType, size: number): void {
-    this.createBuffer()
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, data, drawType)
-    const attr = this.gl.getAttribLocation(this.program, attrName)
-    this.gl.enableVertexAttribArray(attr)
-    this.gl.vertexAttribPointer(attr, size, this.gl.FLOAT, false, 0, 0)
   }
 }
 
