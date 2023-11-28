@@ -19,13 +19,10 @@ export type AttributeInfo = {
 export interface IBaseProgram {
   useContext(context: WebGLRenderingContext): this
   gl: WebGLRenderingContext
+  useProgram(): this
   syncCanvasSize(): this
   getCanvasSize(): { width: number; height: number }
   checkError(): this
-  /**
-   * @deprecated
-   */
-  useProgram(): this
 }
 
 export abstract class BaseProgram<
@@ -88,6 +85,36 @@ export abstract class BaseProgram<
     this.useContext(gl)
   }
 
+  public useProgram(context = this.currentContext): this {
+    context.gl.useProgram(context.program)
+    this.syncCanvasSize(context)
+    return this
+  }
+
+  public syncCanvasSize(context = this.currentContext): typeof this {
+    const { width, height } = this.getCanvasSize()
+    context.gl.viewport(0, 0, width, height)
+    return this
+  }
+
+  public getCanvasSize(context = this.currentContext): { width: number; height: number } {
+    const canvas = context.gl.canvas
+    if (!(canvas instanceof HTMLElement)) {
+      throw new Error("Could not get canvas size, canvas is not an HTMLCanvasElement")
+    }
+    const boundingRect = canvas.getBoundingClientRect()
+
+    return { width: boundingRect.width, height: boundingRect.height }
+  }
+
+  public checkError(context = this.currentContext): typeof this {
+    const error = context.gl.getError()
+    if (error !== WebGLRenderingContext.NO_ERROR) {
+      throw new Error("WebGL error: " + error)
+    }
+    return this
+  }
+
   protected get currentContext(): ExtendableContext {
     if (!this._currentContext) {
       throw new Error("No context is set")
@@ -123,39 +150,6 @@ export abstract class BaseProgram<
   }
 
   protected abstract createProgram(context: WebGLRenderingContext): WebGLProgram
-
-  /**
-   * @deprecated
-   */
-  protected useProgram(context = this.currentContext): this {
-    context.gl.useProgram(context.program)
-    this.syncCanvasSize(context)
-    return this
-  }
-
-  public syncCanvasSize(context = this.currentContext): typeof this {
-    const { width, height } = this.getCanvasSize()
-    context.gl.viewport(0, 0, width, height)
-    return this
-  }
-
-  public getCanvasSize(context = this.currentContext): { width: number; height: number } {
-    const canvas = context.gl.canvas
-    if (!(canvas instanceof HTMLElement)) {
-      throw new Error("Could not get canvas size, canvas is not an HTMLCanvasElement")
-    }
-    const boundingRect = canvas.getBoundingClientRect()
-
-    return { width: boundingRect.width, height: boundingRect.height }
-  }
-
-  public checkError(context = this.currentContext): typeof this {
-    const error = context.gl.getError()
-    if (error !== WebGLRenderingContext.NO_ERROR) {
-      throw new Error("WebGL error: " + error)
-    }
-    return this
-  }
 
   protected getUniformLocation(name: UniformNames, context = this.currentContext): WebGLUniformLocation {
     return context.uniforms[name]
