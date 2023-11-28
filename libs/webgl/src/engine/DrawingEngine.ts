@@ -11,8 +11,7 @@ interface AvailablePrograms {
 
 interface HistoryItem {
   path: ReadonlyArray<number>
-  color: Color
-  thickness: number
+  options: Required<Omit<DrawLineOptions, "drawType">>
 }
 
 export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
@@ -20,10 +19,11 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     color: new ColorContext(),
     currentPath: new Path(),
     pathHistory: [] as Array<HistoryItem>,
+    lineWeight: 5,
     isDrawing: false,
     pixelDensity: 1,
-    lineWeight: 5,
   }
+  protected activeDrawingLayer: WebGLRenderingContext
 
   constructor(canvas: HTMLCanvasElement, pixelDensity = 1) {
     super(canvas, (gl) => ({
@@ -31,6 +31,29 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     }))
 
     this.context.pixelDensity = pixelDensity
+    this.activeDrawingLayer = this.cloneContext({ preserveDrawingBuffer: false })
+  }
+
+  protected cloneContext(options?: WebGLContextAttributes) {
+    const baseCanvas = this.baseLayer.canvas
+    if (!(baseCanvas instanceof HTMLCanvasElement)) {
+      throw new Error("canvas needs to be an active HTMLCanvasElement")
+    }
+    const canvas = document.createElement("canvas")
+    baseCanvas.parentElement?.appendChild(canvas)
+    canvas.width = baseCanvas.width
+    canvas.height = baseCanvas.height
+    canvas.style.width = `${canvas.width / this.context.pixelDensity}px`
+    canvas.style.height = `${canvas.height / this.context.pixelDensity}px`
+    canvas.style.position = "absolute"
+    canvas.style.top = "0"
+    canvas.style.left = "0"
+    canvas.style.pointerEvents = "none"
+    const context = canvas.getContext("webgl", options)
+    if (!context) {
+      throw new Error("Unable to get WebGL context")
+    }
+    return context
   }
 
   public updateDrawing() {
@@ -41,15 +64,15 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
 
   public drawLine(
     points: ReadonlyArray<number>,
-    { color = this.color.foreground, ...options }: Partial<DrawLineOptions> = {},
+    { color = this.color.foreground, thickness = this.lineWeight, drawType }: Partial<DrawLineOptions> = {},
   ) {
     if (points.length === 2) {
       points = [...points, ...points.map((p) => p + 1)]
     }
     this.getProgram("lineDrawing").drawLine(points, {
-      ...options,
-      thickness: (options.thickness ?? 5) * this.context.pixelDensity,
-      color: this.color.foreground,
+      drawType,
+      thickness: thickness * this.context.pixelDensity,
+      color,
     })
   }
 
@@ -75,16 +98,19 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
   }
 
   public clearCanvas() {
-    this.gl.clearColor(0, 0, 0, 0)
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT)
+    this.baseLayer.clearColor(0, 0, 0, 0)
+    this.baseLayer.clear(this.baseLayer.COLOR_BUFFER_BIT)
   }
 
   public setPressed(pressed: boolean, position: Readonly<Vec2>) {
     this.context.isDrawing = pressed
     if (pressed) {
+      this.getProgram("lineDrawing").gl = this.activeDrawingLayer
       this.context.currentPath.add(position)
       this.updateDrawing()
     } else {
+      this.activeDrawingLayer.clearColor(0, 0, 0, 0)
+      this.getProgram("lineDrawing").gl = this.baseLayer
       this.commitPath(this.context.currentPath.clear())
     }
   }
@@ -93,7 +119,15 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     if (path.length === 0) {
       return
     }
-    this.context.pathHistory.push({ path, color: this.color.foreground, thickness: this.lineWeight })
+    const options = {
+      color: this.color.foreground,
+      thickness: this.lineWeight,
+    }
+    this.drawLine(path, { drawType: DrawType.STATIC_DRAW, ...options })
+    this.context.pathHistory.push({
+      path,
+      options,
+    })
   }
 
   public addPosition(position: Readonly<Vec2>) {

@@ -4,10 +4,14 @@ import sourceMap from "./shaders/sourceMap"
 
 export class LineDrawingProgram extends BaseProgram {
   constructor(
-    public readonly gl: WebGLRenderingContext,
+    gl: WebGLRenderingContext,
     public pixelDensity = 1,
   ) {
-    super(WebGLProgramBuilder.createFromSourceMap(gl, sourceMap, "position.vertex", "color.fragment"))
+    super(gl)
+  }
+
+  protected createProgram(): WebGLProgram {
+    return WebGLProgramBuilder.createFromSourceMap(this.gl, sourceMap, "position.vertex", "color.fragment")
   }
 
   public syncCanvasSize(): typeof this {

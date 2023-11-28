@@ -1,7 +1,23 @@
 export abstract class BaseProgram {
-  public abstract readonly gl: WebGLRenderingContext
+  public program: WebGLProgram
+  protected currentGl: WebGLRenderingContext
 
-  constructor(public readonly program: WebGLProgram) {}
+  constructor(protected _gl: WebGLRenderingContext) {
+    this.currentGl = _gl
+    this.program = this.createProgram()
+  }
+
+  set gl(value: WebGLRenderingContext) {
+    this.currentGl = value
+    this.program = this.createProgram()
+    this.useProgram()
+  }
+
+  get gl(): WebGLRenderingContext {
+    return this.currentGl
+  }
+
+  protected abstract createProgram(): WebGLProgram
 
   public useProgram(): typeof this {
     this.gl.useProgram(this.program)

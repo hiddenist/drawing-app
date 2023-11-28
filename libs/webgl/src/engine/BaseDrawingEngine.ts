@@ -4,7 +4,7 @@ export abstract class BaseDrawingEngine<
   Programs extends Record<never, BaseProgram>,
   ProgramKeys extends keyof Programs = keyof Programs,
 > {
-  protected gl: WebGLRenderingContext
+  protected baseLayer: WebGLRenderingContext
   protected currentProgram?: BaseProgram
   private programs: Programs
 
@@ -13,7 +13,7 @@ export abstract class BaseDrawingEngine<
     if (!gl) {
       throw new Error("WebGL not supported")
     }
-    this.gl = gl
+    this.baseLayer = gl
     this.programs = programs(gl)
   }
 

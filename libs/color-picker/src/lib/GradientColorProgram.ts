@@ -3,11 +3,15 @@ import fragmentSource from "../shaders/fragment.glsl"
 import vertexSource from "../shaders/vertex.glsl"
 
 export class GradientColorProgram extends BaseProgram {
-  constructor(public readonly gl: WebGLRenderingContext) {
-    super(WebGLProgramBuilder.create(gl, vertexSource, fragmentSource))
+  constructor(gl: WebGLRenderingContext) {
+    super(gl)
     this.useProgram().syncCanvasSize()
     this.gl.clearColor(1, 1, 1, 1)
     this.gl.clear(this.gl.COLOR_BUFFER_BIT)
+  }
+
+  protected createProgram(): WebGLProgram {
+    return WebGLProgramBuilder.create(this.gl, vertexSource, fragmentSource)
   }
 
   public syncCanvasSize(): typeof this {
