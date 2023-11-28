@@ -35,10 +35,7 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
 
   public updateDrawing() {
     if (this.context.currentPath.points.length > 0) {
-      this.drawLine(
-        this.context.currentPath.points,
-        { drawType: DrawType.DYNAMIC_DRAW, thickness: this.lineWeight }
-      )
+      this.drawLine(this.context.currentPath.points, { drawType: DrawType.DYNAMIC_DRAW, thickness: this.lineWeight })
     }
   }
 
@@ -96,7 +93,6 @@ export class DrawingEngine extends BaseDrawingEngine<AvailablePrograms> {
     if (path.length === 0) {
       return
     }
-    this.drawLine(path, { drawType: DrawType.STATIC_DRAW })
     this.context.pathHistory.push({ path, color: this.color.foreground, thickness: this.lineWeight })
   }
 
