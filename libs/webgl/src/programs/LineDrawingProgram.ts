@@ -1,4 +1,4 @@
-import { VectorArray, WebGLProgramBuilder } from "@libs/shared"
+import { WebGLProgramBuilder } from "@libs/shared"
 import { Color, BaseProgram } from "@libs/shared"
 import sourceMap from "./shaders/sourceMap"
 
@@ -7,7 +7,7 @@ export class LineDrawingProgram extends BaseProgram {
     public readonly gl: WebGLRenderingContext,
     public pixelDensity = 1,
   ) {
-    super(WebGLProgramBuilder.createFromSourceMap(gl, sourceMap, "lines.vertex", "lines.fragment"))
+    super(WebGLProgramBuilder.createFromSourceMap(gl, sourceMap, "position.vertex", "color.fragment"))
   }
 
   public syncCanvasSize(): typeof this {
@@ -22,35 +22,16 @@ export class LineDrawingProgram extends BaseProgram {
     return { width: size.width * this.pixelDensity, height: size.height * this.pixelDensity }
   }
 
-  public setColor(color: Color): typeof this {
+  protected setColor(color: Color): typeof this {
     this.gl.uniform4fv(this.getUniformLocation("uColor"), color.vec4)
     return this
   }
 
-  protected getUniformLocation(name: string) {
-    const uniformLocation = this.gl.getUniformLocation(this.program, name)
-    if (!uniformLocation) {
-      throw new Error(`Failed to get uniform location. Does the specified program have a '${name}' uniform?`)
-    }
-    return uniformLocation
-  }
-
   public drawLine(
     points: ReadonlyArray<number>,
-    {
-      drawType = this.gl.STREAM_DRAW,
-      color = Color.BLACK,
-      thickness = 5.0,
-      projection = [2.0, 2.0, 2.0, 2.0],
-      model = [2.0, 2.0, 2.0, 2.0],
-      view = [2.0, 2.0, 2.0, 2.0],
-    }: DrawLineOptions = {},
+    { drawType = this.gl.STREAM_DRAW, color = Color.BLACK, thickness = 5.0 }: DrawLineOptions = {},
   ) {
     this.setColor(color)
-    this.gl.uniform1f(this.getUniformLocation("uThickness"), thickness)
-    this.gl.uniform4fv(this.getUniformLocation("uProjection"), projection)
-    this.gl.uniform4fv(this.getUniformLocation("uModel"), model)
-    this.gl.uniform4fv(this.getUniformLocation("uView"), view)
 
     const doublePoints = []
 
@@ -68,13 +49,20 @@ export class LineDrawingProgram extends BaseProgram {
       doublePoints.push(x1 + offsetX, y1 - offsetY)
     }
 
-    this.setPositionAttr(doublePoints, drawType)
+    this.bufferAttribute("aPosition", new Float32Array(doublePoints), drawType, 2)
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, doublePoints.length / 2)
     this.checkError()
   }
 
-  protected setPositionAttr(points: ReadonlyArray<number>, drawType: DrawType): void {
-    this.bufferAttribute("aPosition", new Float32Array(points), drawType, 2)
+  protected getUniformLocation(
+    name: string,
+    { gl = this.gl, program = this.program }: { gl?: WebGLRenderingContext; program?: WebGLProgram } = {},
+  ): WebGLUniformLocation {
+    const uniformLocation = gl.getUniformLocation(program, name)
+    if (!uniformLocation) {
+      throw new Error(`Failed to get uniform location. Does the specified program have a '${name}' uniform?`)
+    }
+    return uniformLocation
   }
 
   protected bufferAttribute(attrName: string, data: Readonly<Float32Array>, drawType: DrawType, size: number): void {
@@ -97,9 +85,6 @@ export interface DrawLineOptions {
   color?: Color
 
   thickness?: number
-  projection?: VectorArray<4>
-  model?: VectorArray<4>
-  view?: VectorArray<4>
 }
 
 export enum DrawType {
@@ -108,8 +93,11 @@ export enum DrawType {
   STREAM_DRAW = WebGLRenderingContext.STREAM_DRAW,
 }
 
-export enum LineMode {
+export enum DrawMode {
   LINE_STRIP = WebGLRenderingContext.LINE_STRIP,
   LINE_LOOP = WebGLRenderingContext.LINE_LOOP,
   LINES = WebGLRenderingContext.LINES,
+  TRIANGLE_STRIP = WebGLRenderingContext.TRIANGLE_STRIP,
+  TRIANGLE_FAN = WebGLRenderingContext.TRIANGLE_FAN,
+  TRIANGLES = WebGLRenderingContext.TRIANGLES,
 }
