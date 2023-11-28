@@ -6,15 +6,26 @@ export class ColorPicker {
 
   constructor(
     private readonly root: HTMLElement,
-    public readonly onChange: (color: Color) => void,
+    public readonly config: {
+      initialColor?: Color
+      onChange: (color: Color) => void
+    },
   ) {
-    this.onChange = onChange
     const { canvas, gl } = this.createCanvas()
     this.root.appendChild(canvas)
     const openPickerButton = document.createElement("button")
     openPickerButton.classList.add("open-picker-button")
     openPickerButton.innerText = "color picker"
     this.root.appendChild(openPickerButton)
+
+    if (config.initialColor) {
+      openPickerButton.style.backgroundColor = config.initialColor.rgba
+    }
+
+    const onSetColor = (color: Color) => {
+      openPickerButton.style.backgroundColor = color.rgba
+      this.config.onChange(color)
+    }
 
     this.program = new GradientColorProgram(gl)
     this.program.draw()
@@ -25,10 +36,20 @@ export class ColorPicker {
         this.program.draw()
       }
     })
-    canvas.addEventListener("click", (e) => {
+    canvas.addEventListener("mouseup", (e) => {
       const color = this.getCanvasColor(e)
-      this.onChange(color)
+      onSetColor(color)
       document.body.classList.remove("picker-open")
+    })
+
+    canvas.addEventListener("mousemove", (e) => {
+      const isClicking = e.buttons === 1
+      if (!isClicking) {
+        return
+      }
+      e.preventDefault()
+      const color = this.getCanvasColor(e)
+      onSetColor(color)
     })
   }
 

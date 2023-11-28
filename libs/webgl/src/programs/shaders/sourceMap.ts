@@ -1,6 +1,5 @@
 import positionVertexSource from "./position.vertex.glsl"
 import colorFragmentSource from "./color.fragment.glsl"
-import bezierFragmentSource from "./bezier.vertex.glsl"
 import normalizeCoords from "./inc/normalizeCoords.glsl"
 
 /**
@@ -12,6 +11,5 @@ import normalizeCoords from "./inc/normalizeCoords.glsl"
 export default {
   "position.vertex": positionVertexSource,
   "color.fragment": colorFragmentSource,
-  "bezier.vertex": bezierFragmentSource,
   normalizeCoords,
 }
