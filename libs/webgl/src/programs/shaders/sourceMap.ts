@@ -8,8 +8,37 @@ import normalizeCoords from "./inc/normalizeCoords.glsl"
  * The keys are the names of the files within the source map.
  * Use the `WebGLProgramBuilder.buildGlslSource` method to recursively build the full source code for a given file.
  */
-export default {
+const sourceMap = {
   "position.vertex": positionVertexSource,
   "color.fragment": colorFragmentSource,
   normalizeCoords,
 }
+export default sourceMap
+
+type NameMap = Record<keyof typeof sourceMap, Record<string, string>>
+
+// would be neat if I could run something to generate the uniformNames and attributeNames objects from the sourceMap
+
+const includableScripts = {
+  normalizeCoords: {
+    source: normalizeCoords,
+    uniforms: {
+      canvasSize: "uCanvasSize",
+    },
+  },
+} as const
+
+export const uniformNames = {
+  "position.vertex": {
+    ...includableScripts.normalizeCoords.uniforms,
+  },
+  "color.fragment": {
+    color: "uColor",
+  },
+} as const satisfies Readonly<Partial<NameMap>>
+
+export const attributeNames = {
+  "position.vertex": {
+    position: "aPosition",
+  },
+} as const satisfies Readonly<Partial<NameMap>>

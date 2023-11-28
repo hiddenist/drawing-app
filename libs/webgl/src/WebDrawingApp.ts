@@ -5,22 +5,38 @@ import { Vec2 } from "@libs/shared"
 export class WebDrawingApp {
   public readonly canvas: HTMLCanvasElement
   public readonly engine: DrawingEngine
+  public readonly container: HTMLDivElement
 
   constructor(
+    /**
+     * Note: Pointer events within the root element have their default behavior prevented.
+     */
     private readonly root: HTMLElement,
     width: number,
     height: number,
     private pixelDensity = window.devicePixelRatio,
   ) {
-    this.canvas = document.createElement("canvas")
-    root.appendChild(this.canvas)
+    const { container, canvas } = WebDrawingApp.createElements()
+    this.container = container
+    this.canvas = canvas
     this.resizeCanvas(width, height)
+    root.appendChild(container)
 
     this.engine = new DrawingEngine(this.canvas, pixelDensity)
     this.engine.clearCanvas()
     this.engine.setColor(Color.WHITE)
 
     this.addEventListeners()
+  }
+  private static createElements() {
+    const container = document.createElement("div")
+    container.classList.add("drawing-canvas-container")
+    container.style.position = "relative"
+
+    const canvas = document.createElement("canvas")
+    container.appendChild(canvas)
+
+    return { container, canvas }
   }
 
   public setPixelDensity(pixelDensity: number) {
@@ -88,7 +104,7 @@ export class WebDrawingApp {
   }
 
   protected getCanvasPosition(event: Event): Vec2 {
-    const [x, y] = getEventPosition(event, this.canvas)
+    const [x, y] = getEventPosition(event, this.container)
     return [x * this.pixelDensity, y * this.pixelDensity]
   }
 }

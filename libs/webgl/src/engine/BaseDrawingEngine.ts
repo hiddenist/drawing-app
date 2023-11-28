@@ -1,11 +1,11 @@
-import { BaseProgram } from "@libs/shared"
+import { IBaseProgram } from "@libs/shared"
 
 export abstract class BaseDrawingEngine<
-  Programs extends Record<never, BaseProgram>,
+  Programs extends Record<never, IBaseProgram>,
   ProgramKeys extends keyof Programs = keyof Programs,
 > {
-  protected gl: WebGLRenderingContext
-  protected currentProgram?: BaseProgram
+  protected baseLayer: WebGLRenderingContext
+  protected currentProgram?: IBaseProgram
   private programs: Programs
 
   constructor(canvas: HTMLCanvasElement, programs: (gl: WebGLRenderingContext) => Programs) {
@@ -13,17 +13,15 @@ export abstract class BaseDrawingEngine<
     if (!gl) {
       throw new Error("WebGL not supported")
     }
-    this.gl = gl
+    this.baseLayer = gl
     this.programs = programs(gl)
   }
 
   protected getProgram<T extends ProgramKeys>(name: T): Programs[T] {
     const program = this.programs[name]
-    const asBaseProgram = program as BaseProgram
-    if (this.currentProgram !== program) {
-      asBaseProgram.useProgram()
-      this.currentProgram = asBaseProgram
-    }
+    const asBaseProgram = program as IBaseProgram
+    this.currentProgram = asBaseProgram
+    asBaseProgram.useProgram()
     return program
   }
 }
