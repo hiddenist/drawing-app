@@ -97,6 +97,7 @@ export abstract class BaseProgram<
     return this
   }
 
+  // todo: refactor out the canvas size logic from the program and base program so that it doesn't rely on HTMLElements
   public getCanvasSize(context = this.currentContext): { width: number; height: number } {
     const canvas = context.gl.canvas
     if (!(canvas instanceof HTMLElement)) {
