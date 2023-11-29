@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { WebDrawingApp } from "@libs/webgl"
+import { WebDrawingEngine } from "@libs/webgl"
 import { ColorPicker } from "@libs/color-picker"
 
 main()
@@ -14,12 +14,12 @@ function main() {
   }
   const width = Math.min(window.innerWidth, 500)
   const height = Math.min(window.innerHeight, 500)
-  const app = new WebDrawingApp(canvasRoot, width, height)
+  const engine = new WebDrawingEngine(canvasRoot, width, height)
 
   new ColorPicker(sidebarRoot, {
-    initialColor: app.engine.getCurrentColor(),
+    initialColor: engine.getCurrentColor(),
     onChange(color) {
-      app.engine.setColor(color)
+      engine.setColor(color)
     },
   })
 
@@ -27,9 +27,9 @@ function main() {
   weightInput.type = "range"
   weightInput.max = "100"
   weightInput.min = "1"
-  weightInput.value = app.engine.lineWeight.toString()
+  weightInput.value = engine.lineWeight.toString()
   weightInput.addEventListener("change", () => {
-    app.engine.setLineWeight(parseInt(weightInput.value))
+    engine.setLineWeight(parseInt(weightInput.value))
   })
 
   sidebarRoot.prepend(weightInput)
