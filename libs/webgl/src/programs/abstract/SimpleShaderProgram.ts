@@ -11,8 +11,8 @@ export abstract class SimpleShaderProgram extends BaseProgram<
   keyof typeof UNIFORM_NAMES,
   keyof typeof ATTRIBUTE_NAMES
 > {
-  constructor(gl: WebGLRenderingContext) {
-    super(SimpleShaderProgram.createContextStatic(gl, SimpleShaderProgram.createProgramStatic(gl)))
+  constructor(gl: WebGLRenderingContext, pixelDensity: number) {
+    super(SimpleShaderProgram.createContextStatic(gl, SimpleShaderProgram.createProgramStatic(gl)), pixelDensity)
   }
 
   protected static createProgramStatic(gl: WebGLRenderingContext): WebGLProgram {
