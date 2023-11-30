@@ -19,7 +19,12 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     const { gl, frameBuffer } = this
     const { width, height } = this.getCanvasSize()
     gl.viewport(0, 0, width, height)
-    // Create and bind
+
+    // Enable blending
+    gl.enable(gl.BLEND)
+
+    // Set the blend function
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer)
     this.syncCanvasSize()
