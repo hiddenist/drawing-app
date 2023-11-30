@@ -1,5 +1,5 @@
 import { WebGLProgramBuilder } from "@libs/shared"
-import { Color, BaseProgram } from "@libs/shared"
+import { BaseProgram } from "@libs/shared"
 import sourceMap, { uniformNames, attributeNames } from "../shaders/sourceMap"
 
 const VERTEX_SHADER = "texture.vertex"

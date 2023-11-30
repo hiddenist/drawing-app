@@ -2,7 +2,7 @@ import { SimpleTextureProgram } from "./abstract/SimpleTextureProgram"
 
 export class TextureDrawingProgram extends SimpleTextureProgram {
   protected texture: WebGLTexture
-  constructor(gl: WebGLRenderingContext, pixelDensity = 1) {
+  constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
     this.texture = this.createTexture()
   }

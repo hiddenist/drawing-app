@@ -24,9 +24,13 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     private readonly root: HTMLElement,
     width: number,
     height: number,
-    private pixelDensity = window.devicePixelRatio,
+    private pixelDensity = 1,
   ) {
-    const { container, canvas, context, activeDrawingLayer } = WebDrawingEngine.createElements(width, height)
+    const { container, canvas, context, activeDrawingLayer } = WebDrawingEngine.createElements(
+      width,
+      height,
+      pixelDensity,
+    )
     super(context, activeDrawingLayer, pixelDensity)
 
     this.container = container
@@ -41,7 +45,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     this.addEventListeners()
   }
 
-  private static createElements(width: number, height: number, pixelDensity = window.devicePixelRatio) {
+  private static createElements(width: number, height: number, pixelDensity: number) {
     const container = document.createElement("div")
     container.classList.add("drawing-canvas-container")
     container.style.position = "relative"
