@@ -1,10 +1,12 @@
 import { LineDrawingProgram, DrawLineOptions, DrawType } from "../programs/LineDrawingProgram"
+import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import { ActiveProgramSwitcher } from "./ActiveProgramSwitcher"
 import type { Vec2 } from "@libs/shared"
 import { Color } from "@libs/shared"
 
 interface AvailablePrograms {
   lineDrawing: LineDrawingProgram
+  textureDrawing: TextureDrawingProgram
 }
 
 interface HistoryItem {
@@ -40,6 +42,7 @@ export class DrawingEngine {
 
     this.programs = new ActiveProgramSwitcher({
       lineDrawing: new LineDrawingProgram(baseLayer, pixelDensity),
+      textureDrawing: new TextureDrawingProgram(baseLayer, pixelDensity),
     })
 
     this.drawingHistory = []
@@ -67,11 +70,13 @@ export class DrawingEngine {
     points: ReadonlyArray<number>,
     { color = this.state.color, thickness = this.lineWeight, drawType }: Partial<DrawLineOptions> = {},
   ) {
+    this.getProgram("textureDrawing").prepareFrameBuffer()
     this.getProgram("lineDrawing").draw(points, {
       drawType,
       thickness: thickness * this.state.pixelDensity,
       color,
     })
+    this.getProgram("textureDrawing").drawFrameBufferToTexture()
   }
 
   public setColor(color: Color) {
