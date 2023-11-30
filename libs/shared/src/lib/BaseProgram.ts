@@ -209,6 +209,8 @@ export abstract class BaseProgram<
     const attr = this.getAttribute(attrName, context)
     if (!attr.buffer) {
       attr.buffer = this.createBuffer(WebGLRenderingContext.ARRAY_BUFFER, context)
+    } else {
+      context.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, attr.buffer)
     }
     context.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, data, usage)
     context.gl.enableVertexAttribArray(attr.location)
