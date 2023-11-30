@@ -1,5 +1,5 @@
 import { Color, getEventPosition } from "@libs/shared"
-import { DrawingEngine } from "./engine/DrawingEngine"
+import { DrawingEngine } from "./DrawingEngine"
 import { Vec2 } from "@libs/shared"
 
 interface IWebDrawingEngine {
@@ -51,14 +51,14 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     canvas.height = height * pixelDensity
     container.appendChild(canvas)
 
-    const context = canvas.getContext("webgl", { preserveDrawingBuffer: true })
+    const context = canvas.getContext("webgl", { preserveDrawingBuffer: true, premultipliedAlpha: false })
     if (!context) {
       throw new Error("Could not get canvas context")
     }
 
     const activeDrawingLayer = WebDrawingEngine.cloneCanvasWithNewContext(
       canvas,
-      { preserveDrawingBuffer: false },
+      { preserveDrawingBuffer: false, premultipliedAlpha: false },
       pixelDensity,
     )
 
