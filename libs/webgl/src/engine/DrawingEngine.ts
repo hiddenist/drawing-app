@@ -67,7 +67,7 @@ export class DrawingEngine {
     points: ReadonlyArray<number>,
     { color = this.state.color, thickness = this.lineWeight, drawType }: Partial<DrawLineOptions> = {},
   ) {
-    this.getProgram("lineDrawing").drawLine(points, {
+    this.getProgram("lineDrawing").draw(points, {
       drawType,
       thickness: thickness * this.state.pixelDensity,
       color,

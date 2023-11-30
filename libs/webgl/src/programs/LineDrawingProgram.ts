@@ -1,5 +1,7 @@
-import { SimpleShaderProgram } from "./abstract/SimpleShaderProgram"
+import { SimpleShaderProgram, DrawType, DrawMode } from "./abstract/SimpleShaderProgram"
 import { Color } from "@libs/shared"
+
+export { DrawType } from "./abstract/SimpleShaderProgram"
 
 export class LineDrawingProgram extends SimpleShaderProgram {
   constructor(
@@ -25,7 +27,7 @@ export class LineDrawingProgram extends SimpleShaderProgram {
     return this
   }
 
-  public drawLine(
+  public draw(
     points: ReadonlyArray<number>,
     { drawType = this.gl.STREAM_DRAW, color = Color.BLACK, thickness = 5.0 }: DrawLineOptions = {},
     context = this.currentContext,
@@ -48,9 +50,7 @@ export class LineDrawingProgram extends SimpleShaderProgram {
       doublePoints.push(x1 + offsetX, y1 - offsetY)
     }
 
-    this.bufferAttribute("position", new Float32Array(doublePoints), { usage: drawType, size: 2 })
-    context.gl.drawArrays(context.gl.TRIANGLE_STRIP, 0, doublePoints.length / 2)
-    this.checkError()
+    this.drawPosition(doublePoints, { drawType, drawMode: DrawMode.TRIANGLE_STRIP }, context)
   }
 }
 
@@ -65,19 +65,4 @@ export interface DrawLineOptions {
   color?: Color
 
   thickness?: number
-}
-
-export enum DrawType {
-  STATIC_DRAW = WebGLRenderingContext.STATIC_DRAW,
-  DYNAMIC_DRAW = WebGLRenderingContext.DYNAMIC_DRAW,
-  STREAM_DRAW = WebGLRenderingContext.STREAM_DRAW,
-}
-
-export enum DrawMode {
-  LINE_STRIP = WebGLRenderingContext.LINE_STRIP,
-  LINE_LOOP = WebGLRenderingContext.LINE_LOOP,
-  LINES = WebGLRenderingContext.LINES,
-  TRIANGLE_STRIP = WebGLRenderingContext.TRIANGLE_STRIP,
-  TRIANGLE_FAN = WebGLRenderingContext.TRIANGLE_FAN,
-  TRIANGLES = WebGLRenderingContext.TRIANGLES,
 }

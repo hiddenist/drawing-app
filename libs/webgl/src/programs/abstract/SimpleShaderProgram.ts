@@ -1,5 +1,5 @@
 import { WebGLProgramBuilder } from "@libs/shared"
-import { BaseProgram } from "@libs/shared"
+import { Color, BaseProgram } from "@libs/shared"
 import sourceMap, { uniformNames, attributeNames } from "../shaders/sourceMap"
 
 const VERTEX_SHADER = "position.vertex"
@@ -30,4 +30,39 @@ export abstract class SimpleShaderProgram extends BaseProgram<
   protected createContext(context: WebGLRenderingContext, program: WebGLProgram) {
     return SimpleShaderProgram.createContextStatic(context, program)
   }
+
+  protected setColor(color: Color): typeof this {
+    this.gl.uniform4fv(this.getUniformLocation("color"), color.vec4)
+    return this
+  }
+
+  public drawPosition(
+    points: ReadonlyArray<number>,
+    { drawType = DrawType.STREAM_DRAW, drawMode }: DrawPositionOptions,
+    context = this.currentContext,
+  ) {
+    this.bufferAttribute("position", new Float32Array(points), { usage: drawType, size: 2 })
+    context.gl.drawArrays(drawMode, 0, points.length / 2)
+    this.checkError()
+  }
+}
+
+export enum DrawType {
+  STATIC_DRAW = WebGLRenderingContext.STATIC_DRAW,
+  DYNAMIC_DRAW = WebGLRenderingContext.DYNAMIC_DRAW,
+  STREAM_DRAW = WebGLRenderingContext.STREAM_DRAW,
+}
+
+export enum DrawMode {
+  LINE_STRIP = WebGLRenderingContext.LINE_STRIP,
+  LINE_LOOP = WebGLRenderingContext.LINE_LOOP,
+  LINES = WebGLRenderingContext.LINES,
+  TRIANGLE_STRIP = WebGLRenderingContext.TRIANGLE_STRIP,
+  TRIANGLE_FAN = WebGLRenderingContext.TRIANGLE_FAN,
+  TRIANGLES = WebGLRenderingContext.TRIANGLES,
+}
+
+export interface DrawPositionOptions {
+  drawType?: DrawType
+  drawMode: DrawMode
 }
