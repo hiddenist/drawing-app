@@ -131,7 +131,13 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
       if (event.isPrimary === false) {
         return
       }
-      this.addPosition(position)
+      let positions = [position]
+      try {
+        positions = event.getCoalescedEvents().map((coalsecedEvent) => this.getCanvasPosition(coalsecedEvent))
+      } catch (error) {
+        console.warn("Could not get coalesced events", error)
+      }
+      this.addPositions(positions)
     })
     this.addListener("pointerup", ({ position, event }) => {
       if (event.isPrimary === false) {
@@ -140,6 +146,14 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
       this.setPressed(false, position)
       this.canvas.style.removeProperty("cursor")
     })
+
+    this.addListener(
+      "touchmove",
+      () => {
+        // noop, this just disables the default behavior of scrolling when touching the canvas
+      },
+      this.container,
+    )
   }
 
   /**
