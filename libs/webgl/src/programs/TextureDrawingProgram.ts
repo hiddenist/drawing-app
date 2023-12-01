@@ -20,7 +20,7 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     gl.enable(gl.BLEND)
 
     // Set the blend function
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer)
     this.syncCanvasSize()
@@ -50,6 +50,7 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     // Unbind the framebuffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
     this.bufferAttribute(
       "position",
