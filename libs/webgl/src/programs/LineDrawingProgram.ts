@@ -14,11 +14,6 @@ export class LineDrawingProgram extends SimpleShaderProgram {
     return this
   }
 
-  public getCanvasSize(): { width: number; height: number } {
-    const size = super.getCanvasSize()
-    return { width: size.width * this.pixelDensity, height: size.height * this.pixelDensity }
-  }
-
   protected setColor(color: Color): typeof this {
     this.gl.uniform4fv(this.getUniformLocation("color"), color.vec4)
     return this
