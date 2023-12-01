@@ -50,14 +50,18 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     canvas.height = height * pixelDensity
     container.appendChild(canvas)
 
-    const context = canvas.getContext("webgl", { preserveDrawingBuffer: true, premultipliedAlpha: false })
+    const webGlOptions = {
+      premultipliedAlpha: false,
+    }
+
+    const context = canvas.getContext("webgl", { ...webGlOptions, preserveDrawingBuffer: true })
     if (!context) {
       throw new Error("Could not get canvas context")
     }
 
     const activeDrawingLayer = WebDrawingEngine.cloneCanvasWithNewContext(canvas, {
+      ...webGlOptions,
       preserveDrawingBuffer: false,
-      premultipliedAlpha: false,
       width,
       height,
     })
