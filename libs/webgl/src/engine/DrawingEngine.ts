@@ -129,6 +129,17 @@ export class DrawingEngine {
     }
   }
 
+  public addPosition(position: Readonly<Vec2>) {
+    this.addPositions(position)
+  }
+
+  public addPositions(positions: ReadonlyArray<number> | ReadonlyArray<Vec2>) {
+    if (this.state.isDrawing) {
+      this.state.currentPath.push(...positions.flat())
+      this.updateDrawing()
+    }
+  }
+
   public updateDrawing() {
     if (this.state.currentPath.length > 0) {
       this.drawLine(this.activeDrawingLayer, this.state.currentPath, DrawType.STATIC_DRAW)
@@ -161,12 +172,5 @@ export class DrawingEngine {
     const copy = [...this.state.currentPath]
     this.state.currentPath = []
     return copy
-  }
-
-  public addPosition(position: Readonly<Vec2>) {
-    if (this.state.isDrawing) {
-      this.state.currentPath.push(...position)
-    }
-    this.updateDrawing()
   }
 }
