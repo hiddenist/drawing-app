@@ -4,7 +4,7 @@ import { Color } from "@libs/shared"
 export { DrawType } from "./abstract/SimpleShaderProgram"
 
 export class LineDrawingProgram extends SimpleShaderProgram {
-  constructor(gl: WebGLRenderingContext, pixelDensity = 1) {
+  constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
   }
 

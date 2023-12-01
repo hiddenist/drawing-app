@@ -1,6 +1,8 @@
+type SourceCacheEntry<T extends string> = { source: Readonly<Record<T, string>>; cached: Record<T, string> }
 export class WebGLProgramBuilder {
   protected vertexShader: WebGLShader
   protected fragmentShader: WebGLShader
+  private static sourceMapCache: SourceCacheEntry<any>[] = []
 
   protected constructor(
     protected readonly gl: WebGLRenderingContext,
@@ -50,7 +52,7 @@ export class WebGLProgramBuilder {
     vertexShaderSource: T,
     fragmentShaderSource: T,
   ): WebGLProgram {
-    const mutableSource = { ...sourceMap }
+    const mutableSource = WebGLProgramBuilder.getCachedSources(sourceMap)
 
     const builder = new WebGLProgramBuilder(
       gl,
@@ -58,6 +60,16 @@ export class WebGLProgramBuilder {
       WebGLProgramBuilder.buildGlslSource(mutableSource, fragmentShaderSource),
     )
     return builder.createProgram()
+  }
+
+  private static getCachedSources<T extends string>(sourceMap: Readonly<Record<T, string>>): Record<T, string> {
+    const mutableSourceMap = WebGLProgramBuilder.sourceMapCache.find((map) => map.source === sourceMap)
+    if (mutableSourceMap) {
+      return mutableSourceMap.cached
+    }
+    const newMutableSourceMap = { source: sourceMap, cached: { ...sourceMap } }
+    WebGLProgramBuilder.sourceMapCache.push(newMutableSourceMap)
+    return newMutableSourceMap.cached
   }
 
   public static create(

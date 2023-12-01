@@ -1,5 +1,7 @@
 import positionVertexSource from "./position.vertex.glsl"
 import colorFragmentSource from "./color.fragment.glsl"
+import textureVertexSource from "./texture.vertex.glsl"
+import textureFragmentSource from "./texture.fragment.glsl"
 import normalizeCoords from "./inc/normalizeCoords.glsl"
 
 /**
@@ -11,6 +13,8 @@ import normalizeCoords from "./inc/normalizeCoords.glsl"
 const sourceMap = {
   "position.vertex": positionVertexSource,
   "color.fragment": colorFragmentSource,
+  "texture.vertex": textureVertexSource,
+  "texture.fragment": textureFragmentSource,
   normalizeCoords,
 }
 export default sourceMap
@@ -35,10 +39,17 @@ export const uniformNames = {
   "color.fragment": {
     color: "uColor",
   },
+  "texture.fragment": {
+    texture: "uTexture",
+  },
 } as const satisfies Readonly<Partial<NameMap>>
 
 export const attributeNames = {
   "position.vertex": {
     position: "aPosition",
+  },
+  "texture.vertex": {
+    position: "aPosition",
+    textureCoordinates: "aTexcoord",
   },
 } as const satisfies Readonly<Partial<NameMap>>
