@@ -52,8 +52,14 @@ export class DrawingEngine {
       pixelDensity: options.pixelDensity ?? 1,
     }
 
-    this.savedDrawingLayer = new Layer(savedDrawingContext)
-    this.activeDrawingLayer = new Layer(activeDrawingContext)
+    this.savedDrawingLayer = new Layer(savedDrawingContext, ({ gl }) => {
+      gl.enable(gl.BLEND)
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    })
+    this.activeDrawingLayer = new Layer(activeDrawingContext, ({ gl }) => {
+      gl.disable(gl.BLEND)
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
+    })
 
     this.programs = new ActiveProgramSwitcher({
       lineDrawing: new LineDrawingProgram(savedDrawingContext, this.state.pixelDensity),
@@ -135,12 +141,13 @@ export class DrawingEngine {
   }
 
   public setPressed(pressed: boolean, position: Readonly<Vec2>) {
+    const path = this.clearCurrentPath()
     if (pressed) {
       this.state.isDrawing = true
       this.addPosition(position)
       this.updateDrawing()
     } else {
-      this.commitPath()
+      this.commitPath(path)
       this.state.isDrawing = false
     }
   }
@@ -172,8 +179,7 @@ export class DrawingEngine {
     this.getProgram("textureDrawing", layer.gl).drawTexture(layer)
   }
 
-  protected commitPath() {
-    const path = this.clearCurrentPath()
+  protected commitPath(path: ReadonlyArray<number>) {
     if (path.length === 0) {
       return
     }

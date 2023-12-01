@@ -3,8 +3,15 @@ export class Layer {
   protected _texture?: WebGLTexture
   protected _frameBuffer?: WebGLFramebuffer
 
-  public constructor(gl: WebGLRenderingContext) {
+  public constructor(
+    gl: WebGLRenderingContext,
+    public blendSettings: (layer: Layer) => void,
+  ) {
     this._gl = gl
+  }
+
+  public applyBlendSettings() {
+    this.blendSettings(this)
   }
 
   protected createTexture(gl: WebGLRenderingContext) {
