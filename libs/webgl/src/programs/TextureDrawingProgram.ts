@@ -1,22 +1,18 @@
+import { Layer } from "../engine/Layer"
 import { SimpleTextureProgram } from "./abstract/SimpleTextureProgram"
 
 export class TextureDrawingProgram extends SimpleTextureProgram {
-  protected texture: WebGLTexture
   constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
-    this.texture = this.createTexture()
   }
 
-  private createTexture() {
-    const texture = this.gl.createTexture()
-    if (!texture) {
-      throw new Error("Could not create texture")
-    }
-    return texture
+  protected useLayer(layer: Layer) {
+    this.gl = layer.gl
+    return layer
   }
 
-  prepareFrameBuffer() {
-    const { gl, frameBuffer } = this
+  prepareTextureForDrawing(layer: Layer) {
+    const { gl, frameBuffer, texture } = this.useLayer(layer)
     const { width, height } = this.getCanvasSize()
     gl.viewport(0, 0, width, height)
 
@@ -29,7 +25,7 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer)
     this.syncCanvasSize()
 
-    gl.bindTexture(gl.TEXTURE_2D, this.texture)
+    gl.bindTexture(gl.TEXTURE_2D, texture)
 
     // Set the texture parameters
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
@@ -40,7 +36,7 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
 
     // Attach the texture to the framebuffer
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0)
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
 
     // Check the framebuffer status
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
@@ -48,12 +44,12 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     }
   }
 
-  drawFrameBufferToTexture() {
-    const { gl } = this
+  drawTexture(layer: Layer) {
+    const { gl, texture } = this.useLayer(layer)
 
     // Unbind the framebuffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, this.texture)
+    gl.bindTexture(gl.TEXTURE_2D, texture)
 
     this.bufferAttribute(
       "position",

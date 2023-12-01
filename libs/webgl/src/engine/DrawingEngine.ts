@@ -3,6 +3,7 @@ import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import { ActiveProgramSwitcher } from "./ActiveProgramSwitcher"
 import type { Vec2 } from "@libs/shared"
 import { Color } from "@libs/shared"
+import { Layer } from "./Layer"
 
 interface AvailablePrograms {
   lineDrawing: LineDrawingProgram
@@ -34,10 +35,12 @@ export class DrawingEngine {
   protected state: DrawingState
   protected programs: ActiveProgramSwitcher<AvailablePrograms>
   protected drawingHistory: Array<HistoryItem>
+  protected savedDrawingLayer: Layer
+  protected activeDrawingLayer: Layer
 
   constructor(
-    protected savedDrawingLayer: WebGLRenderingContext,
-    protected activeDrawingLayer: WebGLRenderingContext,
+    savedDrawingContext: WebGLRenderingContext,
+    activeDrawingContext: WebGLRenderingContext,
     options: DrawingEngineOptions,
   ) {
     this.state = {
@@ -49,18 +52,21 @@ export class DrawingEngine {
       pixelDensity: options.pixelDensity ?? 1,
     }
 
+    this.savedDrawingLayer = new Layer(savedDrawingContext)
+    this.activeDrawingLayer = new Layer(activeDrawingContext)
+
     this.programs = new ActiveProgramSwitcher({
-      lineDrawing: new LineDrawingProgram(savedDrawingLayer, this.state.pixelDensity),
-      textureDrawing: new TextureDrawingProgram(savedDrawingLayer, this.state.pixelDensity),
+      lineDrawing: new LineDrawingProgram(savedDrawingContext, this.state.pixelDensity),
+      textureDrawing: new TextureDrawingProgram(savedDrawingContext, this.state.pixelDensity),
     })
 
     this.drawingHistory = []
 
-    if (!savedDrawingLayer.getContextAttributes()?.preserveDrawingBuffer) {
+    if (!savedDrawingContext.getContextAttributes()?.preserveDrawingBuffer) {
       console.warn("drawing buffer preservation is disabled on the base rendering layer")
     }
 
-    if (activeDrawingLayer.getContextAttributes()?.preserveDrawingBuffer) {
+    if (activeDrawingContext.getContextAttributes()?.preserveDrawingBuffer) {
       console.warn("drawing buffer preservation is enabled on the active drawing layer")
     }
   }
@@ -112,7 +118,7 @@ export class DrawingEngine {
   }
 
   public clearCanvas() {
-    this.clear(this.savedDrawingLayer)
+    this.clear(this.savedDrawingLayer.gl)
   }
 
   protected getLineOptions(): Required<Omit<DrawLineOptions, "drawType">> {
@@ -156,14 +162,14 @@ export class DrawingEngine {
     }
   }
 
-  public drawLine(gl: WebGLRenderingContext, points: ReadonlyArray<number>, drawType?: DrawLineOptions["drawType"]) {
-    this.getProgram("textureDrawing", gl).prepareFrameBuffer()
+  public drawLine(layer: Layer, points: ReadonlyArray<number>, drawType?: DrawLineOptions["drawType"]) {
+    this.getProgram("textureDrawing", layer.gl).prepareTextureForDrawing(layer)
     const options = this.getLineOptions()
-    this.getProgram("lineDrawing", gl).draw(points, {
+    this.getProgram("lineDrawing", layer.gl).draw(points, {
       drawType,
       ...options,
     })
-    this.getProgram("textureDrawing", gl).drawFrameBufferToTexture()
+    this.getProgram("textureDrawing", layer.gl).drawTexture(layer)
   }
 
   protected commitPath() {
@@ -179,9 +185,9 @@ export class DrawingEngine {
   }
 
   private clearCurrentPath() {
+    this.clear(this.activeDrawingLayer.gl)
     const copy = [...this.state.currentPath]
     this.state.currentPath = []
-    this.clear(this.activeDrawingLayer)
     return copy
   }
 }

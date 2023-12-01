@@ -25,8 +25,8 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     options: DrawingEngineOptions,
   ) {
     const { width, height } = options
-    const { container, canvas, context, activeDrawingLayer } = WebDrawingEngine.createElements(options)
-    super(context, activeDrawingLayer, options)
+    const { container, canvas, context, activeDrawingContext } = WebDrawingEngine.createElements(options)
+    super(context, activeDrawingContext, options)
 
     this.container = container
     this.canvas = canvas
@@ -59,14 +59,14 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
       throw new Error("Could not get canvas context")
     }
 
-    const activeDrawingLayer = WebDrawingEngine.cloneCanvasWithNewContext(canvas, {
+    const activeDrawingContext = WebDrawingEngine.cloneCanvasWithNewContext(canvas, {
       ...webGlOptions,
       preserveDrawingBuffer: false,
       width,
       height,
     })
 
-    return { container, canvas, context, activeDrawingLayer }
+    return { container, canvas, context, activeDrawingContext }
   }
 
   protected static cloneCanvasWithNewContext(
@@ -90,7 +90,6 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     canvas.style.position = "absolute"
     canvas.style.top = "0"
     canvas.style.left = "0"
-    canvas.style.pointerEvents = "none"
     const context = canvas.getContext("webgl", options)
     if (!context) {
       throw new Error("Unable to get WebGL context")

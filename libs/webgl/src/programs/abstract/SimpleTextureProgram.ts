@@ -11,15 +11,8 @@ export abstract class SimpleTextureProgram extends BaseProgram<
   keyof typeof UNIFORM_NAMES,
   keyof typeof ATTRIBUTE_NAMES
 > {
-  protected frameBuffer: WebGLFramebuffer
   constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(SimpleTextureProgram.createContextStatic(gl, SimpleTextureProgram.createProgramStatic(gl)), pixelDensity)
-    // Create and bind the framebuffer
-    const frameBuffer = gl.createFramebuffer()
-    if (!frameBuffer) {
-      throw new Error("Could not create framebuffer")
-    }
-    this.frameBuffer = frameBuffer
   }
 
   protected static createProgramStatic(gl: WebGLRenderingContext): WebGLProgram {

@@ -123,6 +123,7 @@ export abstract class BaseProgram<
   public checkError(context = this.currentContext): typeof this {
     const error = context.gl.getError()
     if (error !== WebGLRenderingContext.NO_ERROR) {
+      debugger
       throw new Error("WebGL error: " + error)
     }
     return this

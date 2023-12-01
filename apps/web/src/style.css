@@ -48,6 +48,17 @@ aside canvas {
   width: 256px;
 }
 
+aside label {
+  width: 100%;
+  display: grid;
+  gap: 0.5rem;
+  font-size: smaller;
+}
+
+aside label span {
+  text-align: center;
+}
+
 .open-picker-button {
   background: none;
   border: none;
