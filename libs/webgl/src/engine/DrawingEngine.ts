@@ -18,6 +18,14 @@ interface DrawingState {
   lineWeight: number
   isDrawing: boolean
   pixelDensity: number
+  width: number
+  height: number
+}
+
+export interface DrawingEngineOptions {
+  width: number
+  height: number
+  pixelDensity?: number
 }
 
 export class DrawingEngine {
@@ -28,18 +36,19 @@ export class DrawingEngine {
   constructor(
     protected baseLayer: WebGLRenderingContext,
     protected activeDrawingLayer: WebGLRenderingContext,
-    pixelDensity = 1,
+    options: DrawingEngineOptions,
   ) {
     this.state = {
+      ...options,
       color: Color.BLACK,
       currentPath: [],
       lineWeight: 5,
       isDrawing: false,
-      pixelDensity,
+      pixelDensity: options.pixelDensity ?? 1,
     }
 
     this.programs = new ActiveProgramSwitcher({
-      lineDrawing: new LineDrawingProgram(baseLayer, pixelDensity),
+      lineDrawing: new LineDrawingProgram(baseLayer, this.state.pixelDensity),
     })
 
     this.drawingHistory = []
@@ -51,6 +60,14 @@ export class DrawingEngine {
     if (activeDrawingLayer.getContextAttributes()?.preserveDrawingBuffer) {
       console.warn("drawing buffer preservation is enabled on the active drawing layer")
     }
+  }
+
+  protected get pixelDensity() {
+    return this.state.pixelDensity
+  }
+
+  protected set pixelDensity(pixelDensity: number) {
+    this.state.pixelDensity = pixelDensity
   }
 
   protected getProgram<T extends keyof AvailablePrograms>(name: T): AvailablePrograms[T] {

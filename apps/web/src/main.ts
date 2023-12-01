@@ -14,7 +14,7 @@ function main() {
   }
   const width = Math.min(window.innerWidth, 500)
   const height = Math.min(window.innerHeight, 500)
-  const engine = new WebDrawingEngine(canvasRoot, width, height)
+  const engine = new WebDrawingEngine(canvasRoot, { width, height, pixelDensity: window.devicePixelRatio })
 
   new ColorPicker(sidebarRoot, {
     initialColor: engine.getCurrentColor(),
