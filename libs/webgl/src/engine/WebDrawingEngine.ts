@@ -1,5 +1,5 @@
 import { Color, getEventPosition } from "@libs/shared"
-import { DrawingEngine } from "./DrawingEngine"
+import { DrawingEngine, DrawingEngineOptions } from "./DrawingEngine"
 import { Vec2 } from "@libs/shared"
 
 interface IWebDrawingEngine {
@@ -22,16 +22,11 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
      * Note: Pointer events within the root element have their default behavior prevented.
      */
     private readonly root: HTMLElement,
-    width: number,
-    height: number,
-    private pixelDensity = 1,
+    options: DrawingEngineOptions,
   ) {
-    const { container, canvas, context, activeDrawingLayer } = WebDrawingEngine.createElements(
-      width,
-      height,
-      pixelDensity,
-    )
-    super(context, activeDrawingLayer, pixelDensity)
+    const { width, height } = options
+    const { container, canvas, context, activeDrawingLayer } = WebDrawingEngine.createElements(options)
+    super(context, activeDrawingLayer, options)
 
     this.container = container
     this.canvas = canvas
@@ -45,7 +40,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     this.addEventListeners()
   }
 
-  private static createElements(width: number, height: number, pixelDensity: number) {
+  private static createElements({ width, height, pixelDensity = 1 }: DrawingEngineOptions) {
     const container = document.createElement("div")
     container.classList.add("drawing-canvas-container")
     container.style.position = "relative"
@@ -60,19 +55,23 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
       throw new Error("Could not get canvas context")
     }
 
-    const activeDrawingLayer = WebDrawingEngine.cloneCanvasWithNewContext(
-      canvas,
-      { preserveDrawingBuffer: false, premultipliedAlpha: false },
-      pixelDensity,
-    )
+    const activeDrawingLayer = WebDrawingEngine.cloneCanvasWithNewContext(canvas, {
+      preserveDrawingBuffer: false,
+      premultipliedAlpha: false,
+      width,
+      height,
+    })
 
     return { container, canvas, context, activeDrawingLayer }
   }
 
   protected static cloneCanvasWithNewContext(
     baseCanvas: HTMLCanvasElement,
-    options?: WebGLContextAttributes,
-    pixelDensity = 1,
+    {
+      width = baseCanvas.width,
+      height = baseCanvas.height,
+      ...options
+    }: WebGLContextAttributes & { width?: number; height?: number } = {},
   ) {
     if (!(baseCanvas instanceof HTMLCanvasElement)) {
       throw new Error("canvas needs to be an active HTMLCanvasElement")
@@ -81,8 +80,8 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     baseCanvas.parentElement?.appendChild(canvas)
     canvas.width = baseCanvas.width
     canvas.height = baseCanvas.height
-    canvas.style.width = `${canvas.width / pixelDensity}px`
-    canvas.style.height = `${canvas.height / pixelDensity}px`
+    canvas.style.width = `${width}px`
+    canvas.style.height = `${height}px`
     // todo: add a stylesheet for the engine so we dont have to do these inline
     canvas.style.position = "absolute"
     canvas.style.top = "0"
