@@ -1,4 +1,3 @@
-import { debug } from "console"
 import { LineDrawingProgram, DrawLineOptions, DrawType } from "../programs/LineDrawingProgram"
 import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import { ActiveProgramSwitcher } from "./ActiveProgramSwitcher"
@@ -151,7 +150,6 @@ export class DrawingEngine {
     if (path.length === 0) {
       return
     }
-    debugger
     this.drawLine(this.savedDrawingLayer, path, DrawType.STATIC_DRAW)
     this.drawingHistory.push({
       path,
