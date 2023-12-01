@@ -1,3 +1,4 @@
+import { debug } from "console"
 import { LineDrawingProgram, DrawLineOptions, DrawType } from "../programs/LineDrawingProgram"
 import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import { ActiveProgramSwitcher } from "./ActiveProgramSwitcher"
@@ -36,7 +37,7 @@ export class DrawingEngine {
   protected drawingHistory: Array<HistoryItem>
 
   constructor(
-    protected baseLayer: WebGLRenderingContext,
+    protected savedDrawingLayer: WebGLRenderingContext,
     protected activeDrawingLayer: WebGLRenderingContext,
     options: DrawingEngineOptions,
   ) {
@@ -50,13 +51,13 @@ export class DrawingEngine {
     }
 
     this.programs = new ActiveProgramSwitcher({
-      lineDrawing: new LineDrawingProgram(baseLayer, this.state.pixelDensity),
-      textureDrawing: new TextureDrawingProgram(baseLayer, this.state.pixelDensity),
+      lineDrawing: new LineDrawingProgram(savedDrawingLayer, this.state.pixelDensity),
+      textureDrawing: new TextureDrawingProgram(savedDrawingLayer, this.state.pixelDensity),
     })
 
     this.drawingHistory = []
 
-    if (!baseLayer.getContextAttributes()?.preserveDrawingBuffer) {
+    if (!savedDrawingLayer.getContextAttributes()?.preserveDrawingBuffer) {
       console.warn("drawing buffer preservation is disabled on the base rendering layer")
     }
 
@@ -73,27 +74,15 @@ export class DrawingEngine {
     this.state.pixelDensity = pixelDensity
   }
 
-  protected getProgram<T extends keyof AvailablePrograms>(name: T): AvailablePrograms[T] {
-    return this.programs.getProgram(name)
-  }
-
-  public updateDrawing() {
-    if (this.state.currentPath.length > 0) {
-      this.drawLine(this.state.currentPath, { drawType: DrawType.DYNAMIC_DRAW, thickness: this.lineWeight })
+  protected getProgram<T extends keyof AvailablePrograms>(
+    name: T,
+    context?: WebGLRenderingContext,
+  ): AvailablePrograms[T] {
+    const program = this.programs.getProgram(name)
+    if (context) {
+      program.useContext(context)
     }
-  }
-
-  public drawLine(
-    points: ReadonlyArray<number>,
-    { color = this.state.color, thickness = this.lineWeight, drawType }: Partial<DrawLineOptions> = {},
-  ) {
-    this.getProgram("textureDrawing").prepareFrameBuffer()
-    this.getProgram("lineDrawing").draw(points, {
-      drawType,
-      thickness: thickness * this.state.pixelDensity,
-      color,
-    })
-    this.getProgram("textureDrawing").drawFrameBufferToTexture()
+    return program
   }
 
   public setColor(color: Color) {
@@ -114,7 +103,14 @@ export class DrawingEngine {
   }
 
   public clearCanvas() {
-    this.clear(this.baseLayer)
+    this.clear(this.savedDrawingLayer)
+  }
+
+  protected getLineOptions(): Required<Omit<DrawLineOptions, "drawType">> {
+    return {
+      color: this.state.color,
+      thickness: this.lineWeight,
+    }
   }
 
   // Maybe the rendering contexts should have a wrapper class that handles this?
@@ -124,16 +120,43 @@ export class DrawingEngine {
   }
 
   public setPressed(pressed: boolean, position: Readonly<Vec2>) {
-    this.state.isDrawing = pressed
     if (pressed) {
-      this.getProgram("lineDrawing").gl = this.activeDrawingLayer
+      this.state.isDrawing = true
       this.addPosition(position)
       this.updateDrawing()
     } else {
-      this.clear(this.activeDrawingLayer)
-      this.getProgram("lineDrawing").gl = this.baseLayer
       this.commitPath()
+      this.state.isDrawing = false
     }
+  }
+
+  public updateDrawing() {
+    if (this.state.currentPath.length > 0) {
+      this.drawLine(this.activeDrawingLayer, this.state.currentPath, DrawType.STATIC_DRAW)
+    }
+  }
+
+  public drawLine(gl: WebGLRenderingContext, points: ReadonlyArray<number>, drawType?: DrawLineOptions["drawType"]) {
+    //this.getProgram("textureDrawing", gl).prepareFrameBuffer()
+    const options = this.getLineOptions()
+    this.getProgram("lineDrawing", gl).draw(points, {
+      drawType,
+      ...options,
+    })
+    //this.getProgram("textureDrawing", gl).drawFrameBufferToTexture()
+  }
+
+  protected commitPath() {
+    const path = this.clearCurrentPath()
+    if (path.length === 0) {
+      return
+    }
+    debugger
+    this.drawLine(this.savedDrawingLayer, path, DrawType.STATIC_DRAW)
+    this.drawingHistory.push({
+      path,
+      options: this.getLineOptions(),
+    })
   }
 
   private clearCurrentPath() {
@@ -147,21 +170,5 @@ export class DrawingEngine {
       this.state.currentPath.push(...position)
     }
     this.updateDrawing()
-  }
-
-  protected commitPath() {
-    const path = this.clearCurrentPath()
-    if (path.length === 0) {
-      return
-    }
-    const options = {
-      color: this.state.color,
-      thickness: this.lineWeight,
-    }
-    this.drawLine(path, { drawType: DrawType.STATIC_DRAW, ...options })
-    this.drawingHistory.push({
-      path,
-      options,
-    })
   }
 }
