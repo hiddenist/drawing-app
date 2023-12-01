@@ -36,8 +36,20 @@ export abstract class BaseProgram<
 {
   private contexts: ExtendableContext[] = []
 
-  constructor(private _currentContext: ExtendableContext) {
+  constructor(
+    private _currentContext: ExtendableContext,
+    private _pixelDensity = 1,
+  ) {
     this.currentContext = _currentContext
+  }
+
+  public get pixelDensity() {
+    return this._pixelDensity
+  }
+
+  public set pixelDensity(value: number) {
+    this._pixelDensity = value
+    this.syncCanvasSize()
   }
 
   public useContext(context: WebGLRenderingContext): this {
@@ -105,7 +117,7 @@ export abstract class BaseProgram<
     }
     const boundingRect = canvas.getBoundingClientRect()
 
-    return { width: boundingRect.width, height: boundingRect.height }
+    return { width: boundingRect.width * this.pixelDensity, height: boundingRect.height * this.pixelDensity }
   }
 
   public checkError(context = this.currentContext): typeof this {
@@ -209,6 +221,8 @@ export abstract class BaseProgram<
     const attr = this.getAttribute(attrName, context)
     if (!attr.buffer) {
       attr.buffer = this.createBuffer(WebGLRenderingContext.ARRAY_BUFFER, context)
+    } else {
+      context.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, attr.buffer)
     }
     context.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, data, usage)
     context.gl.enableVertexAttribArray(attr.location)
