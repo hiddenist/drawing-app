@@ -147,13 +147,9 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
       this.canvas.style.removeProperty("cursor")
     })
 
-    this.addListener(
-      "touchmove",
-      () => {
-        // noop, this just disables the default behavior of scrolling when touching the canvas
-      },
-      this.container,
-    )
+    this.addListener("touchmove", () => {
+      // noop, this just disables the default behavior of scrolling when touching the canvas
+    })
   }
 
   /**
