@@ -33,4 +33,15 @@ function main() {
   })
 
   sidebarRoot.prepend(weightInput)
+
+  const opacityInput = document.createElement("input")
+  opacityInput.type = "range"
+  opacityInput.max = "255"
+  opacityInput.min = "0"
+  opacityInput.value = engine.getOpacity().toString()
+  opacityInput.addEventListener("change", () => {
+    engine.setOpacity(parseInt(opacityInput.value))
+  })
+
+  sidebarRoot.prepend(opacityInput)
 }

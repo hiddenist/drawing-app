@@ -84,8 +84,22 @@ export class DrawingEngine {
     return program
   }
 
+  public getCurrentColor() {
+    return this.state.color
+  }
+
   public setColor(color: Color) {
-    this.state.color = color
+    const opacity = this.state.color.a
+    this.state.color = new Color(color.r, color.g, color.b, opacity)
+  }
+
+  public setOpacity(opacity: number) {
+    const color = this.state.color
+    this.state.color = new Color(color.r, color.g, color.b, opacity)
+  }
+
+  public getOpacity() {
+    return this.state.color.a
   }
 
   public get lineWeight(): number {
@@ -95,10 +109,6 @@ export class DrawingEngine {
   public setLineWeight(weight: number): typeof this {
     this.state.lineWeight = weight
     return this
-  }
-
-  public getCurrentColor() {
-    return this.state.color
   }
 
   public clearCanvas() {
@@ -147,13 +157,13 @@ export class DrawingEngine {
   }
 
   public drawLine(gl: WebGLRenderingContext, points: ReadonlyArray<number>, drawType?: DrawLineOptions["drawType"]) {
-    //this.getProgram("textureDrawing", gl).prepareFrameBuffer()
+    this.getProgram("textureDrawing", gl).prepareFrameBuffer()
     const options = this.getLineOptions()
     this.getProgram("lineDrawing", gl).draw(points, {
       drawType,
       ...options,
     })
-    //this.getProgram("textureDrawing", gl).drawFrameBufferToTexture()
+    this.getProgram("textureDrawing", gl).drawFrameBufferToTexture()
   }
 
   protected commitPath() {
@@ -171,6 +181,7 @@ export class DrawingEngine {
   private clearCurrentPath() {
     const copy = [...this.state.currentPath]
     this.state.currentPath = []
+    this.clear(this.activeDrawingLayer)
     return copy
   }
 }
