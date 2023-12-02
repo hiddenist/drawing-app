@@ -166,21 +166,21 @@ export class DrawingEngine {
     context.clear(context.COLOR_BUFFER_BIT)
   }
 
-  public setPressed(pressed: boolean, position: Readonly<Vec2>) {
+  public setPressed(pressed: boolean, position: Readonly<Vec2>, pressure: [number]) {
     if (pressed) {
       this.state.isDrawing = true
-      this.addPosition(position)
+      this.addPosition(position, pressure)
       this.updateDrawing()
     } else {
       this.commitPath()
     }
   }
 
-  public addPosition(position: Readonly<Vec2>, pressure?: [number]) {
+  public addPosition(position: Readonly<Vec2>, pressure: [number]) {
     this.addPositions([[...position]], pressure)
   }
 
-  public addPositions(positions: ReadonlyArray<Vec2>, pressure?: ReadonlyArray<number>) {
+  public addPositions(positions: ReadonlyArray<Vec2>, pressure: ReadonlyArray<number>) {
     if (this.state.isDrawing) {
       this.state.currentPath.points.push(...positions.flat())
       if (pressure) this.addPressure(pressure)

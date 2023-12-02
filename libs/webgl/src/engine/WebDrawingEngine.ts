@@ -123,7 +123,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
       if (event.isPrimary === false) {
         return
       }
-      this.setPressed(true, position)
+      this.setPressed(true, position, [event.pressure])
       this.canvas.style.setProperty("cursor", "none")
     })
     this.addListener("pointermove", ({ position, event }) => {
@@ -144,7 +144,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
       if (event.isPrimary === false) {
         return
       }
-      this.setPressed(false, position)
+      this.setPressed(false, position, [event.pressure])
       this.canvas.style.removeProperty("cursor")
     })
 

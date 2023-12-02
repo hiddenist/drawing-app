@@ -34,19 +34,22 @@ export class LineDrawingProgram extends SimpleShaderProgram {
     const doublePoints = []
 
     if (pressure && pressure.length !== points.length / 2) {
-      throw new Error("Pressure array must be the same length as the points array")
+      console.warn("Pressure array should be the same length as the points array")
     }
 
+    const hasPressureData = (pressure?.filter((p) => p > 0).length ?? 0) > 1
+
     for (let i = 0; i < points.length - 2; i += 2) {
-      const pressureValue = pressure ? pressure[i / 2] : 1.0
+      const pressureValue = pressure && hasPressureData ? pressure[i / 2] : 1.0
+      const adjustedThickness = Math.max(thickness * pressureValue, 1)
       const x1 = points[i]
       const y1 = points[i + 1]
       const x2 = points[i + 2]
       const y2 = points[i + 3]
 
       const angle = Math.atan2(y2 - y1, x2 - x1)
-      const offsetX = (Math.sin(angle) * thickness * pressureValue) / 2
-      const offsetY = (Math.cos(angle) * thickness * pressureValue) / 2
+      const offsetX = (Math.sin(angle) * adjustedThickness) / 2
+      const offsetY = (Math.cos(angle) * adjustedThickness) / 2
 
       doublePoints.push(x1 - offsetX, y1 + offsetY)
       doublePoints.push(x1 + offsetX, y1 - offsetY)
