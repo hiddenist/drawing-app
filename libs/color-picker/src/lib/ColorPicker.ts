@@ -24,6 +24,12 @@ export class ColorPicker {
     openPickerButton.innerText = "color picker"
     container.appendChild(openPickerButton)
 
+    const closePickerButton = document.createElement("button")
+    closePickerButton.classList.add("close-picker-button")
+    closePickerButton.innerText = "close"
+
+    container.appendChild(closePickerButton)
+
     if (config.initialColor) {
       openPickerButton.style.backgroundColor = config.initialColor.hex
     }
@@ -42,13 +48,18 @@ export class ColorPicker {
         this.program.draw()
       }
     })
+    closePickerButton.addEventListener("click", () => {
+      document.body.classList.remove("picker-open")
+    })
     canvas.addEventListener("pointerup", (e) => {
       const color = this.getCanvasColor(e)
       this.onSetColor(color)
-      document.body.classList.remove("picker-open")
     })
 
     let lastMoveEvent: PointerEvent | null = null
+    canvas.addEventListener("touchmove", (e) => {
+      e.preventDefault()
+    })
     canvas.addEventListener("pointermove", (e) => {
       const isClicking = e.buttons === 1
       if (!isClicking) {

@@ -58,6 +58,10 @@ aside canvas {
   text-indent: -9999px; /* Hides the text */
 }
 
+.close-picker-button {
+  display: none;
+}
+
 .toolbar {
   display: grid;
   gap: 1rem;
@@ -108,6 +112,10 @@ aside canvas {
   border: 1px solid #222;
 }
 
+.toolbar .recent-color-tray .recent-color.selected {
+  border: 1px solid #fff;
+}
+
 @media (max-width: 800px) {
   body {
     flex-direction: column-reverse;
@@ -117,6 +125,11 @@ aside canvas {
     display: grid;
     padding-bottom: 0;
   }
+
+  .toolbar .color-picker {
+    display: grid;
+  }
+
   .toolbar .color-picker canvas {
     display: none;
   }
@@ -139,16 +152,31 @@ aside canvas {
   }
 
   body.picker-open aside {
+    display: flex;
     flex: 1;
   }
-  body.picker-open .toolbar .color-picker {
+
+  body.picker-open aside .toolbar {
     display: flex;
+    align-self: stretch;
+    flex: 1;
   }
+
+  body.picker-open .toolbar .color-picker {
+    display: grid;
+    flex: 1;
+  }
+
   body.picker-open .toolbar .color-picker canvas {
     display: block;
   }
+
   body.picker-open main {
     display: none;
+  }
+
+  body.picker-open .close-picker-button {
+    display: inline-block;
   }
 
   .toolbar {

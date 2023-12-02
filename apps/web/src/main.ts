@@ -77,13 +77,11 @@ function makeToolbar<T extends string>(
   toolbar.classList.add("toolbar")
   root.append(toolbar)
 
-  let prevColor = options.initialColor ?? Color.BLACK
   const picker = new ColorPicker(toolbar, {
     initialColor: options.initialColor,
     onChange(color) {
-      recentColors.addColor(prevColor)
+      recentColors.setSelectedColor(color)
       options.onSetColor(color)
-      prevColor = color
     },
   })
   const recentColors = recentColorTray({
@@ -179,22 +177,30 @@ function recentColorTray({
   tray.classList.add("recent-color-tray")
   return {
     tray,
-    addColor: (color: Color) => {
+    setSelectedColor: (color: Color) => {
+      ;[...tray.getElementsByClassName("recent-color")].forEach((element) => {
+        element.classList.remove("selected")
+      })
       const existing = colors.find((c) => c.color.equals(color))
       if (existing) {
-        existing.isDisplayed = true
-        tray.prepend(existing.element)
-        return
+        existing.element.classList.add("selected")
+        if (!existing.isDisplayed) {
+          existing.isDisplayed = true
+          tray.prepend(existing.element)
+        }
+        return existing
       }
 
       const colorElement = document.createElement("button")
       colorElement.classList.add("recent-color")
+      colorElement.classList.add("selected")
       colorElement.style.backgroundColor = color.hex
       colorElement.addEventListener("click", () => {
         onColorSelect(color)
       })
       tray.prepend(colorElement)
-      colors.push({ color, element: colorElement, isDisplayed: true })
+      const newEntry = { color, element: colorElement, isDisplayed: true }
+      colors.push(newEntry)
 
       if (tray.children.length > maxDisplayedColors && tray.lastChild) {
         tray.removeChild(tray.lastChild)
@@ -207,6 +213,7 @@ function recentColorTray({
       if (colors.length > maxSavedColors) {
         colors.splice(0, colors.length - maxSavedColors)
       }
+      return newEntry
     },
   }
 }
