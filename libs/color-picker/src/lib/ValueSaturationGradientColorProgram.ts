@@ -1,4 +1,4 @@
-import { BaseProgram, WebGLProgramBuilder, Vec2, Color } from "@libs/shared"
+import { BaseProgram, WebGLProgramBuilder } from "@libs/shared"
 import fragmentSource from "../shaders/value-saturation.fragment.glsl"
 import vertexSource from "../shaders/vertex.glsl"
 import { BaseGradientColorProgram } from "./BaseGradientColorProgram"
