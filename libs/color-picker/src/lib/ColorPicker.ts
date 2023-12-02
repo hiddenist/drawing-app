@@ -3,6 +3,7 @@ import { GradientColorProgram } from "./GradientColorProgram"
 
 export class ColorPicker {
   private readonly program: GradientColorProgram
+  private readonly onSetColor: (color: Color) => void
 
   constructor(
     private readonly root: HTMLElement,
@@ -12,18 +13,23 @@ export class ColorPicker {
     },
   ) {
     const { canvas, gl } = this.createCanvas()
-    this.root.appendChild(canvas)
+
+    const container = document.createElement("div")
+    container.classList.add("color-picker")
+    container.appendChild(canvas)
+    this.root.appendChild(container)
+
     const openPickerButton = document.createElement("button")
     openPickerButton.classList.add("open-picker-button")
     openPickerButton.innerText = "color picker"
-    this.root.appendChild(openPickerButton)
+    container.appendChild(openPickerButton)
 
     if (config.initialColor) {
-      openPickerButton.style.backgroundColor = config.initialColor.rgba
+      openPickerButton.style.backgroundColor = config.initialColor.hex
     }
 
-    const onSetColor = (color: Color) => {
-      openPickerButton.style.backgroundColor = color.rgba
+    this.onSetColor = (color: Color) => {
+      openPickerButton.style.backgroundColor = color.hex
       this.config.onChange(color)
     }
 
@@ -36,21 +42,41 @@ export class ColorPicker {
         this.program.draw()
       }
     })
-    canvas.addEventListener("mouseup", (e) => {
+    canvas.addEventListener("pointerup", (e) => {
       const color = this.getCanvasColor(e)
-      onSetColor(color)
+      this.onSetColor(color)
       document.body.classList.remove("picker-open")
     })
 
-    canvas.addEventListener("mousemove", (e) => {
+    let lastMoveEvent: PointerEvent | null = null
+    canvas.addEventListener("pointermove", (e) => {
       const isClicking = e.buttons === 1
       if (!isClicking) {
         return
       }
+
+      lastMoveEvent = e
       e.preventDefault()
       const color = this.getCanvasColor(e)
-      onSetColor(color)
+      openPickerButton.style.backgroundColor = color.hex
     })
+    window.addEventListener("pointerup", (e) => {
+      const isMobile = window.matchMedia("(max-width: 800px)").matches
+      if (!document.body.classList.contains("picker-open") && isMobile) {
+        lastMoveEvent = null
+        return
+      }
+      if (lastMoveEvent && e.target !== canvas) {
+        const color = this.getCanvasColor(lastMoveEvent)
+        lastMoveEvent = null
+        this.onSetColor(color)
+        return
+      }
+    })
+  }
+
+  public setColor(color: Color) {
+    this.onSetColor(color)
   }
 
   private createCanvas() {
