@@ -46,6 +46,9 @@ function main() {
     },
     tools: tools,
     initialTool: tools[0].value,
+    addDrawListener(cb) {
+      engine.addDrawListener(cb)
+    },
   })
 
   if (import.meta.env.DEV && window.location && window.location.hostname === "localhost") {
@@ -71,6 +74,8 @@ function makeToolbar<T extends string>(
     onSetLineWeight: (weight: number) => void
     onSetColor: (color: Color) => void
     onSetTool: (tool: T) => void
+
+    addDrawListener: (cb: () => void) => void
   },
 ) {
   const toolbar = document.createElement("div")
@@ -80,7 +85,6 @@ function makeToolbar<T extends string>(
   const picker = new ColorPicker(toolbar, {
     initialColor: options.initialColor,
     onChange(color) {
-      recentColors.setSelectedColor(color)
       options.onSetColor(color)
     },
   })
@@ -88,6 +92,10 @@ function makeToolbar<T extends string>(
     onColorSelect(color) {
       picker.setColor(color)
     },
+  })
+
+  options.addDrawListener(() => {
+    recentColors.setSelectedColor(picker.getColor())
   })
 
   toolbar.append(recentColors.tray)
@@ -175,14 +183,19 @@ function recentColorTray({
   const tray = document.createElement("div")
   const colors: { color: Color; element: HTMLElement; isDisplayed: boolean }[] = []
   tray.classList.add("recent-color-tray")
+
+  const updateSelectedClass = (element?: HTMLElement) => {
+    ;[...tray.getElementsByClassName("recent-color")].forEach((e) => {
+      e.classList.remove("selected")
+    })
+    element?.classList.add("selected")
+  }
   return {
     tray,
     setSelectedColor: (color: Color) => {
-      ;[...tray.getElementsByClassName("recent-color")].forEach((element) => {
-        element.classList.remove("selected")
-      })
       const existing = colors.find((c) => c.color.equals(color))
       if (existing) {
+        updateSelectedClass(existing.element)
         existing.element.classList.add("selected")
         if (!existing.isDisplayed) {
           existing.isDisplayed = true
@@ -193,12 +206,13 @@ function recentColorTray({
 
       const colorElement = document.createElement("button")
       colorElement.classList.add("recent-color")
-      colorElement.classList.add("selected")
       colorElement.style.backgroundColor = color.hex
       colorElement.addEventListener("click", () => {
         onColorSelect(color)
+        updateSelectedClass(colorElement)
       })
       tray.prepend(colorElement)
+      updateSelectedClass(colorElement)
       const newEntry = { color, element: colorElement, isDisplayed: true }
       colors.push(newEntry)
 

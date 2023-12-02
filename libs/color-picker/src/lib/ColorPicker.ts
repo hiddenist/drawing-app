@@ -4,7 +4,7 @@ import { ValueSaturationGradientColorProgram } from "./ValueSaturationGradientCo
 export class ColorPicker {
   private readonly program: ValueSaturationGradientColorProgram
   private readonly onSetColor: (color: Color) => void
-  private currentColor: Color = Color.BLACK
+  private currentColor: Color
 
   constructor(
     private readonly root: HTMLElement,
@@ -14,6 +14,7 @@ export class ColorPicker {
     },
   ) {
     const { canvas, gl } = this.createCanvas()
+    this.currentColor = config.initialColor ?? Color.BLACK
 
     const container = document.createElement("div")
     container.classList.add("color-picker")
@@ -51,6 +52,7 @@ export class ColorPicker {
     this.onSetColor = (color: Color) => {
       openPickerButton.style.backgroundColor = color.hex
       this.config.onChange(color)
+      this.currentColor = color
     }
 
     this.program = new ValueSaturationGradientColorProgram(gl)
