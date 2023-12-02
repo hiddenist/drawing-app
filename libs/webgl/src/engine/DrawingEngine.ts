@@ -204,7 +204,6 @@ export class DrawingEngine {
     }
     const doDraw = () => {
       this.drawLine(this.savedDrawingLayer, path, DrawType.STATIC_DRAW)
-      console.log(this.drawingHistory)
     }
     this.drawingHistory.push({
       path,
