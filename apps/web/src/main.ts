@@ -34,7 +34,7 @@ function main() {
       engine.clearCanvas()
     },
     onSetOpacity(opacity) {
-      engine.setOpacity(opacity)
+      engine.setOpacity((opacity * 255) / 100)
     },
     onSetLineWeight(weight) {
       engine.setLineWeight(weight)
