@@ -61,10 +61,10 @@ export class DrawingEngine {
       ...options,
       color: Color.BLACK,
       currentPath: { points: [] },
-      lineWeight: 5,
+      lineWeight: 20,
       isDrawing: false,
       pixelDensity: options.pixelDensity ?? 1,
-      tool: Tools.brush,
+      tool: Tools.pressureSensitiveBrush,
     }
 
     this.savedDrawingLayer = new Layer(savedDrawingContext, ({ gl }) => {

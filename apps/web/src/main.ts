@@ -161,7 +161,7 @@ function makeToolbar<T extends string>(
     label: "Line weight",
     initialValue: options.initialWeight ?? 5,
     min: 1,
-    max: 255,
+    max: 256,
     getDisplayValue: (value) => value.toString(),
     onChange(value) {
       options.onSetLineWeight(value)

@@ -41,7 +41,7 @@ export class LineDrawingProgram extends SimpleShaderProgram {
 
     for (let i = 0; i < points.length - 2; i += 2) {
       const pressureValue = pressure && hasPressureData ? pressure[i / 2] : 1.0
-      const adjustedThickness = Math.max(thickness * pressureValue, 1)
+      const adjustedThickness = Math.max(thickness * pressureValue, 1) * this.pixelDensity
       const x1 = points[i]
       const y1 = points[i + 1]
       const x2 = points[i + 2]

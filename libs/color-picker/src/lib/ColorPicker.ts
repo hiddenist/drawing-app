@@ -22,20 +22,21 @@ export class ColorPicker {
     this.root.appendChild(container)
 
     const hueSlider = document.createElement("input")
-    hueSlider.classList.add("hue-slider")
     hueSlider.type = "range"
     hueSlider.min = "0"
     hueSlider.max = "360"
     hueSlider.step = "1"
-    hueSlider.value = "360"
-    hueSlider.setAttribute("orient", "vertical")
+    hueSlider.value = "0"
     hueSlider.addEventListener("input", () => {
-      this.setHue(360 - parseFloat(hueSlider.value))
+      this.setHue(parseFloat(hueSlider.value))
     })
-    container.prepend(hueSlider)
+    const hueSliderContainer = document.createElement("div")
+    hueSliderContainer.classList.add("hue-slider")
+    hueSliderContainer.appendChild(hueSlider)
+    container.prepend(hueSliderContainer)
 
     const openPickerButton = document.createElement("button")
-    openPickerButton.classList.add("open-picker-button")
+    openPickerButton.classList.add("current-color-button")
     openPickerButton.innerText = "color picker"
     container.appendChild(openPickerButton)
 
