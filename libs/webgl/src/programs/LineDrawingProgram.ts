@@ -3,6 +3,11 @@ import { Color } from "@libs/shared"
 
 export { DrawType } from "./abstract/SimpleShaderProgram"
 
+export interface LineInfo {
+  points: number[]
+  pressure?: number[]
+}
+
 export class LineDrawingProgram extends SimpleShaderProgram {
   constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
@@ -20,7 +25,7 @@ export class LineDrawingProgram extends SimpleShaderProgram {
   }
 
   public draw(
-    points: ReadonlyArray<number>,
+    { points, pressure }: Readonly<LineInfo>,
     { drawType = this.gl.STREAM_DRAW, color = Color.BLACK, thickness = 5.0 }: DrawLineOptions = {},
     context = this.currentContext,
   ) {
@@ -28,15 +33,20 @@ export class LineDrawingProgram extends SimpleShaderProgram {
 
     const doublePoints = []
 
+    if (pressure && pressure.length !== points.length / 2) {
+      throw new Error("Pressure array must be the same length as the points array")
+    }
+
     for (let i = 0; i < points.length - 2; i += 2) {
+      const pressureValue = pressure ? pressure[i / 2] : 1.0
       const x1 = points[i]
       const y1 = points[i + 1]
       const x2 = points[i + 2]
       const y2 = points[i + 3]
 
       const angle = Math.atan2(y2 - y1, x2 - x1)
-      const offsetX = (Math.sin(angle) * thickness) / 2
-      const offsetY = (Math.cos(angle) * thickness) / 2
+      const offsetX = (Math.sin(angle) * thickness * pressureValue) / 2
+      const offsetY = (Math.cos(angle) * thickness * pressureValue) / 2
 
       doublePoints.push(x1 - offsetX, y1 + offsetY)
       doublePoints.push(x1 + offsetX, y1 - offsetY)

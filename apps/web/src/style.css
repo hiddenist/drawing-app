@@ -22,6 +22,10 @@ main {
   padding: 1rem 0;
 }
 
+main canvas {
+  display: block;
+}
+
 main .drawing-canvas-container {
   position: relative;
   border: 1px solid rgb(25, 25, 28);

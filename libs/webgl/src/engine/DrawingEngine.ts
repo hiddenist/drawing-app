@@ -1,4 +1,4 @@
-import { LineDrawingProgram, DrawLineOptions, DrawType } from "../programs/LineDrawingProgram"
+import { LineDrawingProgram, DrawLineOptions, DrawType, LineInfo } from "../programs/LineDrawingProgram"
 import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import { ActiveProgramSwitcher } from "./ActiveProgramSwitcher"
 import type { Vec2 } from "@libs/shared"
@@ -11,18 +11,20 @@ interface AvailablePrograms {
 }
 
 interface HistoryItem {
-  path: ReadonlyArray<number>
+  path: Readonly<LineInfo>
+  tool: Tool
   options: Required<Omit<DrawLineOptions, "drawType">>
 }
 
 interface DrawingState {
   color: Color
-  currentPath: number[]
+  currentPath: LineInfo
   lineWeight: number
   isDrawing: boolean
   pixelDensity: number
   width: number
   height: number
+  tool: Tool
 }
 
 export interface DrawingEngineOptions {
@@ -32,6 +34,14 @@ export interface DrawingEngineOptions {
 }
 
 type DrawListenerCallback = (action: HistoryItem) => void
+
+export const Tools = {
+  brush: "brush",
+  // todo: eraser: "eraser",
+  pressureSensitiveBrush: "pressureSensitiveBrush",
+} as const
+
+export type Tool = (typeof Tools)[keyof typeof Tools]
 
 export class DrawingEngine {
   protected state: DrawingState
@@ -50,10 +60,11 @@ export class DrawingEngine {
     this.state = {
       ...options,
       color: Color.BLACK,
-      currentPath: [],
+      currentPath: { points: [] },
       lineWeight: 5,
       isDrawing: false,
       pixelDensity: options.pixelDensity ?? 1,
+      tool: Tools.brush,
     }
 
     this.savedDrawingLayer = new Layer(savedDrawingContext, ({ gl }) => {
@@ -104,12 +115,23 @@ export class DrawingEngine {
     return this.state.color
   }
 
+  public getCurrentTool() {
+    return this.state.tool
+  }
+
+  public setTool(tool: Tool) {
+    this.commitPath()
+    this.state.tool = tool
+  }
+
   public setColor(color: Color) {
+    this.commitPath()
     const opacity = this.state.color.a
     this.state.color = new Color(color.r, color.g, color.b, opacity)
   }
 
   public setOpacity(opacity: number) {
+    this.commitPath()
     const color = this.state.color
     this.state.color = new Color(color.r, color.g, color.b, opacity)
   }
@@ -145,43 +167,52 @@ export class DrawingEngine {
   }
 
   public setPressed(pressed: boolean, position: Readonly<Vec2>) {
-    const path = this.clearCurrentPath()
     if (pressed) {
       this.state.isDrawing = true
       this.addPosition(position)
       this.updateDrawing()
     } else {
-      this.commitPath(path)
-      this.state.isDrawing = false
+      this.commitPath()
     }
   }
 
-  public addPosition(position: Readonly<Vec2>) {
-    this.addPositions(position)
+  public addPosition(position: Readonly<Vec2>, pressure?: [number]) {
+    this.addPositions([[...position]], pressure)
   }
 
-  public addPositions(positions: ReadonlyArray<number> | ReadonlyArray<Vec2>) {
+  public addPositions(positions: ReadonlyArray<Vec2>, pressure?: ReadonlyArray<number>) {
     if (this.state.isDrawing) {
-      this.state.currentPath.push(...positions.flat())
+      this.state.currentPath.points.push(...positions.flat())
+      if (pressure) this.addPressure(pressure)
       this.updateDrawing()
     }
   }
 
+  private addPressure(pressure: ReadonlyArray<number>) {
+    if (this.state.tool !== Tools.pressureSensitiveBrush) {
+      return
+    }
+    if (!this.state.currentPath.pressure) {
+      this.state.currentPath.pressure = []
+    }
+    this.state.currentPath.pressure.push(...pressure)
+  }
+
   public updateDrawing() {
-    if (this.state.currentPath.length > 0) {
+    if (this.state.currentPath.points.length > 0) {
       this.drawLine(this.activeDrawingLayer, this.state.currentPath, DrawType.STATIC_DRAW)
     }
   }
 
-  public drawLine(layer: Layer, points: ReadonlyArray<number>, drawType?: DrawLineOptions["drawType"]) {
+  public drawLine(layer: Layer, path: LineInfo, drawType?: DrawLineOptions["drawType"]) {
     this.getProgram("textureDrawing", layer.gl).prepareTextureForDrawing(layer)
     const options = this.getLineOptions()
-    this.getProgram("lineDrawing", layer.gl).draw(points, {
+    this.getProgram("lineDrawing", layer.gl).draw(path, {
       drawType,
       ...options,
     })
     this.getProgram("textureDrawing", layer.gl).drawTexture(layer)
-    this.callDrawListeners({ path: points, options })
+    this.callDrawListeners({ path, options, tool: this.state.tool })
   }
 
   public addDrawListener(cb: DrawListenerCallback) {
@@ -198,8 +229,10 @@ export class DrawingEngine {
     this.drawListeners.forEach((listener) => listener(historyItem))
   }
 
-  protected commitPath(path: ReadonlyArray<number>) {
-    if (path.length === 0) {
+  protected commitPath() {
+    const path = this.clearCurrentPath()
+    this.state.isDrawing = false
+    if (path.points.length === 0) {
       return
     }
     const doDraw = () => {
@@ -208,6 +241,7 @@ export class DrawingEngine {
     this.drawingHistory.push({
       path,
       options: this.getLineOptions(),
+      tool: this.state.tool,
     })
     doDraw()
 
@@ -219,10 +253,10 @@ export class DrawingEngine {
     }
   }
 
-  private clearCurrentPath() {
+  private clearCurrentPath(): Readonly<LineInfo> {
     this.clear(this.activeDrawingLayer.gl)
-    const copy = [...this.state.currentPath]
-    this.state.currentPath = []
+    const copy = this.state.currentPath
+    this.state.currentPath = { points: [] }
     return copy
   }
 }

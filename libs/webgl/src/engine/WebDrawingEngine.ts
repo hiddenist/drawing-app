@@ -131,12 +131,14 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
         return
       }
       let positions = [position]
+      let pressure = [event.pressure]
       try {
         positions = event.getCoalescedEvents().map((coalsecedEvent) => this.getCanvasPosition(coalsecedEvent))
+        pressure = event.getCoalescedEvents().map((coalsecedEvent) => coalsecedEvent.pressure)
       } catch (error) {
         console.warn("Could not get coalesced events", error)
       }
-      this.addPositions(positions)
+      this.addPositions(positions, pressure)
     })
     this.addListener("pointerup", ({ position, event }) => {
       if (event.isPrimary === false) {
