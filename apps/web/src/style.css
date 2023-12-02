@@ -48,26 +48,72 @@ aside canvas {
   width: 256px;
 }
 
-aside label {
-  width: 100%;
-  display: grid;
-  gap: 0.5rem;
-  font-size: smaller;
-}
-
-aside label span {
-  text-align: center;
-}
-
 .open-picker-button {
   background: none;
   border: none;
   height: 32px;
   width: 32px;
   border-radius: 50%;
-  margin-bottom: 1rem;
   border: 1px solid #111;
   text-indent: -9999px; /* Hides the text */
+}
+
+.close-picker-button {
+  display: none;
+}
+
+.toolbar {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #111;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.toolbar .slider {
+  display: grid;
+  gap: 0.5rem;
+  font-size: smaller;
+  text-align: center;
+}
+
+.toolbar .color-picker {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+
+.toolbar .input-tray {
+  display: flex;
+  gap: 0.5rem;
+  font-size: smaller;
+  text-align: center;
+}
+
+.toolbar .input-tray .tool-select {
+  flex: 1;
+}
+
+.toolbar .recent-color-tray {
+  display: flex;
+  gap: 0.5rem;
+  font-size: smaller;
+  text-align: center;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  max-width: 255px;
+}
+
+.toolbar .recent-color-tray .recent-color {
+  height: 21px;
+  width: 21px;
+  border: 1px solid #222;
+}
+
+.toolbar .recent-color-tray .recent-color.selected {
+  border: 1px solid #fff;
 }
 
 @media (max-width: 800px) {
@@ -75,20 +121,92 @@ aside label span {
     flex-direction: column-reverse;
     overflow: hidden;
   }
+
   aside {
-    display: grid;
-    padding-bottom: 0;
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    padding: 0;
   }
-  aside canvas {
-    display: none;
-  }
-  body.picker-open aside {
+
+  .toolbar {
     flex: 1;
   }
-  body.picker-open aside canvas {
+
+  .toolbar .color-picker {
+    display: grid;
+  }
+
+  .toolbar .color-picker canvas {
+    display: none;
+  }
+
+  .toolbar .recent-color-tray {
+    display: none;
+    max-width: none;
+  }
+
+  .toolbar .recent-color-tray .recent-color {
+    height: 32px;
+    width: 32px;
+  }
+
+  body.picker-open .toolbar > * {
+    display: none;
+  }
+
+  body.picker-open .toolbar .recent-color-tray {
+    display: flex;
+  }
+
+  body.picker-open aside {
+    display: flex;
+    flex: 1;
+  }
+
+  body.picker-open aside .toolbar {
+    display: flex;
+    align-self: stretch;
+    flex: 1;
+  }
+
+  body.picker-open .toolbar .color-picker {
+    display: grid;
+    flex: 1;
+  }
+
+  body.picker-open .toolbar .color-picker canvas {
     display: block;
   }
+
   body.picker-open main {
+    display: none;
+  }
+
+  body.picker-open .close-picker-button {
+    display: inline-block;
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #111;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .toolbar .slider {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: smaller;
+    text-align: center;
+  }
+
+  .toolbar .slider input {
     display: none;
   }
 }
