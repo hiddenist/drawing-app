@@ -96,17 +96,6 @@ function makeToolbar<T extends string>(
   inputTray.classList.add("input-tray")
   toolbar.prepend(inputTray)
 
-  const clearButton = document.createElement("button")
-  clearButton.classList.add("clear-button")
-  clearButton.innerText = "Clear"
-  clearButton.addEventListener("click", () => {
-    if (!confirm("Are you sure you want to clear the canvas?")) {
-      return
-    }
-    options.onClear()
-  })
-  inputTray.prepend(clearButton)
-
   const toolSelect = document.createElement("select")
   toolSelect.classList.add("tool-select")
   const labelOption = document.createElement("option")
@@ -129,7 +118,18 @@ function makeToolbar<T extends string>(
   toolSelect.addEventListener("change", () => {
     options.onSetTool(toolSelect.value as T)
   })
-  inputTray.prepend(toolSelect)
+  inputTray.append(toolSelect)
+
+  const clearButton = document.createElement("button")
+  clearButton.classList.add("clear-button")
+  clearButton.innerText = "Clear"
+  clearButton.addEventListener("click", () => {
+    if (!confirm("Are you sure you want to clear the canvas?")) {
+      return
+    }
+    options.onClear()
+  })
+  inputTray.append(clearButton)
 
   const opacitySlider = makeSlider({
     className: "opacity-slider",
@@ -144,7 +144,7 @@ function makeToolbar<T extends string>(
     },
   })
 
-  toolbar.prepend(opacitySlider.element)
+  toolbar.append(opacitySlider.element)
 
   const weightSlider = makeSlider({
     className: "weight-slider",
@@ -158,7 +158,7 @@ function makeToolbar<T extends string>(
     },
   })
 
-  toolbar.prepend(weightSlider.element)
+  toolbar.append(weightSlider.element)
 
   return toolbar
 }

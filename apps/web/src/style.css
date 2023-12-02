@@ -64,7 +64,7 @@ aside canvas {
 
 .toolbar {
   display: grid;
-  gap: 1rem;
+  gap: 2rem;
   padding: 1rem;
   background-color: #111;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -85,7 +85,7 @@ aside canvas {
 
 .toolbar .input-tray {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
   font-size: smaller;
   text-align: center;
 }
