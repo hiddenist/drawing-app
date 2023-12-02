@@ -121,9 +121,16 @@ aside canvas {
     flex-direction: column-reverse;
     overflow: hidden;
   }
+
   aside {
-    display: grid;
-    padding-bottom: 0;
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .toolbar {
+    flex: 1;
   }
 
   .toolbar .color-picker {
