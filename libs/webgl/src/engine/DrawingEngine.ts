@@ -31,12 +31,16 @@ export interface DrawingEngineOptions {
   pixelDensity?: number
 }
 
+type DrawListenerCallback = (action: HistoryItem) => void
+
 export class DrawingEngine {
   protected state: DrawingState
   protected programs: ActiveProgramSwitcher<AvailablePrograms>
   protected drawingHistory: Array<HistoryItem>
   protected savedDrawingLayer: Layer
   protected activeDrawingLayer: Layer
+
+  private drawListeners: Array<DrawListenerCallback> = []
 
   constructor(
     savedDrawingContext: WebGLRenderingContext,
@@ -177,6 +181,21 @@ export class DrawingEngine {
       ...options,
     })
     this.getProgram("textureDrawing", layer.gl).drawTexture(layer)
+    this.callDrawListeners({ path: points, options })
+  }
+
+  public addDrawListener(cb: DrawListenerCallback) {
+    this.drawListeners.push(cb)
+    return this
+  }
+
+  public removeDrawListener(cb: DrawListenerCallback) {
+    this.drawListeners = this.drawListeners.filter((listener) => listener !== cb)
+    return this
+  }
+
+  protected callDrawListeners(historyItem: HistoryItem) {
+    this.drawListeners.forEach((listener) => listener(historyItem))
   }
 
   protected commitPath(path: ReadonlyArray<number>) {

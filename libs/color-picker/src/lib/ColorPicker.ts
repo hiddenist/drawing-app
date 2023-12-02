@@ -1,9 +1,10 @@
 import { Color, getEventPosition } from "@libs/shared"
-import { GradientColorProgram } from "./GradientColorProgram"
+import { ValueSaturationGradientColorProgram } from "./ValueSaturationGradientColorProgram"
 
 export class ColorPicker {
-  private readonly program: GradientColorProgram
+  private readonly program: ValueSaturationGradientColorProgram
   private readonly onSetColor: (color: Color) => void
+  private currentColor: Color
 
   constructor(
     private readonly root: HTMLElement,
@@ -13,11 +14,25 @@ export class ColorPicker {
     },
   ) {
     const { canvas, gl } = this.createCanvas()
+    this.currentColor = config.initialColor ?? Color.BLACK
 
     const container = document.createElement("div")
     container.classList.add("color-picker")
     container.appendChild(canvas)
     this.root.appendChild(container)
+
+    const hueSlider = document.createElement("input")
+    hueSlider.classList.add("hue-slider")
+    hueSlider.type = "range"
+    hueSlider.min = "0"
+    hueSlider.max = "360"
+    hueSlider.step = "1"
+    hueSlider.value = "360"
+    hueSlider.setAttribute("orient", "vertical")
+    hueSlider.addEventListener("input", () => {
+      this.setHue(360 - parseFloat(hueSlider.value))
+    })
+    container.prepend(hueSlider)
 
     const openPickerButton = document.createElement("button")
     openPickerButton.classList.add("open-picker-button")
@@ -37,9 +52,10 @@ export class ColorPicker {
     this.onSetColor = (color: Color) => {
       openPickerButton.style.backgroundColor = color.hex
       this.config.onChange(color)
+      this.currentColor = color
     }
 
-    this.program = new GradientColorProgram(gl)
+    this.program = new ValueSaturationGradientColorProgram(gl)
     this.program.draw()
 
     openPickerButton.addEventListener("click", () => {
@@ -86,8 +102,25 @@ export class ColorPicker {
     })
   }
 
+  public setHue(hue: number) {
+    this.program.draw(hue)
+  }
+
+  public getHue(): number {
+    return this.program.getHue()
+  }
+
+  public getSaturation(): number {
+    return this.currentColor.getHslaValues()[1]
+  }
+
   public setColor(color: Color) {
     this.onSetColor(color)
+    this.currentColor = color
+  }
+
+  public getColor(): Color {
+    return this.currentColor
   }
 
   private createCanvas() {
