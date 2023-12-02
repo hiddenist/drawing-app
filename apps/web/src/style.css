@@ -93,6 +93,7 @@ aside canvas {
 
   -webkit-appearance: none;
   appearance: none;
+  margin: 0;
 
   cursor: pointer;
 }
@@ -103,7 +104,7 @@ aside canvas {
 
 .hue-slider {
   width: 1rem;
-  height: 245px;
+  height: 256px;
   background: red;
   background: linear-gradient(
     to bottom,
@@ -152,7 +153,7 @@ aside canvas {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  max-width: 255px;
+  max-width: 292px;
 }
 
 .toolbar .recent-color-tray .recent-color {
