@@ -28,7 +28,7 @@ export class ColorPicker {
     closePickerButton.classList.add("close-picker-button")
     closePickerButton.innerText = "close"
 
-    container.appendChild(closePickerButton)
+    container.prepend(closePickerButton)
 
     if (config.initialColor) {
       openPickerButton.style.backgroundColor = config.initialColor.hex

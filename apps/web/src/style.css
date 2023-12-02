@@ -80,9 +80,7 @@ aside canvas {
 .toolbar .color-picker {
   display: grid;
   gap: 1rem;
-  justify-content: center;
-  align-items: center;
-  align-content: center;
+  justify-items: center;
 }
 
 .toolbar .input-tray {
@@ -103,12 +101,14 @@ aside canvas {
   text-align: center;
   width: 100%;
   flex-wrap: wrap;
-  justify-items: flex-start;
+  align-items: center;
+  justify-content: center;
+  max-width: 255px;
 }
 
 .toolbar .recent-color-tray .recent-color {
-  height: 20px;
-  width: 20px;
+  height: 21px;
+  width: 21px;
   border: 1px solid #222;
 }
 
@@ -136,6 +136,7 @@ aside canvas {
 
   .toolbar .recent-color-tray {
     display: none;
+    max-width: none;
   }
 
   .toolbar .recent-color-tray .recent-color {

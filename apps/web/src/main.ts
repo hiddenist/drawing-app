@@ -166,7 +166,7 @@ function makeToolbar<T extends string>(
 function recentColorTray({
   onColorSelect,
   maxSavedColors = 50,
-  maxDisplayedColors = 9,
+  maxDisplayedColors = 27,
 }: {
   onColorSelect: (color: Color) => void
   maxSavedColors?: number
