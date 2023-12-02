@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { WebDrawingEngine } from "@libs/webgl"
+import { WebDrawingEngine, Tools } from "@libs/webgl"
 import { ColorPicker } from "@libs/color-picker"
 import { Color } from "@libs/shared"
 
@@ -20,7 +20,8 @@ function main() {
   const engine = new WebDrawingEngine(canvasRoot, { width, height, pixelDensity: window.devicePixelRatio })
 
   const tools = [
-    { value: "draw", label: "Brush" },
+    { value: Tools.brush, label: "Brush" },
+    { value: Tools.pressureSensitiveBrush, label: "Pressure-Sensitive Brush" },
     // { value: "erase", label: "Eraser" },
   ] as const
 
@@ -42,10 +43,10 @@ function main() {
       engine.setColor(color)
     },
     onSetTool(tool) {
-      console.log(tool)
+      engine.setTool(tool)
     },
     tools: tools,
-    initialTool: tools[0].value,
+    initialTool: engine.getCurrentTool(),
     addDrawListener(cb) {
       engine.addDrawListener(cb)
     },
@@ -66,8 +67,9 @@ function makeToolbar<T extends string>(
     initialColor?: Color
     initialWeight?: number
     initialOpacity?: number
-    tools: ReadonlyArray<{ label: string; value: T }>
     initialTool?: T
+
+    tools: ReadonlyArray<{ label: string; value: T }>
 
     onClear: () => void
     onSetOpacity: (opacity: number) => void
@@ -159,7 +161,7 @@ function makeToolbar<T extends string>(
     label: "Line weight",
     initialValue: options.initialWeight ?? 5,
     min: 1,
-    max: 255,
+    max: 256,
     getDisplayValue: (value) => value.toString(),
     onChange(value) {
       options.onSetLineWeight(value)

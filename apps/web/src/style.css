@@ -22,6 +22,10 @@ main {
   padding: 1rem 0;
 }
 
+main canvas {
+  display: block;
+}
+
 main .drawing-canvas-container {
   position: relative;
   border: 1px solid rgb(25, 25, 28);
@@ -48,13 +52,13 @@ aside canvas {
   width: 256px;
 }
 
-.open-picker-button {
+.current-color-button {
   background: none;
   border: none;
   height: 32px;
   width: 32px;
   border-radius: 50%;
-  border: 1px solid #111;
+  border: 1px solid #555;
   text-indent: -9999px; /* Hides the text */
 }
 
@@ -82,52 +86,106 @@ aside canvas {
   gap: 1rem;
   justify-items: center;
   grid-template-areas:
-    "canvas hue-slider"
-    "button button";
+    ". close-button . ."
+    ". . . ."
+    "canvas canvas canvas hue-slider"
+    ". button . .";
+}
+
+.toolbar .color-picker canvas {
+  grid-area: canvas;
+}
+
+.toolbar .current-color-button {
+  grid-area: button;
+}
+.toolbar .color-picker .close-picker-button {
+  grid-area: close-button;
 }
 
 .toolbar .color-picker .hue-slider {
-  appearance: slider-vertical;
-  box-sizing: border-box;
   grid-area: hue-slider;
-
-  -webkit-appearance: none;
-  appearance: none;
-  margin: 0;
-
-  cursor: pointer;
+  position: relative;
+  width: 1rem;
+  height: 256px;
 }
 
-.hue-slider:focus {
+.hue-slider input {
+  -webkit-appearance: none;
+  appearance: none;
+
+  -webkit-transform: rotate(90deg);
+  transform: rotate(90deg);
+  position: absolute;
+  top: calc(128px - 0.5rem);
+  left: calc(0.5rem - 128px);
+  height: 1rem;
+  width: 256px;
+
+  box-sizing: border-box;
+
+  margin: 0;
+
+  user-select: none;
+  cursor: pointer;
+  background: red;
+  background: linear-gradient(
+    to right,
+    hsl(0, 100%, 50%) 0%,
+    hsl(30, 100%, 50%) 8.33%,
+    hsl(60, 100%, 50%) 16.67%,
+    hsl(90, 100%, 50%) 25%,
+    hsl(120, 100%, 50%) 33.33%,
+    hsl(150, 100%, 50%) 41.67%,
+    hsl(180, 100%, 50%) 50%,
+    hsl(210, 100%, 50%) 58.33%,
+    hsl(240, 100%, 50%) 66.67%,
+    hsl(270, 100%, 50%) 75%,
+    hsl(300, 100%, 50%) 83.33%,
+    hsl(330, 100%, 50%) 91.67%,
+    hsl(360, 100%, 50%) 100%
+  );
+  border-radius: 0.1rem;
+}
+
+.hue-slider input:focus {
   outline: none;
 }
 
-.hue-slider {
-  width: 1rem;
-  height: 256px;
-  background: red;
-  background: linear-gradient(
-    to bottom,
-    hsl(0, 100%, 50%) 0%,
-    hsl(36, 100%, 50%) 10%,
-    hsl(72, 100%, 50%) 20%,
-    hsl(108, 100%, 50%) 30%,
-    hsl(154, 100%, 50%) 40%,
-    hsl(180, 100%, 50%) 50%,
-    hsl(216, 100%, 50%) 60%,
-    hsl(252, 100%, 50%) 70%,
-    hsl(300, 100%, 50%) 80%,
-    hsl(324, 100%, 50%) 90%,
-    hsl(360, 100%, 50%) 100%
-  );
-  border-radius: 0.5rem;
-}
-
-.hue-slider::-webkit-slider-thumb,
-.hue-slider::-moz-range-thumb {
+.hue-slider input::-moz-range-thumb {
+  width: 5px;
+  height: 1rem;
+  box-sizing: content-box;
+  appearance: none;
   border: 2px solid #fff;
   background-color: transparent;
-  border-radius: 50%;
+  border-radius: 0;
+  box-shadow:
+    inset 0 0 2px rgba(0, 0, 0, 0.5),
+    0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.hue-slider input::-webkit-slider-thumb {
+  width: 5px;
+  height: 1rem;
+  box-sizing: content-box;
+  appearance: none;
+  border: 2px solid #fff;
+  background-color: transparent;
+  border-radius: 0;
+  box-shadow:
+    inset 0 0 2px rgba(0, 0, 0, 0.5),
+    0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.hue-slider input::-ms-thumb {
+  width: 5px;
+  height: 1rem;
+  box-sizing: content-box;
+  appearance: none;
+  border: 2px solid #fff;
+  background-color: transparent;
+  border-radius: 0;
   box-shadow:
     inset 0 0 2px rgba(0, 0, 0, 0.5),
     0 0 2px rgba(0, 0, 0, 0.5);
@@ -166,7 +224,7 @@ aside canvas {
   border: 1px solid #fff;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 850px) {
   body {
     flex-direction: column-reverse;
     overflow: hidden;
@@ -193,13 +251,17 @@ aside canvas {
     display: none;
   }
 
+  body:not(.picker-open) .toolbar .color-picker {
+    grid-template-areas: "button";
+  }
+
   .toolbar .recent-color-tray .recent-color {
     max-width: none;
     height: 32px;
     width: 32px;
   }
 
-  body.picker-open .toolbar > * {
+  body.picker-open .toolbar > *:not(.recent-color-tray) {
     display: none;
   }
 

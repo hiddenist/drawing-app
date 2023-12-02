@@ -24,7 +24,7 @@ export function makeSlider(options: {
       value = value ? 0 : parseInt(value)
     }
     if (isNaN(value)) {
-      return
+      value = 0
     }
     if (value < options.min) {
       value = options.min
@@ -85,9 +85,29 @@ export function makeSlider(options: {
     setValue(value)
   })
   labelTextEditable.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "ArrowUp") {
+      e.preventDefault()
+      const value = parseInt(labelTextEditable.innerText)
+      if (isNaN(value)) {
+        return
+      }
+      setValue(value + 1)
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault()
+      const value = parseInt(labelTextEditable.innerText)
+      if (isNaN(value)) {
+        return
+      }
+      setValue(value - 1)
+    } else if (e.key === "Enter") {
       e.preventDefault()
       labelTextEditable.blur()
+    } else if (e.key === "Escape") {
+      e.preventDefault()
+      labelTextEditable.innerText = input.value
+      labelTextEditable.blur()
+    } else if (e.key.length === 1 && isNaN(parseInt(e.key))) {
+      e.preventDefault()
     }
   })
   labelTextEditable.addEventListener("blur", () => {
