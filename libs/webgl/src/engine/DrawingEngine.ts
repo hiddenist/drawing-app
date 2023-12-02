@@ -202,11 +202,22 @@ export class DrawingEngine {
     if (path.length === 0) {
       return
     }
-    this.drawLine(this.savedDrawingLayer, path, DrawType.STATIC_DRAW)
+    const doDraw = () => {
+      this.drawLine(this.savedDrawingLayer, path, DrawType.STATIC_DRAW)
+      console.log(this.drawingHistory)
+    }
     this.drawingHistory.push({
       path,
       options: this.getLineOptions(),
     })
+    doDraw()
+
+    // the first draw seems to disappear without this. ‾\_(:/)_/‾
+    if (this.drawingHistory.length === 1) {
+      console.debug("redrawing first draw as a hacky bug fix")
+      requestAnimationFrame(doDraw)
+      return
+    }
   }
 
   private clearCurrentPath() {
