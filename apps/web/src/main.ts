@@ -45,6 +45,13 @@ function main() {
     onSetTool(tool) {
       engine.setTool(tool)
     },
+    onExport(name) {
+      const url = engine.getDataUri()
+      const link = document.createElement("a")
+      link.download = name
+      link.href = url
+      link.click()
+    },
     tools: tools,
     initialTool: engine.getCurrentTool(),
     addDrawListener(cb) {
@@ -76,6 +83,7 @@ function makeToolbar<T extends string>(
     onSetLineWeight: (weight: number) => void
     onSetColor: (color: Color) => void
     onSetTool: (tool: T) => void
+    onExport: (name: string) => void
 
     addDrawListener: (cb: () => void) => void
   },
@@ -129,6 +137,14 @@ function makeToolbar<T extends string>(
     options.onSetTool(toolSelect.value as T)
   })
   inputTray.append(toolSelect)
+
+  const exportButton = document.createElement("button")
+  exportButton.classList.add("export-button")
+  exportButton.innerText = "Export"
+  exportButton.addEventListener("click", () => {
+    options.onExport("drawing.png")
+  })
+  inputTray.append(exportButton)
 
   const clearButton = document.createElement("button")
   clearButton.classList.add("clear-button")

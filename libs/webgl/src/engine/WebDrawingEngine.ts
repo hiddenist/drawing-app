@@ -7,6 +7,7 @@ interface IWebDrawingEngine {
   container: Readonly<HTMLDivElement>
   setPixelDensity(pixelDensity: number): this
   resizeCanvas(width: number, height: number): this
+  getDataUri(): string
 }
 
 /*
@@ -51,7 +52,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
 
     const gl = canvas.getContext("webgl", {
       premultipliedAlpha: true,
-      preserveDrawingBuffer: false,
+      preserveDrawingBuffer: true,
     })
     if (!gl) {
       throw new Error("Could not get canvas context")
@@ -68,6 +69,11 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
    */
   get engine() {
     return this
+  }
+
+  public getDataUri() {
+    // note: This doesn't always work without the preserveDrawingBuffer option on the canvas context.
+    return this.canvas.toDataURL()
   }
 
   public setPixelDensity(pixelDensity: number) {
