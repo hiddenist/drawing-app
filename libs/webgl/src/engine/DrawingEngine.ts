@@ -76,10 +76,6 @@ export class DrawingEngine {
     }
 
     this.drawingHistory = []
-
-    if (gl.getContextAttributes()?.preserveDrawingBuffer) {
-      console.warn("drawing buffer preservation is enabled on canvas context, this may cause unexpected behavior")
-    }
   }
 
   protected get pixelDensity() {
