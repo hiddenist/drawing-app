@@ -1,9 +1,9 @@
-import { BaseProgram, BaseProgramContext, Vec2, Color } from "@libs/shared"
+import { BaseProgram, ProgramInfo, Vec2, Color } from "@libs/shared"
 
 export abstract class BaseGradientColorProgram<
   U extends string,
   A extends string,
-  ExtendableContext extends BaseProgramContext<U, A> = BaseProgramContext<U, A>,
+  ExtendableContext extends ProgramInfo<U, A> = ProgramInfo<U, A>,
 > extends BaseProgram<U, A> {
   constructor(
     context: ExtendableContext,

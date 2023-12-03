@@ -1,4 +1,4 @@
-export interface BaseProgramContext<UniformNames extends string, AttributeNames extends string> {
+export interface ProgramInfo<UniformNames extends string, AttributeNames extends string> {
   gl: WebGLRenderingContext
   program: WebGLProgram
   uniforms: Record<UniformNames, WebGLUniformLocation>
@@ -17,8 +17,7 @@ export type AttributeInfo = {
 }
 
 export interface IBaseProgram {
-  useContext(context: WebGLRenderingContext): this
-  gl: WebGLRenderingContext
+  readonly gl: WebGLRenderingContext
   useProgram(): this
   syncCanvasSize(): this
   getCanvasSize(): { width: number; height: number }
@@ -28,20 +27,13 @@ export interface IBaseProgram {
 export abstract class BaseProgram<
   UniformNames extends string,
   AttributeNames extends string,
-  ExtendableContext extends BaseProgramContext<UniformNames, AttributeNames> = BaseProgramContext<
-    UniformNames,
-    AttributeNames
-  >,
+  ExtendableProgramInfo extends ProgramInfo<UniformNames, AttributeNames> = ProgramInfo<UniformNames, AttributeNames>,
 > implements IBaseProgram
 {
-  private contexts: ExtendableContext[] = []
-
   constructor(
-    private _currentContext: ExtendableContext,
+    private readonly _programInfo: ExtendableProgramInfo,
     private _pixelDensity = 1,
-  ) {
-    this.currentContext = _currentContext
-  }
+  ) {}
 
   public get pixelDensity() {
     return this._pixelDensity
@@ -52,19 +44,14 @@ export abstract class BaseProgram<
     this.syncCanvasSize()
   }
 
-  public useContext(context: WebGLRenderingContext): this {
-    this.currentContext = this.findOrCreateContext(context)
-    return this
-  }
+  protected abstract createProgramInfo(context: WebGLRenderingContext, program: WebGLProgram): ExtendableProgramInfo
 
-  protected abstract createContext(context: WebGLRenderingContext, program: WebGLProgram): ExtendableContext
-
-  protected static makeBaseContextFromAttributes<UniformNames extends string, AttributeNames extends string>(
+  protected static getProgramInfo<UniformNames extends string, AttributeNames extends string>(
     gl: WebGLRenderingContext,
     program: WebGLProgram,
     uniformNames: Record<UniformNames, string>,
     attributeNames: Record<AttributeNames, string>,
-  ): BaseProgramContext<UniformNames, AttributeNames> {
+  ): ProgramInfo<UniformNames, AttributeNames> {
     const uniforms: Record<string, WebGLUniformLocation> = {}
     const attributes: Record<string, AttributeInfo> = {}
 
@@ -87,31 +74,23 @@ export abstract class BaseProgram<
   }
 
   public get gl(): WebGLRenderingContext {
-    if (!this.currentContext) {
-      throw new Error("No context is set")
-    }
-    return this.currentContext.gl
+    return this._programInfo.gl
   }
 
-  public set gl(gl: WebGLRenderingContext) {
-    this.useContext(gl)
-  }
-
-  public useProgram(context = this.currentContext): this {
-    context.gl.useProgram(context.program)
-    this.syncCanvasSize(context)
+  public useProgram(): this {
+    this.gl.useProgram(this.program)
     return this
   }
 
-  public syncCanvasSize(context = this.currentContext): typeof this {
+  public syncCanvasSize(): typeof this {
     const { width, height } = this.getCanvasSize()
-    context.gl.viewport(0, 0, width, height)
+    this.gl.viewport(0, 0, width, height)
     return this
   }
 
   // todo: refactor out the canvas size logic from the program and base program so that it doesn't rely on HTMLElements
-  public getCanvasSize(context = this.currentContext): { width: number; height: number } {
-    const canvas = context.gl.canvas
+  public getCanvasSize(): { width: number; height: number } {
+    const canvas = this.gl.canvas
     if (!(canvas instanceof HTMLElement)) {
       throw new Error("Could not get canvas size, canvas is not an HTMLCanvasElement")
     }
@@ -120,8 +99,8 @@ export abstract class BaseProgram<
     return { width: boundingRect.width * this.pixelDensity, height: boundingRect.height * this.pixelDensity }
   }
 
-  public checkError(context = this.currentContext): typeof this {
-    const error = context.gl.getError()
+  public checkError(): typeof this {
+    const error = this.gl.getError()
     if (error !== WebGLRenderingContext.NO_ERROR) {
       debugger
       throw new Error("WebGL error: " + error)
@@ -129,60 +108,33 @@ export abstract class BaseProgram<
     return this
   }
 
-  protected get currentContext(): ExtendableContext {
-    if (!this._currentContext) {
-      throw new Error("No context is set")
-    }
-    return this._currentContext
-  }
-
-  private set currentContext(context: ExtendableContext) {
-    this._currentContext = context
-    context.gl.useProgram(context.program)
-  }
-
   protected get program(): WebGLProgram {
-    if (!this.currentContext) {
+    if (!this._programInfo) {
       throw new Error("No context is set")
     }
-    return this.currentContext.program
-  }
-
-  private findContext(context: WebGLRenderingContext) {
-    return this.contexts.find(({ gl: ctx }) => ctx === context)
-  }
-
-  private findOrCreateContext(context: WebGLRenderingContext) {
-    const existingContext = this.findContext(context)
-    if (existingContext) {
-      return existingContext
-    }
-    const program = this.createProgram(context)
-    const newContext = this.createContext(context, program)
-    this.contexts.push(newContext)
-    return newContext
+    return this._programInfo.program
   }
 
   protected abstract createProgram(context: WebGLRenderingContext): WebGLProgram
 
-  protected getUniformLocation(name: UniformNames, context = this.currentContext): WebGLUniformLocation {
-    return context.uniforms[name]
+  protected getUniformLocation(name: UniformNames): WebGLUniformLocation {
+    return this._programInfo.uniforms[name]
   }
 
-  protected getAttribute(attrName: AttributeNames, context = this.currentContext): AttributeInfo {
-    const attr = context.attributes[attrName]
+  protected getAttribute(attrName: AttributeNames): AttributeInfo {
+    const attr = this._programInfo.attributes[attrName]
     if (!attr) {
       throw new Error(`Attribute '${attrName.toString()}' does not exist`)
     }
     return attr
   }
 
-  protected createBuffer(target = this.gl.ARRAY_BUFFER, context = this.currentContext): WebGLBuffer {
-    const buffer = context.gl.createBuffer()
+  protected createBuffer(target = this.gl.ARRAY_BUFFER): WebGLBuffer {
+    const buffer = this.gl.createBuffer()
     if (!buffer) {
       throw new Error("Failed to create buffer")
     }
-    context.gl.bindBuffer(target, buffer)
+    this.gl.bindBuffer(target, buffer)
     return buffer
   }
 
@@ -208,7 +160,6 @@ export abstract class BaseProgram<
       isNormalized = false,
       stride = 0,
       offset = 0,
-      context = this.currentContext,
     }: {
       usage: number
       size: number
@@ -216,17 +167,17 @@ export abstract class BaseProgram<
       isNormalized?: boolean
       stride?: number
       offset?: number
-      context?: ExtendableContext
+      context?: ExtendableProgramInfo
     },
   ): void {
-    const attr = this.getAttribute(attrName, context)
+    const attr = this.getAttribute(attrName)
     if (!attr.buffer) {
-      attr.buffer = this.createBuffer(WebGLRenderingContext.ARRAY_BUFFER, context)
+      attr.buffer = this.createBuffer(WebGLRenderingContext.ARRAY_BUFFER)
     } else {
-      context.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, attr.buffer)
+      this.gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, attr.buffer)
     }
-    context.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, data, usage)
-    context.gl.enableVertexAttribArray(attr.location)
-    context.gl.vertexAttribPointer(attr.location, size, type, isNormalized, stride, offset)
+    this.gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, data, usage)
+    this.gl.enableVertexAttribArray(attr.location)
+    this.gl.vertexAttribPointer(attr.location, size, type, isNormalized, stride, offset)
   }
 }

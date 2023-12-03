@@ -6,31 +6,21 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     super(gl, pixelDensity)
   }
 
-  protected useLayer(layer: Layer) {
-    this.gl = layer.gl
-    return layer
-  }
-
   prepareTextureForDrawing(layer: Layer) {
-    const { gl, frameBuffer, texture } = this.useLayer(layer)
+    const { gl } = this
+    const { texture, frameBuffer } = layer
+    this.useProgram()
+
     const { width, height } = this.getCanvasSize()
+
     gl.viewport(0, 0, width, height)
 
-    // Enable blending
     gl.enable(gl.BLEND)
-
-    // Set the blend function
-    gl.blendFunc(WebGLRenderingContext.ONE, WebGLRenderingContext.ZERO)
+    gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer)
-    this.syncCanvasSize()
 
     gl.bindTexture(gl.TEXTURE_2D, texture)
-
-    // Set the texture parameters
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
     // Allocate memory for the texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
@@ -42,16 +32,30 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
       console.error("Error setting up framebuffer")
     }
+
+    if (layer.settings.clearBeforeDrawing) {
+      gl.clearColor(0, 0, 0, 0)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+    }
   }
 
-  drawTexture(layer: Layer) {
-    const { gl, texture } = this.useLayer(layer)
-
+  drawTextures(foreground: Layer, background: Layer) {
+    const { gl } = this
+    this.useProgram()
     // Unbind the framebuffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, texture)
 
-    layer.applyBlendSettings()
+    gl.uniform1i(this.getUniformLocation("background"), 1)
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, background.texture)
+
+    gl.uniform1i(this.getUniformLocation("foreground"), 0)
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, foreground.texture)
+
+    gl.enable(gl.BLEND)
+    gl.blendEquation(gl.FUNC_ADD)
+    gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
     this.bufferAttribute(
       "position",

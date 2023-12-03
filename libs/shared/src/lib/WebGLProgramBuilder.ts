@@ -92,6 +92,7 @@ export class WebGLProgramBuilder {
     if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
       throw new Error("Failed to link program: " + this.gl.getProgramInfoLog(program))
     }
+    this.gl.useProgram(program)
     return program
   }
 

@@ -25,8 +25,8 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     options: DrawingEngineOptions,
   ) {
     const { width, height } = options
-    const { container, canvas, context, activeDrawingContext } = WebDrawingEngine.createElements(options)
-    super(context, activeDrawingContext, options)
+    const { container, canvas, gl } = WebDrawingEngine.createElements(options)
+    super(gl, options)
 
     this.container = container
     this.canvas = canvas
@@ -50,51 +50,18 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     canvas.height = height * pixelDensity
     container.appendChild(canvas)
 
-    const webGlOptions = {
+    const gl = canvas.getContext("webgl", {
       premultipliedAlpha: false,
-    }
-
-    const context = canvas.getContext("webgl", { ...webGlOptions, preserveDrawingBuffer: true })
-    if (!context) {
+      preserveDrawingBuffer: true,
+    })
+    if (!gl) {
       throw new Error("Could not get canvas context")
     }
 
-    const activeDrawingContext = WebDrawingEngine.cloneCanvasWithNewContext(canvas, {
-      ...webGlOptions,
-      preserveDrawingBuffer: false,
-      width,
-      height,
-    })
+    gl.clearColor(0, 0, 0, 0)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-    return { container, canvas, context, activeDrawingContext }
-  }
-
-  protected static cloneCanvasWithNewContext(
-    baseCanvas: HTMLCanvasElement,
-    {
-      width = baseCanvas.width,
-      height = baseCanvas.height,
-      ...options
-    }: WebGLContextAttributes & { width?: number; height?: number } = {},
-  ) {
-    if (!(baseCanvas instanceof HTMLCanvasElement)) {
-      throw new Error("canvas needs to be an active HTMLCanvasElement")
-    }
-    const canvas = document.createElement("canvas")
-    baseCanvas.parentElement?.appendChild(canvas)
-    canvas.width = baseCanvas.width
-    canvas.height = baseCanvas.height
-    canvas.style.width = `${width}px`
-    canvas.style.height = `${height}px`
-    // todo: add a stylesheet for the engine so we dont have to do these inline
-    canvas.style.position = "absolute"
-    canvas.style.top = "0"
-    canvas.style.left = "0"
-    const context = canvas.getContext("webgl", options)
-    if (!context) {
-      throw new Error("Unable to get WebGL context")
-    }
-    return context
+    return { container, canvas, gl }
   }
 
   /**
