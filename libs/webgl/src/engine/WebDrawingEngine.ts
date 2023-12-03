@@ -1,5 +1,5 @@
 import { Color, getEventPosition } from "@libs/shared"
-import { DrawingEngine, DrawingEngineOptions } from "./DrawingEngine"
+import { DrawingEngine, DrawingEngineOptions, Tools } from "./DrawingEngine"
 import { Vec2 } from "@libs/shared"
 
 interface IWebDrawingEngine {
@@ -37,7 +37,11 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
 
     this.setColor(Color.WHITE)
 
-    this.addEventListeners()
+    this.bindBrowserEvents()
+
+    this.addListener("changeTool", ({ tool }) => {
+      this.root.dataset.tool = tool
+    })
   }
 
   private static createElements({ width, height, pixelDensity = 1 }: DrawingEngineOptions) {
@@ -90,15 +94,17 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     return this
   }
 
-  private addEventListeners() {
-    this.addListener("pointerdown", ({ position, event }) => {
+  private bindBrowserEvents() {
+    this.listenOnPositionEvent("pointerdown", ({ position, event }) => {
       if (event.isPrimary === false) {
         return
       }
-      this.setPressed(true, position, [event.pressure])
-      this.canvas.style.setProperty("cursor", "none")
+      const handle = this.handlePointerDown(position, [event.pressure])
+      if (handle?.hideCursor) {
+        this.canvas.style.setProperty("cursor", "none")
+      }
     })
-    this.addListener("pointermove", ({ position, event }) => {
+    this.listenOnPositionEvent("pointermove", ({ position, event }) => {
       if (event.isPrimary === false) {
         return
       }
@@ -110,18 +116,33 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
       } catch (error) {
         console.warn("Could not get coalesced events", error)
       }
-      this.addPositions(positions, pressure)
+      this.handlePointerMove(positions, pressure)
     })
-    this.addListener("pointerup", ({ position, event }) => {
+    this.listenOnPositionEvent("pointerup", ({ position, event }) => {
       if (event.isPrimary === false) {
         return
       }
-      this.setPressed(false, position, [event.pressure])
+      this.handlePointerUp(position, [event.pressure])
       this.canvas.style.removeProperty("cursor")
     })
 
-    this.addListener("touchmove", () => {
+    this.listenOnPositionEvent("touchmove", () => {
       // noop, this just disables the default behavior of scrolling when touching the canvas
+    })
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Control" && !this.state.isPressed) {
+        this.setTool(Tools.colorPicker)
+        return
+      }
+    })
+
+    window.addEventListener("keyup", (event) => {
+      if (event.key === "Escape") {
+        this.handleCancel()
+      } else if (event.key === "Control" && this.state.tool === Tools.colorPicker) {
+        this.handleCancel()
+      }
     })
   }
 
@@ -138,7 +159,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
   //   }
   // }
 
-  private addListener<K extends keyof HTMLElementEventMap>(
+  private listenOnPositionEvent<K extends keyof HTMLElementEventMap>(
     eventName: K,
     handler?: (event: DrawingEvent<HTMLElementEventMap[K]>) => void,
     element: HTMLElement = this.root,

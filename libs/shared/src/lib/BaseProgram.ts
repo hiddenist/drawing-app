@@ -1,3 +1,5 @@
+import { Color, Vec2 } from "../exports"
+
 export interface ProgramInfo<UniformNames extends string, AttributeNames extends string> {
   gl: WebGLRenderingContext
   program: WebGLProgram
@@ -71,6 +73,25 @@ export abstract class BaseProgram<
       uniforms: uniforms as Record<UniformNames, WebGLUniformLocation>,
       attributes: attributes as Record<AttributeNames, AttributeInfo>,
     }
+  }
+
+  static getColorAtPosition(gl: WebGLRenderingContext, [x, y]: Readonly<Vec2>): Color | null {
+    const pixelData = new Uint8Array(4)
+
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1)
+    gl.readPixels(x, gl.canvas.height - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData)
+
+    if (pixelData[3] <= 0) {
+      return null
+    }
+
+    // adjust for premultiplied alpha
+    if (pixelData[3] < 255) {
+      pixelData[0] = Math.round((pixelData[0] * 255) / pixelData[3])
+      pixelData[1] = Math.round((pixelData[1] * 255) / pixelData[3])
+      pixelData[2] = Math.round((pixelData[2] * 255) / pixelData[3])
+    }
+    return new Color(pixelData[0], pixelData[1], pixelData[2])
   }
 
   public get gl(): WebGLRenderingContext {

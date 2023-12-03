@@ -116,7 +116,7 @@ export class Color {
   }
 
   get hsl(): string {
-    const [h, s, l] = this.getHslaValues()
+    const [h, s, l] = this.getHslValues()
     return `hsl(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%)`
   }
 
@@ -125,7 +125,7 @@ export class Color {
   }
 
   public getHsla(alphaPercent = 100): string {
-    const [h, s, l] = this.getHslaValues()
+    const [h, s, l] = this.getHslValues()
     return `hsla(${Math.round(h)}, ${Math.round(s)}%, ${Math.round(l)}%, ${alphaPercent / 100})`
   }
 
@@ -138,7 +138,7 @@ export class Color {
    * @returns An array of HSLA values.
    * @see https://en.wikipedia.org/wiki/HSL_and_HSV
    */
-  public getHslaValues(): HslArray {
+  public getHslValues(): HslArray {
     const redPercent = this.r / 255
     const greenPercent = this.g / 255
     const bluePercent = this.b / 255
@@ -180,12 +180,23 @@ export class Color {
     return true
   }
 
+  /**
+   * Returns a new color with the given hue.
+   * @param hue
+   * @returns
+   */
+  public setHue(hue: number): Color {
+    const [_, s, l] = this.getHslValues()
+    const newRgb = Color.fromHslValues(hue, s, l)
+    return new Color(...newRgb)
+  }
+
   protected static fromString(color: string): RbgArray {
     if (color.startsWith("#")) return Color.fromHex(color)
     if (color.startsWith("rgb(")) return Color.fromRgb(color)
     if (color.startsWith("rgba(")) return Color.fromRgba(color)
-    if (color.startsWith("hsl(")) return Color.fromHsl(color)
-    if (color.startsWith("hsla(")) return Color.fromHsla(color)
+    if (color.startsWith("hsl(")) return Color.fromHslString(color)
+    if (color.startsWith("hsla(")) return Color.fromHslaString(color)
     throw new Error("Invalid color string")
   }
 
@@ -219,7 +230,7 @@ export class Color {
     return [r, g, b]
   }
 
-  protected static fromHsl(hsl: string): RbgArray {
+  protected static fromHslString(hsl: string): RbgArray {
     const [h, s, l] = hsl
       .slice(4, -1)
       .split(",")
@@ -227,7 +238,7 @@ export class Color {
     return Color.fromHslValues(h, s, l)
   }
 
-  protected static fromHsla(hsla: string): RbgArray {
+  protected static fromHslaString(hsla: string): RbgArray {
     const sliced = hsla
       .slice(5, -1)
       .split(",")
@@ -237,7 +248,7 @@ export class Color {
   }
 
   protected static fromHslValues(h: number, s: number, l: number): RbgArray {
-    const hue = h / 360
+    const hue = (h % 360) / 360
     const saturation = s / 100
     const lightness = l / 100
 

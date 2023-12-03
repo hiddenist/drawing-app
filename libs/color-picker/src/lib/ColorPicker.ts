@@ -4,6 +4,7 @@ import { ValueSaturationGradientColorProgram } from "./ValueSaturationGradientCo
 export class ColorPicker {
   private readonly program: ValueSaturationGradientColorProgram
   private readonly onSetColor: (color: Color) => void
+  private readonly onPreviewColor: (color: Color | null) => void
   private currentColor: Color
 
   constructor(
@@ -50,10 +51,14 @@ export class ColorPicker {
       openPickerButton.style.backgroundColor = config.initialColor.hex
     }
 
-    this.onSetColor = (color: Color) => {
+    this.onSetColor = (color) => {
       openPickerButton.style.backgroundColor = color.hex
       this.config.onChange(color)
       this.currentColor = color
+    }
+
+    this.onPreviewColor = (color) => {
+      openPickerButton.style.backgroundColor = (color ?? this.currentColor).hex
     }
 
     this.program = new ValueSaturationGradientColorProgram(gl)
@@ -105,6 +110,7 @@ export class ColorPicker {
 
   public setHue(hue: number) {
     this.program.draw(hue)
+    this.onSetColor(this.currentColor.setHue(hue))
   }
 
   public getHue(): number {
@@ -112,12 +118,16 @@ export class ColorPicker {
   }
 
   public getSaturation(): number {
-    return this.currentColor.getHslaValues()[1]
+    return this.currentColor.getHslValues()[1]
   }
 
   public setColor(color: Color) {
     this.onSetColor(color)
     this.currentColor = color
+  }
+
+  public setColorPreview(color: Color | null) {
+    this.onPreviewColor(color)
   }
 
   public getColor(): Color {

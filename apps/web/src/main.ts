@@ -17,11 +17,16 @@ function main() {
   }
   const width = Math.min(window.innerWidth, 500)
   const height = Math.min(window.innerHeight, 500)
-  const engine = new WebDrawingEngine(canvasRoot, { width, height, pixelDensity: window.devicePixelRatio })
+  const engine = new WebDrawingEngine(canvasRoot, {
+    width,
+    height,
+    pixelDensity: window.devicePixelRatio,
+  })
 
   const tools = [
     { value: Tools.brush, label: "Brush" },
     { value: Tools.pressureSensitiveBrush, label: "Pressure-Sensitive Brush" },
+    { value: Tools.colorPicker, label: "Color Picker" },
     // { value: "erase", label: "Eraser" },
   ] as const
 
@@ -54,9 +59,8 @@ function main() {
     },
     tools: tools,
     initialTool: engine.getCurrentTool(),
-    addDrawListener(cb) {
-      engine.addDrawListener(cb)
-    },
+
+    addListener: engine.addListener.bind(engine),
   })
 
   if (import.meta.env.DEV && window.location && window.location.hostname === "localhost") {
@@ -85,7 +89,7 @@ function makeToolbar<T extends string>(
     onSetTool: (tool: T) => void
     onExport: (name: string) => void
 
-    addDrawListener: (cb: () => void) => void
+    addListener: WebDrawingEngine["addListener"]
   },
 ) {
   const toolbar = document.createElement("div")
@@ -104,8 +108,14 @@ function makeToolbar<T extends string>(
     },
   })
 
-  options.addDrawListener(() => {
+  options.addListener("draw", () => {
     recentColors.setSelectedColor(picker.getColor())
+  })
+  options.addListener("pickColor", ({ color }) => {
+    picker.setColor(color)
+  })
+  options.addListener("previewColor", ({ color }) => {
+    picker.setColorPreview(color)
   })
 
   toolbar.append(recentColors.tray)
@@ -115,6 +125,10 @@ function makeToolbar<T extends string>(
   toolbar.prepend(inputTray)
 
   const toolSelect = document.createElement("select")
+
+  options.addListener("changeTool", ({ tool }) => {
+    toolSelect.value = tool
+  })
   toolSelect.classList.add("tool-select")
   const labelOption = document.createElement("option")
   labelOption.value = ""
