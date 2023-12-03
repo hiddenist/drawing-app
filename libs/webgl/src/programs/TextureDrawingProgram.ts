@@ -45,9 +45,9 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     // Unbind the framebuffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
 
-    gl.uniform1i(this.getUniformLocation("background"), 1)
-    gl.activeTexture(gl.TEXTURE1)
-    gl.bindTexture(gl.TEXTURE_2D, background.texture)
+    // gl.uniform1i(this.getUniformLocation("background"), 1)
+    // gl.activeTexture(gl.TEXTURE1)
+    // gl.bindTexture(gl.TEXTURE_2D, background.texture)
 
     gl.uniform1i(this.getUniformLocation("foreground"), 0)
     gl.activeTexture(gl.TEXTURE0)
