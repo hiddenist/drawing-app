@@ -4,19 +4,27 @@ import { SimpleTextureProgram } from "./abstract/SimpleTextureProgram"
 export class TextureDrawingProgram extends SimpleTextureProgram {
   constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
+    console.log("TextureDrawingProgram constructor")
   }
 
-  prepareTextureForDrawing(layer: Layer) {
+  public createTextureImage(layer: Layer, drawImage: () => void) {
     const { gl } = this
-    const { texture, frameBuffer } = layer
+    this._createTextureImage(layer.texture, layer.frameBuffer, () => {
+      if (layer.settings.clearBeforeDrawing) {
+        gl.clearColor(0, 0, 0, 0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+      }
+      drawImage()
+    })
+  }
+
+  protected _createTextureImage(texture: WebGLTexture, frameBuffer: WebGLFramebuffer, drawImage: () => void) {
+    const { gl } = this
     this.useProgram()
 
     const { width, height } = this.getCanvasSize()
 
     gl.viewport(0, 0, width, height)
-
-    gl.enable(gl.BLEND)
-    gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer)
 
@@ -33,29 +41,36 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
       console.error("Error setting up framebuffer")
     }
 
-    if (layer.settings.clearBeforeDrawing) {
-      gl.clearColor(0, 0, 0, 0)
-      gl.clear(gl.COLOR_BUFFER_BIT)
-    }
-  }
+    drawImage()
 
-  drawTextures(foreground: Layer, _background: Layer) {
-    const { gl } = this
-    this.useProgram()
     // Unbind the framebuffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+  }
 
-    // gl.uniform1i(this.getUniformLocation("background"), 1)
-    // gl.activeTexture(gl.TEXTURE1)
-    // gl.bindTexture(gl.TEXTURE_2D, background.texture)
+  public mergeDown(foreground: Layer, background: Layer) {
+    const { gl } = this
+    const copy = new Layer(gl)
+    this.createTextureImage(copy, () => {
+      this.drawTextures(foreground.texture, background.texture)
+    })
+    return copy
+  }
+
+  public draw(foreground: Layer, background: Layer) {
+    this.drawTextures(foreground.texture, background.texture)
+  }
+
+  protected drawTextures(front: WebGLTexture, back: WebGLTexture) {
+    const { gl } = this
+    this.useProgram()
+
+    gl.uniform1i(this.getUniformLocation("background"), 1)
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, back)
 
     gl.uniform1i(this.getUniformLocation("foreground"), 0)
     gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, foreground.texture)
-
-    gl.enable(gl.BLEND)
-    gl.blendEquation(gl.FUNC_ADD)
-    gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    gl.bindTexture(gl.TEXTURE_2D, front)
 
     this.bufferAttribute(
       "position",

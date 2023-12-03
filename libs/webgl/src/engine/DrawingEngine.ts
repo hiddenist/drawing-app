@@ -77,8 +77,8 @@ export class DrawingEngine {
 
     this.drawingHistory = []
 
-    if (!gl.getContextAttributes()?.preserveDrawingBuffer) {
-      console.warn("drawing buffer preservation is disabled on canvas context")
+    if (gl.getContextAttributes()?.preserveDrawingBuffer) {
+      console.warn("drawing buffer preservation is enabled on canvas context, this may cause unexpected behavior")
     }
   }
 
@@ -128,8 +128,9 @@ export class DrawingEngine {
 
   public clearCanvas() {
     this.savedDrawingLayer.clear()
+    this.activePathLayer.clear()
     this.clearCurrent()
-    this.programs.textureDrawing.drawTextures(this.activePathLayer, this.savedDrawingLayer)
+    this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
   }
 
   protected clearCurrent() {
@@ -152,7 +153,6 @@ export class DrawingEngine {
     if (pressed) {
       this.state.isDrawing = true
       this.addPosition(position, pressure)
-      this.updateActivePath()
     } else {
       this.commitPath()
     }
@@ -186,19 +186,20 @@ export class DrawingEngine {
     }
   }
 
-  protected drawUpdatedTextures() {
-    this.programs.textureDrawing.drawTextures(this.activePathLayer, this.savedDrawingLayer)
+  public drawLine(layer: Layer, path: LineInfo, drawType?: DrawLineOptions["drawType"]) {
+    const options = this.getLineOptions()
+    this.programs.textureDrawing.createTextureImage(layer, () => {
+      this.programs.lineDrawing.draw(path, {
+        drawType,
+        ...options,
+      })
+    })
+    this.render()
+    this.callDrawListeners({ path, options, tool: this.state.tool })
   }
 
-  public drawLine(layer: Layer, path: LineInfo, drawType?: DrawLineOptions["drawType"]) {
-    this.programs.textureDrawing.prepareTextureForDrawing(layer)
-    const options = this.getLineOptions()
-    this.programs.lineDrawing.draw(path, {
-      drawType,
-      ...options,
-    })
-    this.programs.textureDrawing.drawTextures(this.activePathLayer, this.savedDrawingLayer)
-    this.callDrawListeners({ path, options, tool: this.state.tool })
+  protected render() {
+    this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
   }
 
   public addDrawListener(cb: DrawListenerCallback) {
@@ -221,8 +222,12 @@ export class DrawingEngine {
     if (path.points.length === 0) {
       return
     }
+
+    const copy = this.programs.textureDrawing.mergeDown(this.activePathLayer, this.savedDrawingLayer)
+    this.savedDrawingLayer.clear()
     this.activePathLayer.clear()
-    this.drawLine(this.savedDrawingLayer, path, DrawType.STATIC_DRAW)
+    this.savedDrawingLayer = copy
+    this.render()
     this.drawingHistory.push({
       path,
       options: this.getLineOptions(),

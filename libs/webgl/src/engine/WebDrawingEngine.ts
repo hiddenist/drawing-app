@@ -34,7 +34,6 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     this.resizeCanvas(width, height)
     root.appendChild(container)
 
-    this.clearCanvas()
     this.setColor(Color.WHITE)
 
     this.addEventListeners()
@@ -51,8 +50,8 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     container.appendChild(canvas)
 
     const gl = canvas.getContext("webgl", {
-      premultipliedAlpha: false,
-      preserveDrawingBuffer: true,
+      premultipliedAlpha: true,
+      preserveDrawingBuffer: false,
     })
     if (!gl) {
       throw new Error("Could not get canvas context")
