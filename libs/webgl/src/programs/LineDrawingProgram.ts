@@ -19,37 +19,37 @@ export class LineDrawingProgram extends SimpleShaderProgram {
     return this
   }
 
-  protected setColor(color: Color): typeof this {
-    this.gl.uniform4fv(this.getUniformLocation("color"), color.vec4)
-    return this
-  }
-
   public draw(
     { points, pressure }: Readonly<LineInfo>,
-    { drawType = this.gl.STREAM_DRAW, color = Color.BLACK, thickness = 5.0 }: DrawLineOptions = {},
+    { drawType = this.gl.STREAM_DRAW, color = Color.BLACK, diameter = 5.0, opacity = 255.0 }: DrawLineOptions = {},
     context = this.currentContext,
   ) {
     this.setColor(color)
+    this.setOpacity(opacity)
 
     const doublePoints = []
 
     if (pressure && pressure.length !== points.length / 2) {
-      console.warn("Pressure array should be the same length as the points array")
+      console.warn("Pressure array should be the same length as the points array", {
+        pressureValues: pressure.length,
+        points: points.length / 2,
+      })
     }
 
     const hasPressureData = (pressure?.filter((p) => p > 0).length ?? 0) > 1
+    const minDiameter = 1.0
 
     for (let i = 0; i < points.length - 2; i += 2) {
       const pressureValue = pressure && hasPressureData ? pressure[i / 2] : 1.0
-      const adjustedThickness = Math.max(thickness * pressureValue, 1) * this.pixelDensity
+      const radius = (Math.max(diameter * pressureValue, minDiameter) * this.pixelDensity) / 2
       const x1 = points[i]
       const y1 = points[i + 1]
       const x2 = points[i + 2]
       const y2 = points[i + 3]
 
       const angle = Math.atan2(y2 - y1, x2 - x1)
-      const offsetX = (Math.sin(angle) * adjustedThickness) / 2
-      const offsetY = (Math.cos(angle) * adjustedThickness) / 2
+      const offsetX = Math.sin(angle) * radius
+      const offsetY = Math.cos(angle) * radius
 
       doublePoints.push(x1 - offsetX, y1 + offsetY)
       doublePoints.push(x1 + offsetX, y1 - offsetY)
@@ -69,5 +69,13 @@ export interface DrawLineOptions {
    */
   color?: Color
 
-  thickness?: number
+  /**
+   * The diameter of the line. Defaults to 5.0.
+   */
+  diameter?: number
+
+  /**
+   * The opacity of the line. Defaults to 255.0.
+   */
+  opacity?: number
 }
