@@ -39,7 +39,7 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     }
   }
 
-  drawTextures(foreground: Layer, background: Layer) {
+  drawTextures(foreground: Layer, _background: Layer) {
     const { gl } = this
     this.useProgram()
     // Unbind the framebuffer
