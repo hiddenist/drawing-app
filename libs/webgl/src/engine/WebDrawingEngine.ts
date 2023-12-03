@@ -132,7 +132,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
 
     window.addEventListener("keydown", (event) => {
       if (event.key === "Control" && !this.state.isPressed) {
-        this.setTool(Tools.colorPicker)
+        this.setTool(Tools.eyedropper)
         return
       }
     })
@@ -140,7 +140,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     window.addEventListener("keyup", (event) => {
       if (event.key === "Escape") {
         this.handleCancel()
-      } else if (event.key === "Control" && this.state.tool === Tools.colorPicker) {
+      } else if (event.key === "Control" && this.state.tool === Tools.eyedropper) {
         this.handleCancel()
       }
     })

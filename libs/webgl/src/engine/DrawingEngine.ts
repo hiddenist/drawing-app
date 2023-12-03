@@ -55,7 +55,7 @@ export const Tools = {
   brush: "brush",
   // todo: eraser: "eraser",
   pressureSensitiveBrush: "pressureSensitiveBrush",
-  colorPicker: "colorPicker",
+  eyedropper: "eyedropper",
 } as const
 
 const defaultTool = Tools.pressureSensitiveBrush
@@ -121,7 +121,7 @@ export class DrawingEngine {
     this.tools = {
       [Tools.brush]: brushBindings,
       [Tools.pressureSensitiveBrush]: brushBindings,
-      [Tools.colorPicker]: {
+      [Tools.eyedropper]: {
         onCancel: () => {
           this.setTool(this.state.prevTool ?? defaultTool)
           this.callListeners("previewColor", { color: null })
@@ -139,7 +139,7 @@ export class DrawingEngine {
         onRelease: (position) => {
           if (this.pickColor(position)) {
             const prevTool = this.state.prevTool ?? defaultTool
-            this.setTool(prevTool === Tools.colorPicker ? defaultTool : prevTool)
+            this.setTool(prevTool === Tools.eyedropper ? defaultTool : prevTool)
           } else {
             this.handleCancel()
           }

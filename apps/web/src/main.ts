@@ -26,7 +26,7 @@ function main() {
   const tools = [
     { value: Tools.brush, label: "Brush" },
     { value: Tools.pressureSensitiveBrush, label: "Pressure-Sensitive Brush" },
-    { value: Tools.colorPicker, label: "Color Picker" },
+    { value: Tools.eyedropper, label: "Grab Color" },
     // { value: "erase", label: "Eraser" },
   ] as const
 
