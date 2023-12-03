@@ -41,6 +41,7 @@ export abstract class BaseGradientColorProgram<
   protected draw() {
     const { gl } = this
     this.useProgram()
+    this.syncCanvasSize()
 
     this.setUniforms()
 
