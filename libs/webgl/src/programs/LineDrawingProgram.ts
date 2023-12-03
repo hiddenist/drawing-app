@@ -22,8 +22,9 @@ export class LineDrawingProgram extends SimpleShaderProgram {
   public draw(
     { points, pressure }: Readonly<LineInfo>,
     { drawType = this.gl.STREAM_DRAW, color = Color.BLACK, diameter = 5.0, opacity = 255.0 }: DrawLineOptions = {},
-    context = this.currentContext,
   ) {
+    this.useProgram()
+    this.syncCanvasSize()
     this.setColor(color)
     this.setOpacity(opacity)
 
@@ -55,7 +56,7 @@ export class LineDrawingProgram extends SimpleShaderProgram {
       doublePoints.push(x1 + offsetX, y1 - offsetY)
     }
 
-    this.drawPosition(doublePoints, { drawType, drawMode: DrawMode.TRIANGLE_STRIP }, context)
+    this.drawPosition(doublePoints, { drawType, drawMode: DrawMode.TRIANGLE_STRIP })
   }
 }
 
@@ -78,4 +79,7 @@ export interface DrawLineOptions {
    * The opacity of the line. Defaults to 255.0.
    */
   opacity?: number
+
+  hardness?: number
+  flow?: number
 }

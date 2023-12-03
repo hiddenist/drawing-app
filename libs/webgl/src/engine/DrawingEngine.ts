@@ -1,6 +1,5 @@
 import { LineDrawingProgram, DrawLineOptions, DrawType, LineInfo } from "../programs/LineDrawingProgram"
 import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
-import { ActiveProgramSwitcher } from "./ActiveProgramSwitcher"
 import type { Vec2 } from "@libs/shared"
 import { Color } from "@libs/shared"
 import { Layer } from "./Layer"
@@ -46,16 +45,15 @@ export type Tool = (typeof Tools)[keyof typeof Tools]
 
 export class DrawingEngine {
   protected state: DrawingState
-  protected programs: ActiveProgramSwitcher<AvailablePrograms>
+  protected programs: AvailablePrograms
   protected drawingHistory: Array<HistoryItem>
   protected savedDrawingLayer: Layer
-  protected activeDrawingLayer: Layer
+  protected activePathLayer: Layer
 
   private drawListeners: Array<DrawListenerCallback> = []
 
   constructor(
-    savedDrawingContext: WebGLRenderingContext,
-    activeDrawingContext: WebGLRenderingContext,
+    public gl: WebGLRenderingContext,
     options: DrawingEngineOptions,
   ) {
     this.state = {
@@ -69,28 +67,18 @@ export class DrawingEngine {
       tool: Tools.pressureSensitiveBrush,
     }
 
-    this.savedDrawingLayer = new Layer(savedDrawingContext, ({ gl }) => {
-      gl.enable(gl.BLEND)
-      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-    })
-    this.activeDrawingLayer = new Layer(activeDrawingContext, ({ gl }) => {
-      gl.disable(gl.BLEND)
-      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
-    })
+    this.savedDrawingLayer = new Layer(gl)
+    this.activePathLayer = new Layer(gl, { clearBeforeDrawing: true })
 
-    this.programs = new ActiveProgramSwitcher({
-      lineDrawing: new LineDrawingProgram(savedDrawingContext, this.state.pixelDensity),
-      textureDrawing: new TextureDrawingProgram(savedDrawingContext, this.state.pixelDensity),
-    })
+    this.programs = {
+      lineDrawing: new LineDrawingProgram(gl, this.state.pixelDensity),
+      textureDrawing: new TextureDrawingProgram(gl, this.state.pixelDensity),
+    }
 
     this.drawingHistory = []
 
-    if (!savedDrawingContext.getContextAttributes()?.preserveDrawingBuffer) {
-      console.warn("drawing buffer preservation is disabled on the base rendering layer")
-    }
-
-    if (activeDrawingContext.getContextAttributes()?.preserveDrawingBuffer) {
-      console.warn("drawing buffer preservation is enabled on the active drawing layer")
+    if (gl.getContextAttributes()?.preserveDrawingBuffer) {
+      console.warn("drawing buffer preservation is enabled on canvas context, this may cause unexpected behavior")
     }
   }
 
@@ -100,17 +88,6 @@ export class DrawingEngine {
 
   protected set pixelDensity(pixelDensity: number) {
     this.state.pixelDensity = pixelDensity
-  }
-
-  protected getProgram<T extends keyof AvailablePrograms>(
-    name: T,
-    context?: WebGLRenderingContext,
-  ): AvailablePrograms[T] {
-    const program = this.programs.getProgram(name)
-    if (context) {
-      program.useContext(context)
-    }
-    return program
   }
 
   public getCurrentColor() {
@@ -150,7 +127,15 @@ export class DrawingEngine {
   }
 
   public clearCanvas() {
-    this.clear(this.savedDrawingLayer.gl)
+    this.savedDrawingLayer.clear()
+    this.activePathLayer.clear()
+    this.clearCurrent()
+    this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
+  }
+
+  protected clearCurrent() {
+    this.gl.clearColor(0, 0, 0, 0)
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT)
   }
 
   protected getLineOptions(): Required<Omit<DrawLineOptions, "drawType">> {
@@ -158,20 +143,16 @@ export class DrawingEngine {
       color: this.state.color,
       opacity: this.state.opacity,
       diameter: this.lineWeight,
-    }
-  }
 
-  // Maybe the rendering contexts should have a wrapper class that handles this?
-  protected clear(context: WebGLRenderingContext) {
-    context.clearColor(0, 0, 0, 0)
-    context.clear(context.COLOR_BUFFER_BIT)
+      hardness: 0.5,
+      flow: 1.0,
+    }
   }
 
   public setPressed(pressed: boolean, position: Readonly<Vec2>, pressure: [number]) {
     if (pressed) {
       this.state.isDrawing = true
       this.addPosition(position, pressure)
-      this.updateDrawing()
     } else {
       this.commitPath()
     }
@@ -185,7 +166,7 @@ export class DrawingEngine {
     if (this.state.isDrawing) {
       this.state.currentPath.points.push(...positions.flat())
       if (pressure) this.addPressure(pressure)
-      this.updateDrawing()
+      this.updateActivePath()
     }
   }
 
@@ -199,21 +180,26 @@ export class DrawingEngine {
     this.state.currentPath.pressure.push(...pressure)
   }
 
-  public updateDrawing() {
+  protected updateActivePath() {
     if (this.state.currentPath.points.length > 0) {
-      this.drawLine(this.activeDrawingLayer, this.state.currentPath, DrawType.STATIC_DRAW)
+      this.drawLine(this.activePathLayer, this.state.currentPath, DrawType.STATIC_DRAW)
     }
   }
 
   public drawLine(layer: Layer, path: LineInfo, drawType?: DrawLineOptions["drawType"]) {
-    this.getProgram("textureDrawing", layer.gl).prepareTextureForDrawing(layer)
     const options = this.getLineOptions()
-    this.getProgram("lineDrawing", layer.gl).draw(path, {
-      drawType,
-      ...options,
+    this.programs.textureDrawing.createTextureImage(layer, () => {
+      this.programs.lineDrawing.draw(path, {
+        drawType,
+        ...options,
+      })
     })
-    this.getProgram("textureDrawing", layer.gl).drawTexture(layer)
+    this.render()
     this.callDrawListeners({ path, options, tool: this.state.tool })
+  }
+
+  protected render() {
+    this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
   }
 
   public addDrawListener(cb: DrawListenerCallback) {
@@ -236,26 +222,20 @@ export class DrawingEngine {
     if (path.points.length === 0) {
       return
     }
-    const doDraw = () => {
-      this.drawLine(this.savedDrawingLayer, path, DrawType.STATIC_DRAW)
-    }
+
+    const copy = this.programs.textureDrawing.mergeDown(this.activePathLayer, this.savedDrawingLayer)
+    this.savedDrawingLayer.clear()
+    this.activePathLayer.clear()
+    this.savedDrawingLayer = copy
+    this.render()
     this.drawingHistory.push({
       path,
       options: this.getLineOptions(),
       tool: this.state.tool,
     })
-    doDraw()
-
-    // the first draw seems to disappear without this. ‾\_(:/)_/‾
-    if (this.drawingHistory.length === 1) {
-      console.debug("redrawing first draw as a hacky bug fix")
-      requestAnimationFrame(doDraw)
-      return
-    }
   }
 
   private clearCurrentPath(): Readonly<LineInfo> {
-    this.clear(this.activeDrawingLayer.gl)
     const copy = this.state.currentPath
     this.state.currentPath = { points: [] }
     return copy

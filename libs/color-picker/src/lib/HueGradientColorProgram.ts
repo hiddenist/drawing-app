@@ -17,11 +17,9 @@ export class HueGradientColorProgram extends BaseGradientColorProgram<
 > {
   private saturation: number = 100
   constructor(gl: WebGLRenderingContext) {
-    super(
-      HueGradientColorProgram.createContextStatic(gl, HueGradientColorProgram.createProgramStatic(gl)),
-      "aPosition",
-      "uResolution",
-    )
+    const program = HueGradientColorProgram.createProgramStatic(gl)
+    const programInfo = HueGradientColorProgram.createProgramInfoStatic(gl, program)
+    super(programInfo, "aPosition", "uResolution")
   }
 
   protected static createProgramStatic(gl: WebGLRenderingContext): WebGLProgram {
@@ -32,12 +30,12 @@ export class HueGradientColorProgram extends BaseGradientColorProgram<
     return HueGradientColorProgram.createProgramStatic(gl)
   }
 
-  protected static createContextStatic(gl: WebGLRenderingContext, program: WebGLProgram) {
-    return BaseProgram.makeBaseContextFromAttributes(gl, program, UNIFORM_NAMES, ATTRIBUTE_NAMES)
+  protected static createProgramInfoStatic(gl: WebGLRenderingContext, program: WebGLProgram) {
+    return BaseProgram.getProgramInfo(gl, program, UNIFORM_NAMES, ATTRIBUTE_NAMES)
   }
 
-  protected createContext(context: WebGLRenderingContext, program: WebGLProgram) {
-    return HueGradientColorProgram.createContextStatic(context, program)
+  protected createProgramInfo(context: WebGLRenderingContext, program: WebGLProgram) {
+    return HueGradientColorProgram.createProgramInfoStatic(context, program)
   }
 
   public draw(saturation?: number) {

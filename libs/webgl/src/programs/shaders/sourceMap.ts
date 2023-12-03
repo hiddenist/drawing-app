@@ -41,7 +41,8 @@ export const uniformNames = {
     opacity: "uOpacity",
   },
   "texture.fragment": {
-    texture: "uTexture",
+    foreground: "uForegroundTexture",
+    background: "uBackgroundTexture",
   },
 } as const satisfies Readonly<Partial<NameMap>>
 

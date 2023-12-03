@@ -4,33 +4,31 @@ import { SimpleTextureProgram } from "./abstract/SimpleTextureProgram"
 export class TextureDrawingProgram extends SimpleTextureProgram {
   constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
+    console.log("TextureDrawingProgram constructor")
   }
 
-  protected useLayer(layer: Layer) {
-    this.gl = layer.gl
-    return layer
+  public createTextureImage(layer: Layer, drawImage: () => void) {
+    const { gl } = this
+    this._createTextureImage(layer.texture, layer.frameBuffer, () => {
+      if (layer.settings.clearBeforeDrawing) {
+        gl.clearColor(0, 0, 0, 0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+      }
+      drawImage()
+    })
   }
 
-  prepareTextureForDrawing(layer: Layer) {
-    const { gl, frameBuffer, texture } = this.useLayer(layer)
+  protected _createTextureImage(texture: WebGLTexture, frameBuffer: WebGLFramebuffer, drawImage: () => void) {
+    const { gl } = this
+    this.useProgram()
+
     const { width, height } = this.getCanvasSize()
+
     gl.viewport(0, 0, width, height)
 
-    // Enable blending
-    gl.enable(gl.BLEND)
-
-    // Set the blend function
-    gl.blendFunc(WebGLRenderingContext.ONE, WebGLRenderingContext.ZERO)
-
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer)
-    this.syncCanvasSize()
 
     gl.bindTexture(gl.TEXTURE_2D, texture)
-
-    // Set the texture parameters
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
     // Allocate memory for the texture
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
@@ -42,16 +40,37 @@ export class TextureDrawingProgram extends SimpleTextureProgram {
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
       console.error("Error setting up framebuffer")
     }
-  }
 
-  drawTexture(layer: Layer) {
-    const { gl, texture } = this.useLayer(layer)
+    drawImage()
 
     // Unbind the framebuffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-    gl.bindTexture(gl.TEXTURE_2D, texture)
+  }
 
-    layer.applyBlendSettings()
+  public mergeDown(foreground: Layer, background: Layer) {
+    const { gl } = this
+    const copy = new Layer(gl)
+    this.createTextureImage(copy, () => {
+      this.drawTextures(foreground.texture, background.texture)
+    })
+    return copy
+  }
+
+  public draw(foreground: Layer, background: Layer) {
+    this.drawTextures(foreground.texture, background.texture)
+  }
+
+  protected drawTextures(front: WebGLTexture, back: WebGLTexture) {
+    const { gl } = this
+    this.useProgram()
+
+    gl.uniform1i(this.getUniformLocation("background"), 1)
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, back)
+
+    gl.uniform1i(this.getUniformLocation("foreground"), 0)
+    gl.activeTexture(gl.TEXTURE0)
+    gl.bindTexture(gl.TEXTURE_2D, front)
 
     this.bufferAttribute(
       "position",

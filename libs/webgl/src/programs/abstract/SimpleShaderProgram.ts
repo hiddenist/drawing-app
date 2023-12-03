@@ -24,10 +24,10 @@ export abstract class SimpleShaderProgram extends BaseProgram<
   }
 
   protected static createContextStatic(context: WebGLRenderingContext, program: WebGLProgram) {
-    return BaseProgram.makeBaseContextFromAttributes(context, program, UNIFORM_NAMES, ATTRIBUTE_NAMES)
+    return BaseProgram.getProgramInfo(context, program, UNIFORM_NAMES, ATTRIBUTE_NAMES)
   }
 
-  protected createContext(context: WebGLRenderingContext, program: WebGLProgram) {
+  protected createProgramInfo(context: WebGLRenderingContext, program: WebGLProgram) {
     return SimpleShaderProgram.createContextStatic(context, program)
   }
 
@@ -44,10 +44,9 @@ export abstract class SimpleShaderProgram extends BaseProgram<
   public drawPosition(
     points: ReadonlyArray<number>,
     { drawType = DrawType.STREAM_DRAW, drawMode }: DrawPositionOptions,
-    context = this.currentContext,
   ) {
     this.bufferAttribute("position", new Float32Array(points), { usage: drawType, size: 2 })
-    context.gl.drawArrays(drawMode, 0, points.length / 2)
+    this.gl.drawArrays(drawMode, 0, points.length / 2)
     this.checkError()
   }
 }
