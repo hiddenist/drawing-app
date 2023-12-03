@@ -182,7 +182,6 @@ export class DrawingEngine {
 
   protected updateActivePath() {
     if (this.state.currentPath.points.length > 0) {
-      this.activePathLayer.clear()
       this.drawLine(this.activePathLayer, this.state.currentPath, DrawType.STATIC_DRAW)
     }
   }
