@@ -1,6 +1,7 @@
 precision mediump float;
-uniform vec4 uColor;
+uniform vec3 uColor;
+uniform float uOpacity;
 
 void main() {
-  gl_FragColor = uColor / vec4(255.0);
+  gl_FragColor = vec4(uColor, uOpacity) / vec4(255.0);
 }

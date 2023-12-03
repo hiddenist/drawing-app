@@ -35,7 +35,7 @@ export abstract class BaseGradientColorProgram<
 
     this.checkError()
 
-    return new Color(pixelData[0], pixelData[1], pixelData[2], 255)
+    return new Color(pixelData[0], pixelData[1], pixelData[2])
   }
 
   protected draw() {

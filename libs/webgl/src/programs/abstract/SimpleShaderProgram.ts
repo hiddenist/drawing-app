@@ -32,7 +32,12 @@ export abstract class SimpleShaderProgram extends BaseProgram<
   }
 
   protected setColor(color: Color): typeof this {
-    this.gl.uniform4fv(this.getUniformLocation("color"), color.vec4)
+    this.gl.uniform3fv(this.getUniformLocation("color"), color.vec3)
+    return this
+  }
+
+  protected setOpacity(opacity: number): typeof this {
+    this.gl.uniform1f(this.getUniformLocation("opacity"), opacity)
     return this
   }
 

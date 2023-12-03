@@ -18,6 +18,7 @@ interface HistoryItem {
 
 interface DrawingState {
   color: Color
+  opacity: number
   currentPath: LineInfo
   lineWeight: number
   isDrawing: boolean
@@ -60,6 +61,7 @@ export class DrawingEngine {
     this.state = {
       ...options,
       color: Color.BLACK,
+      opacity: 255,
       currentPath: { points: [] },
       lineWeight: 20,
       isDrawing: false,
@@ -126,18 +128,16 @@ export class DrawingEngine {
 
   public setColor(color: Color) {
     this.commitPath()
-    const opacity = this.state.color.a
-    this.state.color = new Color(color.r, color.g, color.b, opacity)
+    this.state.color = color
   }
 
   public setOpacity(opacity: number) {
     this.commitPath()
-    const color = this.state.color
-    this.state.color = new Color(color.r, color.g, color.b, opacity)
+    this.state.opacity = opacity
   }
 
   public getOpacity() {
-    return this.state.color.a
+    return this.state.opacity
   }
 
   public get lineWeight(): number {
@@ -156,7 +156,8 @@ export class DrawingEngine {
   protected getLineOptions(): Required<Omit<DrawLineOptions, "drawType">> {
     return {
       color: this.state.color,
-      thickness: this.lineWeight,
+      opacity: this.state.opacity,
+      diameter: this.lineWeight,
     }
   }
 

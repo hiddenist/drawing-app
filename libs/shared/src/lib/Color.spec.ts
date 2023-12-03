@@ -4,8 +4,8 @@ import { it, describe, expect } from "vitest"
 const testData: ReadonlyArray<{
   colorName: string
   colorObject: Color
-  rgbaArray: [number, number, number, number]
-  hslaArray: [number, number, number, number]
+  rgbArray: [number, number, number]
+  hslArray: [number, number, number]
   rgbString: string
   rgbaString: string
   hexString: string
@@ -15,158 +15,158 @@ const testData: ReadonlyArray<{
   {
     colorName: "Black",
     colorObject: Color.BLACK,
-    rgbaArray: [0, 0, 0, 255],
+    rgbArray: [0, 0, 0],
     rgbString: "rgb(0, 0, 0)",
     rgbaString: "rgba(0, 0, 0, 1)",
     hexString: "#000000",
     hslString: "hsl(0, 0%, 0%)",
-    hslaArray: [0, 0, 0, 1],
+    hslArray: [0, 0, 0],
     hslaString: "hsla(0, 0%, 0%, 1)",
   },
   {
     colorName: "White",
     colorObject: Color.WHITE,
-    rgbaArray: [255, 255, 255, 255],
+    rgbArray: [255, 255, 255],
     rgbString: "rgb(255, 255, 255)",
     rgbaString: "rgba(255, 255, 255, 1)",
     hexString: "#ffffff",
     hslString: "hsl(0, 0%, 100%)",
-    hslaArray: [0, 0, 100, 1],
+    hslArray: [0, 0, 100],
     hslaString: "hsla(0, 0%, 100%, 1)",
   },
   {
     colorName: "Red",
     colorObject: new Color(255, 0, 0),
-    rgbaArray: [255, 0, 0, 255],
+    rgbArray: [255, 0, 0],
     rgbString: "rgb(255, 0, 0)",
     rgbaString: "rgba(255, 0, 0, 1)",
     hexString: "#ff0000",
     hslString: "hsl(0, 100%, 50%)",
-    hslaArray: [0, 100, 50, 1],
+    hslArray: [0, 100, 50],
     hslaString: "hsla(0, 100%, 50%, 1)",
   },
   {
     colorName: "Orange",
     colorObject: new Color(255, 165, 0),
-    rgbaArray: [255, 165, 0, 255],
+    rgbArray: [255, 165, 0],
     rgbString: "rgb(255, 165, 0)",
     rgbaString: "rgba(255, 165, 0, 1)",
     hexString: "#ffa500",
     hslString: "hsl(39, 100%, 50%)",
-    hslaArray: [39, 100, 50, 1],
+    hslArray: [39, 100, 50],
     hslaString: "hsla(39, 100%, 50%, 1)",
   },
   {
     colorName: "Yellow",
     colorObject: new Color(255, 255, 0),
-    rgbaArray: [255, 255, 0, 255],
+    rgbArray: [255, 255, 0],
     rgbString: "rgb(255, 255, 0)",
     rgbaString: "rgba(255, 255, 0, 1)",
     hexString: "#ffff00",
     hslString: "hsl(60, 100%, 50%)",
-    hslaArray: [60, 100, 50, 1],
+    hslArray: [60, 100, 50],
     hslaString: "hsla(60, 100%, 50%, 1)",
   },
   {
     colorName: "Green",
     colorObject: new Color(0, 128, 0),
-    rgbaArray: [0, 128, 0, 255],
+    rgbArray: [0, 128, 0],
     rgbString: "rgb(0, 128, 0)",
     rgbaString: "rgba(0, 128, 0, 1)",
     hexString: "#008000",
     hslString: "hsl(120, 100%, 25%)",
-    hslaArray: [120, 100, 25, 1],
+    hslArray: [120, 100, 25],
     hslaString: "hsla(120, 100%, 25%, 1)",
   },
   {
     colorName: "Blue",
     colorObject: new Color(0, 0, 255),
-    rgbaArray: [0, 0, 255, 255],
+    rgbArray: [0, 0, 255],
     rgbString: "rgb(0, 0, 255)",
     rgbaString: "rgba(0, 0, 255, 1)",
     hexString: "#0000ff",
     hslString: "hsl(240, 100%, 50%)",
-    hslaArray: [240, 100, 50, 1],
+    hslArray: [240, 100, 50],
     hslaString: "hsla(240, 100%, 50%, 1)",
   },
   {
     colorName: "Indigo",
     colorObject: new Color(75, 0, 130),
-    rgbaArray: [75, 0, 130, 255],
+    rgbArray: [75, 0, 130],
     rgbString: "rgb(75, 0, 130)",
     rgbaString: "rgba(75, 0, 130, 1)",
     hexString: "#4b0082",
     hslString: "hsl(275, 100%, 25%)",
-    hslaArray: [275, 100, 25, 1],
+    hslArray: [275, 100, 25],
     hslaString: "hsla(275, 100%, 25%, 1)",
   },
   {
     colorName: "Violet",
     colorObject: new Color(238, 130, 238),
-    rgbaArray: [238, 130, 238, 255],
+    rgbArray: [238, 130, 238],
     rgbString: "rgb(238, 130, 238)",
     rgbaString: "rgba(238, 130, 238, 1)",
     hexString: "#ee82ee",
     hslString: "hsl(300, 76%, 72%)",
-    hslaArray: [300, 76, 72, 1],
+    hslArray: [300, 76, 72],
     hslaString: "hsla(300, 76%, 72%, 1)",
   },
   {
     colorName: "Brown",
     colorObject: new Color(165, 42, 42),
-    rgbaArray: [165, 42, 42, 255],
+    rgbArray: [165, 42, 42],
     rgbString: "rgb(165, 42, 42)",
     rgbaString: "rgba(165, 42, 42, 1)",
     hexString: "#a52a2a",
     hslString: "hsl(0, 59%, 41%)",
-    hslaArray: [0, 59, 41, 1],
+    hslArray: [0, 59, 41],
     hslaString: "hsla(0, 59%, 41%, 1)",
   },
   {
     colorName: "Gray",
     colorObject: new Color(128, 128, 128),
-    rgbaArray: [128, 128, 128, 255],
+    rgbArray: [128, 128, 128],
     rgbString: "rgb(128, 128, 128)",
     rgbaString: "rgba(128, 128, 128, 1)",
     hexString: "#808080",
     hslString: "hsl(0, 0%, 50%)",
-    hslaArray: [0, 0, 50, 1],
+    hslArray: [0, 0, 50],
     hslaString: "hsla(0, 0%, 50%, 1)",
   },
 ]
 
-const toStringResultType = "rgbaString"
+const toStringResultType = "rgbString"
 
 describe("Color", () => {
-  it("should create a color with RGBA values", () => {
+  it("should create a color with RGB values", () => {
     for (const {
       [toStringResultType]: toStringResult,
-      rgbaArray: [r, g, b, a],
+      rgbArray: [r, g, b],
     } of testData) {
-      const color = new Color(r, g, b, a)
+      const color = new Color(r, g, b)
       expect(color.toString()).toBe(toStringResult)
       expect(color.r).toBe(r)
       expect(color.g).toBe(g)
       expect(color.b).toBe(b)
-      expect(color.a).toBe(a)
     }
   })
 
-  it("should return an rgba string with toString", () => {
-    for (const { colorObject, rgbaString, colorName } of testData) {
-      expect(colorObject.toString(), colorName).toBe(rgbaString)
+  it("should return an rgb string with toString", () => {
+    for (const { colorObject, rgbString, colorName } of testData) {
+      expect(colorObject.toString(), colorName).toBe(rgbString)
     }
-    expect(toStringResultType).toBe("rgbaString")
+    expect(toStringResultType).toBe("rgbString")
   })
 
-  it("should return a Uint8ClampedArray with the vec4 parameter", () => {
-    expect(Color.WHITE.vec4).toBeInstanceOf(Uint8ClampedArray)
+  it("should return a Uint8ClampedArray of length 3 with the vec3 parameter", () => {
+    expect(Color.WHITE.vec3).toBeInstanceOf(Uint8ClampedArray)
+    expect(Color.WHITE.vec3).toHaveLength(3)
   })
 
   it("should return the red channel value with r", () => {
     for (const {
       colorObject,
-      rgbaArray: [r],
+      rgbArray: [r],
       colorName,
     } of testData) {
       expect(colorObject.r, colorName).toBe(r)
@@ -176,7 +176,7 @@ describe("Color", () => {
   it("should return the green channel value with g", () => {
     for (const {
       colorObject,
-      rgbaArray: [_, g],
+      rgbArray: [_, g],
       colorName,
     } of testData) {
       expect(colorObject.g, colorName).toBe(g)
@@ -186,46 +186,10 @@ describe("Color", () => {
   it("should return the blue channel value with b", () => {
     for (const {
       colorObject,
-      rgbaArray: [_, __, b],
+      rgbArray: [_, __, b],
       colorName,
     } of testData) {
       expect(colorObject.b, colorName).toBe(b)
-    }
-  })
-
-  it("should return the alpha channel value with a", () => {
-    for (const {
-      colorObject,
-      rgbaArray: [_, __, ___, a],
-      colorName,
-    } of testData) {
-      expect(colorObject.a, colorName).toBe(a)
-    }
-  })
-
-  it.each([0, 4, 25, 32, 50, 64, 100])("should be able to be generated with and return alpha at %i%", (alpha) => {
-    for (const {
-      colorName,
-      rgbaArray: [r, g, b],
-      hslaArray: [h, s, l],
-    } of testData) {
-      const a = (alpha / 100) * 255
-      const colorFromRgb = new Color(r, g, b, a)
-      expect(colorFromRgb.alphaPercent, `${colorName} from rgba`).toBe(alpha)
-      expect(Math.round(colorFromRgb.a), `${colorName} from rgba`).toBe(Math.round(a))
-      const colorFromHsla = new Color(`hsla(${h}, ${s}%, ${l}%, ${alpha / 100})`)
-      expect(colorFromHsla.alphaPercent, `${colorName} from hsla`).toBe(alpha)
-    }
-  })
-
-  it("should create a color with full opacity when opacity is not specified", () => {
-    for (const {
-      [toStringResultType]: toStringResult,
-      rgbaArray: [r, g, b],
-    } of testData) {
-      const color = new Color(r, g, b)
-      expect(color.toString()).toBe(toStringResult)
-      expect(color.a).toBe(255)
     }
   })
 
@@ -261,13 +225,12 @@ describe("Color", () => {
   it("should create a color from a Uint8ClampedArray", () => {
     for (const {
       colorName,
-      rgbaArray: [r, g, b, a],
+      rgbArray: [r, g, b],
     } of testData) {
-      const color = new Color(new Uint8ClampedArray([r, g, b, a]))
+      const color = new Color(new Uint8ClampedArray([r, g, b]))
       expect(color.r, colorName).toBe(r)
       expect(color.g, colorName).toBe(g)
       expect(color.b, colorName).toBe(b)
-      expect(color.a, colorName).toBe(a)
     }
   })
 
@@ -282,6 +245,5 @@ describe("Color", () => {
   it("should have the right colors for constant values", () => {
     expect(Color.BLACK.hex).toBe("#000000")
     expect(Color.WHITE.hex).toBe("#ffffff")
-    expect(Color.TRANSPARENT.rgba).toBe("rgba(0, 0, 0, 0)")
   })
 })

@@ -38,6 +38,7 @@ export const uniformNames = {
   },
   "color.fragment": {
     color: "uColor",
+    opacity: "uOpacity",
   },
   "texture.fragment": {
     texture: "uTexture",
