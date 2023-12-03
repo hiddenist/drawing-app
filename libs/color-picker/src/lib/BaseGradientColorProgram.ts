@@ -27,15 +27,11 @@ export abstract class BaseGradientColorProgram<
   }
 
   public getColorAtPosition([x, y]: Vec2): Color {
-    const { gl } = this
-    const pixelData = new Uint8Array(4)
-
-    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1)
-    gl.readPixels(x, gl.canvas.height - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixelData)
-
-    this.checkError()
-
-    return new Color(pixelData[0], pixelData[1], pixelData[2])
+    const color = BaseProgram.getColorAtPosition(this.gl, [x, y])
+    if (!color) {
+      throw new Error("Could not get color at position")
+    }
+    return color
   }
 
   protected draw() {

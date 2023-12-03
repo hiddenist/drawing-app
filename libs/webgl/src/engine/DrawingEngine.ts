@@ -1,7 +1,7 @@
 import { LineDrawingProgram, DrawLineOptions, DrawType, LineInfo } from "../programs/LineDrawingProgram"
 import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import type { Vec2 } from "@libs/shared"
-import { Color } from "@libs/shared"
+import { BaseProgram, Color } from "@libs/shared"
 import { Layer } from "./Layer"
 
 interface AvailablePrograms {
@@ -20,11 +20,12 @@ interface DrawingState {
   opacity: number
   currentPath: LineInfo
   lineWeight: number
-  isDrawing: boolean
+  isPressed: boolean
   pixelDensity: number
   width: number
   height: number
   tool: Tool
+  prevTool: Tool
 }
 
 export interface DrawingEngineOptions {
@@ -33,15 +34,40 @@ export interface DrawingEngineOptions {
   pixelDensity?: number
 }
 
-type DrawListenerCallback = (action: HistoryItem) => void
+export interface DrawingEngineEventMap {
+  draw: HistoryItem
+  pickColor: { color: Color }
+  previewColor: { color: Color | null }
+  clear: undefined
+  changeTool: { tool: Tool }
+}
+export type DrawingEngineEvent<T extends DrawingEngineEventName> = {
+  eventName: T
+} & (DrawingEngineEventMap[T] extends undefined ? {} : DrawingEngineEventMap[T])
+export type DrawingEngineEventName = keyof DrawingEngineEventMap
+export type DrawingEventHandler<T extends DrawingEngineEventName> = (event: DrawingEngineEvent<T>) => void
+
+type DrawingEventListeners = {
+  [Key in DrawingEngineEventName]: Array<DrawingEventHandler<Key>>
+}
 
 export const Tools = {
   brush: "brush",
   // todo: eraser: "eraser",
   pressureSensitiveBrush: "pressureSensitiveBrush",
+  eyedropper: "eyedropper",
 } as const
 
+const defaultTool = Tools.pressureSensitiveBrush
+
 export type Tool = (typeof Tools)[keyof typeof Tools]
+
+export interface ToolBindings {
+  onPress?: (position: Readonly<Vec2>, pressure: Readonly<[number]>) => { hideCursor?: boolean } | void
+  onMove?: (positions: ReadonlyArray<Vec2>, pressure: ReadonlyArray<number>) => void
+  onRelease?: (position: Readonly<Vec2>, pressure: Readonly<[number]>) => void
+  onCancel?: () => void
+}
 
 export class DrawingEngine {
   protected state: DrawingState
@@ -50,11 +76,13 @@ export class DrawingEngine {
   protected savedDrawingLayer: Layer
   protected activePathLayer: Layer
 
-  private drawListeners: Array<DrawListenerCallback> = []
+  protected tools: Record<Tool, ToolBindings>
+
+  private listeners: Partial<DrawingEventListeners> = {}
 
   constructor(
     public gl: WebGLRenderingContext,
-    options: DrawingEngineOptions,
+    protected readonly options: DrawingEngineOptions,
   ) {
     this.state = {
       ...options,
@@ -62,9 +90,10 @@ export class DrawingEngine {
       opacity: 255,
       currentPath: { points: [] },
       lineWeight: 20,
-      isDrawing: false,
+      isPressed: false,
       pixelDensity: options.pixelDensity ?? 1,
-      tool: Tools.pressureSensitiveBrush,
+      tool: defaultTool,
+      prevTool: defaultTool,
     }
 
     this.savedDrawingLayer = new Layer(gl)
@@ -76,6 +105,47 @@ export class DrawingEngine {
     }
 
     this.drawingHistory = []
+
+    const brushBindings: ToolBindings = {
+      onPress: (position, pressure) => {
+        this.addPosition(position, pressure)
+        return { hideCursor: true }
+      },
+      onMove: (positions, pressure) => {
+        this.addPositions(positions, pressure)
+      },
+      onRelease: () => {
+        this.commitPath()
+      },
+    }
+    this.tools = {
+      [Tools.brush]: brushBindings,
+      [Tools.pressureSensitiveBrush]: brushBindings,
+      [Tools.eyedropper]: {
+        onCancel: () => {
+          this.setTool(this.state.prevTool ?? defaultTool)
+          this.callListeners("previewColor", { color: null })
+        },
+        onPress: (pos) => {
+          this.pickColor(pos)
+        },
+        onMove: (positions) => {
+          const color = BaseProgram.getColorAtPosition(this.gl, positions[positions.length - 1])
+          if (!color) {
+            return
+          }
+          this.callListeners("previewColor", { color })
+        },
+        onRelease: (position) => {
+          if (this.pickColor(position)) {
+            const prevTool = this.state.prevTool ?? defaultTool
+            this.setTool(prevTool === Tools.eyedropper ? defaultTool : prevTool)
+          } else {
+            this.handleCancel()
+          }
+        },
+      },
+    }
   }
 
   protected get pixelDensity() {
@@ -95,8 +165,13 @@ export class DrawingEngine {
   }
 
   public setTool(tool: Tool) {
+    if (this.state.tool === tool) {
+      return
+    }
     this.commitPath()
+    this.state.prevTool = this.state.tool
     this.state.tool = tool
+    this.callListeners("changeTool", { tool })
   }
 
   public setColor(color: Color) {
@@ -127,6 +202,8 @@ export class DrawingEngine {
     this.activePathLayer.clear()
     this.clearCurrent()
     this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
+
+    this.callListeners("clear", undefined)
   }
 
   protected clearCurrent() {
@@ -145,25 +222,48 @@ export class DrawingEngine {
     }
   }
 
-  public setPressed(pressed: boolean, position: Readonly<Vec2>, pressure: [number]) {
-    if (pressed) {
-      this.state.isDrawing = true
-      this.addPosition(position, pressure)
-    } else {
-      this.commitPath()
-    }
+  protected handlePointerDown(position: Readonly<Vec2>, pressure: Readonly<[number]>) {
+    this.state.isPressed = true
+    return this.tools[this.state.tool].onPress?.(position, pressure)
   }
 
-  public addPosition(position: Readonly<Vec2>, pressure: [number]) {
+  protected handlePointerUp(position: Readonly<Vec2>, pressure: Readonly<[number]>) {
+    this.state.isPressed = false
+    return this.tools[this.state.tool].onRelease?.(position, pressure)
+  }
+
+  protected handlePointerMove(positions: ReadonlyArray<Vec2>, pressure: ReadonlyArray<number>) {
+    return this.tools[this.state.tool].onMove?.(positions, pressure)
+  }
+
+  protected handleCancel() {
+    this.tools[this.state.tool].onCancel?.()
+  }
+
+  protected pickColor(position: Readonly<Vec2>) {
+    const color = BaseProgram.getColorAtPosition(this.gl, position)
+    if (!color) {
+      return false
+    }
+    this.setColor(color)
+    this.callListeners("pickColor", { color })
+    return true
+  }
+
+  public addPosition(position: Readonly<Vec2>, pressure: Readonly<[number]>) {
     this.addPositions([[...position]], pressure)
   }
 
   public addPositions(positions: ReadonlyArray<Vec2>, pressure: ReadonlyArray<number>) {
-    if (this.state.isDrawing) {
+    if (this.state.isPressed) {
       this.state.currentPath.points.push(...positions.flat())
       if (pressure) this.addPressure(pressure)
       this.updateActivePath()
     }
+  }
+
+  protected isPositionInCanvas(position: Readonly<Vec2>) {
+    return position[0] >= 0 && position[0] <= this.state.width && position[1] >= 0 && position[1] <= this.state.height
   }
 
   private addPressure(pressure: ReadonlyArray<number>) {
@@ -191,30 +291,36 @@ export class DrawingEngine {
       })
     })
     this.render()
-    this.callDrawListeners({ path, options, tool: this.state.tool })
+    this.callListeners("draw", { path, options, tool: this.state.tool })
   }
 
   protected render() {
     this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
   }
 
-  public addDrawListener(cb: DrawListenerCallback) {
-    this.drawListeners.push(cb)
+  public addListener<E extends DrawingEngineEventName>(eventName: E, cb: DrawingEventHandler<E>) {
+    let listeners = this.listeners[eventName]
+    if (!listeners) {
+      listeners = []
+      this.listeners[eventName] = listeners
+    }
+    listeners.push(cb)
     return this
   }
 
-  public removeDrawListener(cb: DrawListenerCallback) {
-    this.drawListeners = this.drawListeners.filter((listener) => listener !== cb)
+  public removeListener<E extends DrawingEngineEventName>(eventName: E, cb: DrawingEventHandler<E>) {
+    const index = this.listeners[eventName]?.indexOf(cb) ?? -1
+    this.listeners[eventName]?.splice(index, 1)
     return this
   }
 
-  protected callDrawListeners(historyItem: HistoryItem) {
-    this.drawListeners.forEach((listener) => listener(historyItem))
+  protected callListeners<E extends DrawingEngineEventName>(eventName: E, data: DrawingEngineEventMap[E]) {
+    this.listeners[eventName]?.forEach((listener) => listener({ eventName, ...data }))
   }
 
   protected commitPath() {
     const path = this.clearCurrentPath()
-    this.state.isDrawing = false
+    this.state.isPressed = false
     if (path.points.length === 0) {
       return
     }

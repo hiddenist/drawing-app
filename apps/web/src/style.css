@@ -26,6 +26,10 @@ main canvas {
   display: block;
 }
 
+main[data-tool="colorPicker"] canvas {
+  cursor: copy;
+}
+
 main .drawing-canvas-container {
   position: relative;
   border: 1px solid rgb(25, 25, 28);
