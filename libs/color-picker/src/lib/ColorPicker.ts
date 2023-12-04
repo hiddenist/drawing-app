@@ -6,6 +6,7 @@ export class ColorPicker {
   private readonly onSetColor: (color: Color) => void
   private readonly onPreviewColor: (color: Color | null) => void
   private currentColor: Color
+  private readonly canvas: HTMLCanvasElement
 
   constructor(
     private readonly root: HTMLElement,
@@ -15,6 +16,7 @@ export class ColorPicker {
     },
   ) {
     const { canvas, gl } = this.createCanvas()
+    this.canvas = canvas
     this.currentColor = config.initialColor ?? Color.BLACK
 
     const container = document.createElement("div")
@@ -55,6 +57,7 @@ export class ColorPicker {
       openPickerButton.style.backgroundColor = color.hex
       this.config.onChange(color)
       this.currentColor = color
+      this.draw(color)
     }
 
     this.onPreviewColor = (color) => {
@@ -62,12 +65,12 @@ export class ColorPicker {
     }
 
     this.program = new ValueSaturationGradientColorProgram(gl)
-    this.program.draw()
+    this.draw()
 
     openPickerButton.addEventListener("click", () => {
       document.body.classList.toggle("picker-open")
       if (document.body.classList.contains("picker-open")) {
-        this.program.draw()
+        this.draw()
       }
     })
     closePickerButton.addEventListener("click", () => {
@@ -91,7 +94,7 @@ export class ColorPicker {
       lastMoveEvent = e
       e.preventDefault()
       const color = this.getCanvasColor(e)
-      openPickerButton.style.backgroundColor = color.hex
+      this.setColorPreview(color)
     })
     window.addEventListener("pointerup", (e) => {
       const isMobile = window.matchMedia("(max-width: 800px)").matches
@@ -108,8 +111,12 @@ export class ColorPicker {
     })
   }
 
+  private draw(color = this.currentColor) {
+    this.program.draw(this.getHue(), color)
+  }
+
   public setHue(hue: number) {
-    this.program.draw(hue)
+    this.program.setHue(hue)
     this.onSetColor(this.currentColor.setHue(hue))
   }
 
@@ -128,6 +135,7 @@ export class ColorPicker {
 
   public setColorPreview(color: Color | null) {
     this.onPreviewColor(color)
+    this.draw(color ?? this.currentColor)
   }
 
   public getColor(): Color {
@@ -144,6 +152,13 @@ export class ColorPicker {
   }
 
   private getCanvasColor(event: MouseEvent): Color {
-    return this.program.getColorAtPosition(getEventPosition(event))
+    const [x, y] = getEventPosition(event)
+
+    const saturation = (x / this.canvas.width) * 100
+    const value = (1 - y / this.canvas.height) * 100
+    const color = Color.createFromHsv(this.getHue(), saturation, value)
+
+    console.log({ x, y, saturation, value, width: this.canvas.width, height: this.canvas.height, color: color.hex })
+    return color
   }
 }
