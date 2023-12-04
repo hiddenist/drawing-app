@@ -1,4 +1,4 @@
-import { BaseProgram, WebGLProgramBuilder } from "@libs/shared"
+import { BaseProgram, Color, WebGLProgramBuilder } from "@libs/shared"
 import fragmentSource from "../shaders/value-saturation.fragment.glsl"
 import vertexSource from "../shaders/vertex.glsl"
 import { BaseGradientColorProgram } from "./BaseGradientColorProgram"
@@ -6,6 +6,7 @@ import { BaseGradientColorProgram } from "./BaseGradientColorProgram"
 const UNIFORM_NAMES = {
   uResolution: "uResolution",
   uHue: "uHue",
+  uSelectedColor: "uSelectedColor",
 } as const
 const ATTRIBUTE_NAMES = {
   aPosition: "aPosition",
@@ -16,6 +17,7 @@ export class ValueSaturationGradientColorProgram extends BaseGradientColorProgra
   keyof typeof ATTRIBUTE_NAMES
 > {
   private hue: number = 0
+  private selectedColor?: Color
   constructor(gl: WebGLRenderingContext) {
     const program = ValueSaturationGradientColorProgram.createProgramStatic(gl)
     const programInfo = ValueSaturationGradientColorProgram.createProgramInfoStatic(gl, program)
@@ -38,13 +40,15 @@ export class ValueSaturationGradientColorProgram extends BaseGradientColorProgra
     return ValueSaturationGradientColorProgram.createProgramInfoStatic(context, program)
   }
 
-  public draw(hue?: number) {
+  public draw(hue?: number, selectedColor?: Color) {
     if (hue !== undefined) this.hue = hue
+    this.selectedColor = selectedColor
     super.draw()
   }
 
   protected setUniforms() {
     this.gl.uniform1f(this.getUniformLocation("uHue"), this.hue)
+    this.gl.uniform3fv(this.getUniformLocation("uSelectedColor"), this.selectedColor?.vec3 ?? [-1, -1, -1])
   }
 
   public setHue(hue: number) {
