@@ -98,6 +98,29 @@ export class Color {
     return this.vector[2]
   }
 
+  get red(): number {
+    return this.r
+  }
+  get green(): number {
+    return this.g
+  }
+  get blue(): number {
+    return this.b
+  }
+
+  get hue(): number {
+    return this.getHslValues()[0]
+  }
+  get saturation(): number {
+    return this.getHslValues()[1]
+  }
+  get lightness(): number {
+    return this.getHslValues()[2]
+  }
+  get luminance(): number {
+    return (0.2126 * this.r + 0.7152 * this.g + 0.0722 * this.b) / 255
+  }
+
   get rgb(): string {
     return `rgb(${this.r}, ${this.g}, ${this.b})`
   }
@@ -189,6 +212,67 @@ export class Color {
     const [_, s, l] = this.getHslValues()
     const newRgb = Color.fromHslValues(hue, s, l)
     return new Color(...newRgb)
+  }
+
+  /**
+   * @param hue  The hue as a degree (0 to 360).
+   * @param saturation  The saturation as a percentage (0 to 100).
+   * @param value  The value as a percentage (0 to 100).
+   * @returns  A new color with the given HSV values.
+   */
+  public static createFromHsv(hue: number, saturation: number, value: number): Color {
+    const rgb = Color.fromHsvValues(hue, saturation, value)
+    return new Color(...rgb)
+  }
+
+  /**
+   * @param hue  The hue as a degree (0 to 360).
+   * @param saturation  The saturation as a percentage (0 to 100).
+   * @param value  The value as a percentage (0 to 100).
+   * @returns  An array of RGB values.
+   */
+  private static fromHsvValues(hue: number, sat: number, val: number): RbgArray {
+    hue = (hue % 360) / 60
+    sat /= 100
+    val /= 100
+
+    const c = val * sat
+    const x = c * (1 - Math.abs((hue % 2) - 1))
+    const m = val - c
+
+    let red: number
+    let green: number
+    let blue: number
+
+    if (hue >= 0 && hue < 1) {
+      red = c
+      green = x
+      blue = 0
+    } else if (hue >= 1 && hue < 2) {
+      red = x
+      green = c
+      blue = 0
+    } else if (hue >= 2 && hue < 3) {
+      red = 0
+      green = c
+      blue = x
+    } else if (hue >= 3 && hue < 4) {
+      red = 0
+      green = x
+      blue = c
+    } else if (hue >= 4 && hue < 5) {
+      red = x
+      green = 0
+      blue = c
+    } else {
+      red = c
+      green = 0
+      blue = x
+    }
+
+    console.log({ red, green, blue })
+
+    return [255 * (red + m), 255 * (green + m), 255 * (blue + m)]
   }
 
   protected static fromString(color: string): RbgArray {
