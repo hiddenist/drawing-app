@@ -158,7 +158,6 @@ export class ColorPicker {
     const value = (1 - y / this.canvas.height) * 100
     const color = Color.createFromHsv(this.getHue(), saturation, value)
 
-    console.log({ x, y, saturation, value, width: this.canvas.width, height: this.canvas.height, color: color.hex })
     return color
   }
 }
