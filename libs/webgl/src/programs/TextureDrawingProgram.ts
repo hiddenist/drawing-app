@@ -1,7 +1,7 @@
 import { Layer } from "../engine/Layer"
-import { SimpleTextureProgram } from "./abstract/SimpleTextureProgram"
+import { TextureProgramBase } from "./base/TextureProgramBase"
 
-export class TextureDrawingProgram extends SimpleTextureProgram {
+export class TextureDrawingProgram extends TextureProgramBase {
   constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
     console.log("TextureDrawingProgram constructor")

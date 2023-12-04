@@ -1,14 +1,14 @@
-import { SimpleShaderProgram, DrawType, DrawMode } from "./abstract/SimpleShaderProgram"
+import { PositionColorProgramBase, DrawType, DrawMode } from "./base/PositionColorProgramBase"
 import { Color } from "@libs/shared"
 
-export { DrawType } from "./abstract/SimpleShaderProgram"
+export { DrawType } from "./base/PositionColorProgramBase"
 
 export interface LineInfo {
   points: number[]
   pressure?: number[]
 }
 
-export class LineDrawingProgram extends SimpleShaderProgram {
+export class LineDrawingProgram extends PositionColorProgramBase {
   constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
   }
@@ -79,7 +79,4 @@ export interface DrawLineOptions {
    * The opacity of the line. Defaults to 255.0.
    */
   opacity?: number
-
-  hardness?: number
-  flow?: number
 }
