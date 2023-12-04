@@ -98,6 +98,29 @@ export class Color {
     return this.vector[2]
   }
 
+  get red(): number {
+    return this.r
+  }
+  get green(): number {
+    return this.g
+  }
+  get blue(): number {
+    return this.b
+  }
+
+  get hue(): number {
+    return this.getHslValues()[0]
+  }
+  get saturation(): number {
+    return this.getHslValues()[1]
+  }
+  get lightness(): number {
+    return this.getHslValues()[2]
+  }
+  get luminance(): number {
+    return (0.2126 * this.r + 0.7152 * this.g + 0.0722 * this.b) / 255
+  }
+
   get rgb(): string {
     return `rgb(${this.r}, ${this.g}, ${this.b})`
   }

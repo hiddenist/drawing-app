@@ -41,8 +41,13 @@ export class ValueSaturationGradientColorProgram extends BaseGradientColorProgra
   }
 
   public draw(hue?: number, selectedColor?: Color) {
-    if (hue !== undefined) this.hue = hue
+    if (selectedColor && selectedColor.saturation > 0) {
+      this.hue = selectedColor.hue
+    } else if (hue !== undefined) {
+      this.hue = hue
+    }
     this.selectedColor = selectedColor
+
     super.draw()
   }
 
