@@ -216,9 +216,6 @@ export class DrawingEngine {
       color: this.state.color,
       opacity: this.state.opacity,
       diameter: this.lineWeight,
-
-      hardness: 0.5,
-      flow: 1.0,
     }
   }
 
