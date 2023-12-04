@@ -7,12 +7,9 @@ const FRAGMENT_SHADER = "texture.fragment"
 const UNIFORM_NAMES = { ...uniformNames[FRAGMENT_SHADER] } as const
 const ATTRIBUTE_NAMES = { ...attributeNames[VERTEX_SHADER] } as const
 
-export abstract class SimpleTextureProgram extends BaseProgram<
-  keyof typeof UNIFORM_NAMES,
-  keyof typeof ATTRIBUTE_NAMES
-> {
+export abstract class TextureProgramBase extends BaseProgram<keyof typeof UNIFORM_NAMES, keyof typeof ATTRIBUTE_NAMES> {
   constructor(gl: WebGLRenderingContext, pixelDensity: number) {
-    super(SimpleTextureProgram.createContextStatic(gl, SimpleTextureProgram.createProgramStatic(gl)), pixelDensity)
+    super(TextureProgramBase.createContextStatic(gl, TextureProgramBase.createProgramStatic(gl)), pixelDensity)
   }
 
   protected static createProgramStatic(gl: WebGLRenderingContext): WebGLProgram {
@@ -20,7 +17,7 @@ export abstract class SimpleTextureProgram extends BaseProgram<
   }
 
   protected createProgram(gl: WebGLRenderingContext): WebGLProgram {
-    return SimpleTextureProgram.createProgramStatic(gl)
+    return TextureProgramBase.createProgramStatic(gl)
   }
 
   protected static createContextStatic(context: WebGLRenderingContext, program: WebGLProgram) {
@@ -28,14 +25,6 @@ export abstract class SimpleTextureProgram extends BaseProgram<
   }
 
   protected createProgramInfo(context: WebGLRenderingContext, program: WebGLProgram) {
-    return SimpleTextureProgram.createContextStatic(context, program)
-  }
-
-  protected createFrameBuffer(gl: WebGLRenderingContext) {
-    const frameBuffer = gl.createFramebuffer()
-    if (!frameBuffer) {
-      throw new Error("Could not create framebuffer")
-    }
-    return frameBuffer
+    return TextureProgramBase.createContextStatic(context, program)
   }
 }

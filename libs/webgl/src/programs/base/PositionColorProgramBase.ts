@@ -7,12 +7,15 @@ const FRAGMENT_SHADER = "color.fragment"
 const UNIFORM_NAMES = { ...uniformNames[VERTEX_SHADER], ...uniformNames[FRAGMENT_SHADER] } as const
 const ATTRIBUTE_NAMES = { ...attributeNames[VERTEX_SHADER] } as const
 
-export abstract class SimpleShaderProgram extends BaseProgram<
+export abstract class PositionColorProgramBase extends BaseProgram<
   keyof typeof UNIFORM_NAMES,
   keyof typeof ATTRIBUTE_NAMES
 > {
   constructor(gl: WebGLRenderingContext, pixelDensity: number) {
-    super(SimpleShaderProgram.createContextStatic(gl, SimpleShaderProgram.createProgramStatic(gl)), pixelDensity)
+    super(
+      PositionColorProgramBase.createContextStatic(gl, PositionColorProgramBase.createProgramStatic(gl)),
+      pixelDensity,
+    )
   }
 
   protected static createProgramStatic(gl: WebGLRenderingContext): WebGLProgram {
@@ -20,7 +23,7 @@ export abstract class SimpleShaderProgram extends BaseProgram<
   }
 
   protected createProgram(gl: WebGLRenderingContext): WebGLProgram {
-    return SimpleShaderProgram.createProgramStatic(gl)
+    return PositionColorProgramBase.createProgramStatic(gl)
   }
 
   protected static createContextStatic(context: WebGLRenderingContext, program: WebGLProgram) {
@@ -28,7 +31,7 @@ export abstract class SimpleShaderProgram extends BaseProgram<
   }
 
   protected createProgramInfo(context: WebGLRenderingContext, program: WebGLProgram) {
-    return SimpleShaderProgram.createContextStatic(context, program)
+    return PositionColorProgramBase.createContextStatic(context, program)
   }
 
   protected setColor(color: Color): typeof this {
