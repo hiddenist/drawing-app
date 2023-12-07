@@ -4,7 +4,7 @@ import { WebDrawingEngine, Tools } from "@libs/webgl"
 import { ColorPicker } from "@libs/color-picker"
 import { Color } from "@libs/shared"
 
-import { makeSlider } from "./elements/makeSlider"
+import { SliderInput } from "./components/SliderInput"
 
 main()
 
@@ -171,7 +171,7 @@ function makeToolbar<T extends string>(
   })
   inputTray.append(clearButton)
 
-  const opacitySlider = makeSlider({
+  const opacitySlider = SliderInput({
     className: "opacity-slider",
     label: "Opacity",
     initialValue: options.initialOpacity ?? 100,
@@ -184,9 +184,9 @@ function makeToolbar<T extends string>(
     },
   })
 
-  toolbar.append(opacitySlider.element)
+  toolbar.append(opacitySlider)
 
-  const weightSlider = makeSlider({
+  const weightSlider = SliderInput({
     className: "weight-slider",
     label: "Line weight",
     initialValue: options.initialWeight ?? 5,
@@ -198,7 +198,7 @@ function makeToolbar<T extends string>(
     },
   })
 
-  toolbar.append(weightSlider.element)
+  toolbar.append(weightSlider)
 
   return toolbar
 }

@@ -1,0 +1,11 @@
+{
+  "name": "@libs/jsx-factory",
+  "version": "0.0.0",
+  "description": "",
+  "private": false,
+  "main": "./src/exports.ts",
+  "types": [
+    "./src/exports.ts",
+    "./src/types/exports.d.ts"
+  ]
+}

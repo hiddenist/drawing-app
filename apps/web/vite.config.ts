@@ -11,4 +11,9 @@ export default defineConfig({
   server: {
     host: true,
   },
+  esbuild: {
+    jsxFactory: "createDomElement",
+    jsxFragment: "createDomFragment",
+    jsxInject: `import { createDomElement, createDomFragment } from "@libs/jsx-factory"`,
+  },
 })
