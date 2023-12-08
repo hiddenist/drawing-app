@@ -97,6 +97,7 @@ function makeToolbar<T extends string>(
     onSetColor: (color: Color) => void
     onSetTool: (tool: T) => void
     onExport: (name: string) => void
+    onLoadImage(image: Image) => void
 
     addListener: WebDrawingEngine["addListener"]
   },
@@ -170,17 +171,33 @@ function makeToolbar<T extends string>(
   })
   inputTray.append(exportButton)
 
+  const fileInput = document.createElement("input") 
+  fileInput.type = "file"
+  fileInput.accept = "image/*"
+  fileInput.addEventListener(
+    "change",
+    (e) => {
+      const file = fileInput.files[0]
+      if (!file) return
+      const image = new Image()
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        image.src = e.target.result
+        options.state.hasDrawn = true
+        options.onLoadImage(image)
+      }
+      reader.readAsDataURL(file)
+    }
+  )
+                          )
   const clearButton = document.createElement("button")
   clearButton.classList.add("clear-button")
   clearButton.innerText = options.state.hasDrawn ? "Clear" : "Load"
-  const loadImage = () => {
-    const image = new Image() // todo
-    options.state.hasDrawn = true
-    options.onLoadImage(image)
-  }
-  clearButton.addEventListener("click", () => {
+  
+  clearButton.addEventListener("click", (e) => {
+    e.preventDefault()
     if (!options.state.hasDrawn) {
-      loadImage()
+      fileInput.click()
       return
     }
     if (!confirm("Are you sure you want to clear the canvas?")) {
