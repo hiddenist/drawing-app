@@ -30,7 +30,11 @@ function main() {
     // { value: "erase", label: "Eraser" },
   ] as const
 
+  const state = {
+    hasDrawn: false
+  }
   makeToolbar(sidebarRoot, {
+    state,
     initialColor: engine.getCurrentColor(),
     initialOpacity: (engine.getOpacity() * 100) / 255,
     initialWeight: engine.lineWeight,
@@ -50,6 +54,9 @@ function main() {
     onSetTool(tool) {
       engine.setTool(tool)
     },
+    onLoadImage(image) {
+      engine.loadImage(image)
+    },
     onExport(name) {
       const url = engine.getDataUri()
       const link = document.createElement("a")
@@ -66,8 +73,9 @@ function main() {
   if (import.meta.env.DEV && window.location && window.location.hostname === "localhost") {
     return
   }
-
+  
   window.addEventListener("beforeunload", (e) => {
+    if (!state.hasDrawn) return
     e.preventDefault()
     e.returnValue = ""
   })
@@ -75,6 +83,7 @@ function main() {
 function makeToolbar<T extends string>(
   root: HTMLElement,
   options: {
+    state: { hasDrawn: boolean }
     initialColor?: Color
     initialWeight?: number
     initialOpacity?: number
@@ -110,6 +119,7 @@ function makeToolbar<T extends string>(
 
   options.addListener("draw", () => {
     recentColors.setSelectedColor(picker.getColor())
+    options.state.hasDrawn = true
   })
   options.addListener("pickColor", ({ color }) => {
     picker.setColor(color)
@@ -162,12 +172,23 @@ function makeToolbar<T extends string>(
 
   const clearButton = document.createElement("button")
   clearButton.classList.add("clear-button")
-  clearButton.innerText = "Clear"
+  clearButton.innerText = options.state.hasDrawn ? "Clear" : "Load"
+  const loadImage = () => {
+    const image = new Image() // todo
+    options.state.hasDrawn = true
+    options.onLoadImage(image)
+  }
   clearButton.addEventListener("click", () => {
+    if (!options.state.hasDrawn) {
+      loadImage()
+      return
+    }
     if (!confirm("Are you sure you want to clear the canvas?")) {
       return
     }
     options.onClear()
+    options.state.hasDrawn = false
+    clearButton.label = "Load"
   })
   inputTray.append(clearButton)
 
