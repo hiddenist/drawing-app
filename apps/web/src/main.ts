@@ -178,7 +178,7 @@ function makeToolbar<T extends string>(
   fileInput.addEventListener(
     "change",
     () => {
-      const file = fileInput.file?.[0]
+      const file = fileInput.files?.[0]
       if (!file) return
       const image = new Image()
       const reader = new FileReader()
