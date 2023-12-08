@@ -13,7 +13,7 @@ export class Layer {
   ) {
     this._gl = gl
 
-    if (from Image) {
+    if (fromImage) {
       this._texture = this.createTexture(gl, fromImage)
     }
   }
