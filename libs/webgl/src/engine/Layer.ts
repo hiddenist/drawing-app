@@ -1,6 +1,9 @@
 export interface LayerSettings {
   clearBeforeDrawing?: boolean
 }
+
+export type Image = ImageData | HTMLImageElement | HTMLCanvasElement | ImageBitmap
+
 export class Layer {
   protected readonly _gl: WebGLRenderingContext
   protected _texture?: WebGLTexture
