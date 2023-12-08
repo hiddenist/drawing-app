@@ -211,12 +211,12 @@ function makeToolbar<T extends string>(
     }
     options.onClear()
     options.state.hasDrawn = false
-    clearButton.label = "Load"
+    clearButton.innerText = "Load"
   })
   inputTray.append(clearButton)
   options.addListener("draw", () => {
     options.state.hasDrawn = true
-    clearButton.label = "Clear"
+    clearButton.innerText = "Clear"
   })
 
   const opacitySlider = makeSlider({
