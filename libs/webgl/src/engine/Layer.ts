@@ -34,7 +34,26 @@ export class Layer {
 
     const { width, height } = this.gl.canvas
 
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, image)
+    const level = 0
+    const internalFormat = gl.RGBA
+    const border = 0
+    const srcFormat = gl.RGBA
+    const srcType = gl.UNSIGNED_BYTE
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+    const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
+    gl.texImage2D
+    gl.TEXTURE_2D,
+    level,
+    internalFormat,
+    width,
+    height,
+    border,
+    srcFormat,
+    srcType,
+    image,
+    )
+    gl.UNSIGNED_BYTE, image)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
