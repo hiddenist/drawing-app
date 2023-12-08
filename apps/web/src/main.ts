@@ -8,6 +8,8 @@ import { makeSlider } from "./elements/makeSlider"
 
 main()
 
+type Image = HTMLImageElement
+
 function main() {
   const canvasRoot = document.getElementById("canvas-root")
   const sidebarRoot = document.getElementById("sidebar-root")
