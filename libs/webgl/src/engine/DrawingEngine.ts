@@ -291,6 +291,12 @@ export class DrawingEngine {
     this.callListeners("draw", { path, options, tool: this.state.tool })
   }
 
+  public loadImage(image: Image) {
+    const imageLayer = new Layer(this.gl, { ...this.savedDrawingLayer.settings }, image)
+    this.savedDrawingLayer = imageLayer
+    this.render()
+  }
+
   protected render() {
     this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
   }
