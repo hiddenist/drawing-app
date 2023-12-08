@@ -97,7 +97,7 @@ function makeToolbar<T extends string>(
     onSetColor: (color: Color) => void
     onSetTool: (tool: T) => void
     onExport: (name: string) => void
-    onLoadImage(image: Image) => void
+    onLoadImage: (image: Image) => void
 
     addListener: WebDrawingEngine["addListener"]
   },
