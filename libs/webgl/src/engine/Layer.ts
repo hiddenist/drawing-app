@@ -34,7 +34,7 @@ export class Layer {
 
     const { width, height } = this.gl.canvas
     if (image) {
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 0, gl.RGBA, gl.UNSIGNED_BYTE, image)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, image)
     } else {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
     }
