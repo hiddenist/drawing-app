@@ -3,6 +3,7 @@ import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import type { Vec2 } from "@libs/shared"
 import { BaseProgram, Color } from "@libs/shared"
 import { Layer } from "./Layer"
+import type { Image } from "./Layer"
 
 interface AvailablePrograms {
   lineDrawing: LineDrawingProgram
