@@ -73,7 +73,7 @@ function main() {
   if (import.meta.env.DEV && window.location && window.location.hostname === "localhost") {
     return
   }
-  
+
   window.addEventListener("beforeunload", (e) => {
     if (!state.hasDrawn) return
     e.preventDefault()
@@ -120,7 +120,6 @@ function makeToolbar<T extends string>(
 
   options.addListener("draw", () => {
     recentColors.setSelectedColor(picker.getColor())
-    options.state.hasDrawn = true
   })
   options.addListener("pickColor", ({ color }) => {
     picker.setColor(color)
@@ -183,13 +182,12 @@ function makeToolbar<T extends string>(
       const reader = new FileReader()
       reader.onload = (e) => {
         image.src = e.target.result
-        options.state.hasDrawn = true
         options.onLoadImage(image)
       }
       reader.readAsDataURL(file)
     }
   )
-                          )
+
   const clearButton = document.createElement("button")
   clearButton.classList.add("clear-button")
   clearButton.innerText = options.state.hasDrawn ? "Clear" : "Load"
@@ -208,6 +206,10 @@ function makeToolbar<T extends string>(
     clearButton.label = "Load"
   })
   inputTray.append(clearButton)
+  options.addListener("draw", () => {
+    options.state.hasDrawn = true
+    clearButton.label = "Clear"
+  })
 
   const opacitySlider = makeSlider({
     className: "opacity-slider",
