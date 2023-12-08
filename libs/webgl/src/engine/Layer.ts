@@ -9,15 +9,20 @@ export class Layer {
   public constructor(
     gl: WebGLRenderingContext,
     protected _settings: LayerSettings = {},
+    fromImage: null | Image = null
   ) {
     this._gl = gl
+
+    if (from Image) {
+      this._texture = this.createTexture(gl, fromImage)
+    }
   }
 
   public get settings(): Readonly<LayerSettings> {
     return this._settings
   }
 
-  protected createTexture(gl: WebGLRenderingContext) {
+  protected createTexture(gl: WebGLRenderingContext, image: Image | null = null) {
     const texture = gl.createTexture()
     if (!texture) {
       throw new Error("Could not create texture")
@@ -25,7 +30,7 @@ export class Layer {
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
     const { width, height } = this.gl.canvas
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, image)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
