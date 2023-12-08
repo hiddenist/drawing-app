@@ -177,13 +177,19 @@ function makeToolbar<T extends string>(
   fileInput.accept = "image/*"
   fileInput.addEventListener(
     "change",
-    (e) => {
-      const file = fileInput.files[0]
+    () => {
+      const file = fileInput.file?.[0]
       if (!file) return
       const image = new Image()
       const reader = new FileReader()
       reader.onload = (e) => {
-        image.src = e.target.result
+        const result = e.target?.result
+        if (!result) return
+        if (typeof result !== "string") {
+          alert("oops, can't load an image")
+          return
+        }
+        image.src = result
         options.onLoadImage(image)
       }
       reader.readAsDataURL(file)
