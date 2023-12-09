@@ -30,7 +30,11 @@ function main() {
     // { value: "erase", label: "Eraser" },
   ] as const
 
+  const state = {
+    hasDrawn: false,
+  }
   makeToolbar(sidebarRoot, {
+    state,
     initialColor: engine.getCurrentColor(),
     initialOpacity: (engine.getOpacity() * 100) / 255,
     initialWeight: engine.lineWeight,
@@ -50,6 +54,9 @@ function main() {
     onSetTool(tool) {
       engine.setTool(tool)
     },
+    onLoadImage(image) {
+      engine.loadImage(image)
+    },
     onExport(name) {
       const url = engine.getDataUri()
       const link = document.createElement("a")
@@ -68,6 +75,7 @@ function main() {
   }
 
   window.addEventListener("beforeunload", (e) => {
+    if (!state.hasDrawn) return
     e.preventDefault()
     e.returnValue = ""
   })
@@ -75,6 +83,7 @@ function main() {
 function makeToolbar<T extends string>(
   root: HTMLElement,
   options: {
+    state: { hasDrawn: boolean }
     initialColor?: Color
     initialWeight?: number
     initialOpacity?: number
@@ -88,13 +97,23 @@ function makeToolbar<T extends string>(
     onSetColor: (color: Color) => void
     onSetTool: (tool: T) => void
     onExport: (name: string) => void
+    onLoadImage: (image: HTMLImageElement) => void
 
     addListener: WebDrawingEngine["addListener"]
   },
 ) {
+  const localState = {
+    title: "My Drawing",
+  }
   const toolbar = document.createElement("div")
   toolbar.classList.add("toolbar")
   root.append(toolbar)
+
+  const hasDrawnCallbacks = new Set<(value: boolean) => void>()
+  const setHasDrawn = (value: boolean) => {
+    options.state.hasDrawn = value
+    hasDrawnCallbacks.forEach((cb) => cb(value))
+  }
 
   const picker = new ColorPicker(toolbar, {
     initialColor: options.initialColor,
@@ -152,24 +171,65 @@ function makeToolbar<T extends string>(
   })
   inputTray.append(toolSelect)
 
+  const importInput = document.createElement("input")
+  importInput.type = "file"
+  importInput.accept = "image/*"
+  importInput.addEventListener("change", () => {
+    const file = importInput.files?.[0]
+    if (!file) return
+    const image = new Image()
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result
+      if (!result) return
+      if (typeof result !== "string") {
+        alert("oops, can't load an image")
+        return
+      }
+      image.src = result
+    }
+    image.onload = () => {
+      options.onLoadImage(image)
+    }
+    reader.readAsDataURL(file)
+  })
+
   const exportButton = document.createElement("button")
   exportButton.classList.add("export-button")
-  exportButton.innerText = "Export"
+  const setExportButtonTitle = () => {
+    exportButton.innerText = options.state.hasDrawn ? "Export" : "Import"
+  }
+  hasDrawnCallbacks.add(setExportButtonTitle)
+  setExportButtonTitle()
+  exportButton.style.minWidth = "6chr"
   exportButton.addEventListener("click", () => {
-    options.onExport("drawing.png")
+    if (!options.state.hasDrawn) {
+      importInput.click()
+      return
+    }
+    const title = prompt("What would you like to name the image?", localState.title)
+    if (!title) return
+    localState.title = title
+    const filename = title.replace(/[^a-z0-9]/gi, "_").toLowerCase()
+    options.onExport(`${filename || "drawing"}.png`)
   })
   inputTray.append(exportButton)
 
   const clearButton = document.createElement("button")
   clearButton.classList.add("clear-button")
   clearButton.innerText = "Clear"
-  clearButton.addEventListener("click", () => {
+  clearButton.addEventListener("click", (e) => {
+    e.preventDefault()
     if (!confirm("Are you sure you want to clear the canvas?")) {
       return
     }
     options.onClear()
+    setHasDrawn(false)
   })
   inputTray.append(clearButton)
+  options.addListener("draw", () => {
+    setHasDrawn(true)
+  })
 
   const opacitySlider = SliderInput({
     className: "opacity-slider",
