@@ -171,13 +171,13 @@ function makeToolbar<T extends string>(
   })
   inputTray.append(toolSelect)
 
-  const fileInput = document.createElement("input")
-  fileInput.type = "file"
-  fileInput.accept = "image/*"
-  fileInput.addEventListener(
+  const importInput = document.createElement("input")
+  importInput.type = "file"
+  importInput.accept = "image/*"
+  importInput.addEventListener(
     "change",
     () => {
-      const file = fileInput.files?.[0]
+      const file = importInput.files?.[0]
       if (!file) return
       const image = new Image()
       const reader = new FileReader()
@@ -189,6 +189,8 @@ function makeToolbar<T extends string>(
           return
         }
         image.src = result
+      }
+      image.onload = () => {
         options.onLoadImage(image)
       }
       reader.readAsDataURL(file)
@@ -197,14 +199,15 @@ function makeToolbar<T extends string>(
 
   const exportButton = document.createElement("button")
   exportButton.classList.add("export-button")
-  exportButton.innerText = options.state.hasDrawn ? "Export" : "Import"
-  hasDrawnCallbacks.add((value) => {
-    exportButton.innerText = value ? "Export" : "Import"
-  })
+  const setExportButtonTitle = () => {
+    exportButton.innerText = options.state.hasDrawn ? "Export" : "Import"
+  }
+  hasDrawnCallbacks.add(setExportButtonTitle)
+  setExportButtonTitle()
   exportButton.style.minWidth = "6chr"
   exportButton.addEventListener("click", () => {
     if (!options.state.hasDrawn) {
-      fileInput.click()
+      importInput.click()
       return
     }
     const title = prompt("What would you like to name the image?", localState.title)
