@@ -10,7 +10,7 @@ export class Layer {
   public constructor(
     gl: WebGLRenderingContext,
     protected _settings: LayerSettings = {},
-    fromSource: TexImageSource | null = null
+    fromSource?: TexImageSource
   ) {
     this._gl = gl
 
@@ -23,7 +23,7 @@ export class Layer {
     return this._settings
   }
 
-  protected createTexture(gl: WebGLRenderingContext, source: TexImageSource | null = null) {
+  protected createTexture(gl: WebGLRenderingContext, source?: TexImageSource) {
     const texture = gl.createTexture()
     if (!texture) {
       throw new Error("Could not create texture")
@@ -38,6 +38,7 @@ export class Layer {
     const border = 0
 
     if (source) {
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
       gl.texImage2D(
         target,
         level,
