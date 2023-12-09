@@ -31,7 +31,7 @@ function main() {
   ] as const
 
   const state = {
-    hasDrawn: false
+    hasDrawn: false,
   }
   makeToolbar(sidebarRoot, {
     state,
@@ -174,28 +174,25 @@ function makeToolbar<T extends string>(
   const importInput = document.createElement("input")
   importInput.type = "file"
   importInput.accept = "image/*"
-  importInput.addEventListener(
-    "change",
-    () => {
-      const file = importInput.files?.[0]
-      if (!file) return
-      const image = new Image()
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const result = e.target?.result
-        if (!result) return
-        if (typeof result !== "string") {
-          alert("oops, can't load an image")
-          return
-        }
-        image.src = result
+  importInput.addEventListener("change", () => {
+    const file = importInput.files?.[0]
+    if (!file) return
+    const image = new Image()
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result
+      if (!result) return
+      if (typeof result !== "string") {
+        alert("oops, can't load an image")
+        return
       }
-      image.onload = () => {
-        options.onLoadImage(image)
-      }
-      reader.readAsDataURL(file)
+      image.src = result
     }
-  )
+    image.onload = () => {
+      options.onLoadImage(image)
+    }
+    reader.readAsDataURL(file)
+  })
 
   const exportButton = document.createElement("button")
   exportButton.classList.add("export-button")

@@ -10,7 +10,7 @@ export class Layer {
   public constructor(
     gl: WebGLRenderingContext,
     protected _settings: LayerSettings = {},
-    fromSource?: TexImageSource
+    fromSource?: TexImageSource,
   ) {
     this._gl = gl
 
@@ -39,27 +39,10 @@ export class Layer {
 
     if (source) {
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-      gl.texImage2D(
-        target,
-        level,
-        internalFormat,
-        srcFormat,
-        srcType,
-        source
-      )
+      gl.texImage2D(target, level, internalFormat, srcFormat, srcType, source)
     } else {
       const { width, height } = this.gl.canvas
-      gl.texImage2D(
-        target,
-        level,
-        internalFormat,
-        width,
-        height,
-        border,
-        srcFormat,
-        srcType,
-        null
-      )
+      gl.texImage2D(target, level, internalFormat, width, height, border, srcFormat, srcType, null)
     }
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
