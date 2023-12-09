@@ -17,8 +17,13 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
+    "noFallthroughCasesInSwitch
+    
+    "jsx": "preserve",
+    "jsxFactory": "DOMcreateElement",
+    "jsxFragmentFactory": "DOMcreateFragment",
+    "types": ["@libs/jsx-factory"],
+    
     "esModuleInterop": true,
     "paths": {
       "~/types/": ["./types/*"]
