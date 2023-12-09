@@ -8,8 +8,6 @@ import { makeSlider } from "./elements/makeSlider"
 
 main()
 
-type Image = HTMLImageElement
-
 function main() {
   const canvasRoot = document.getElementById("canvas-root")
   const sidebarRoot = document.getElementById("sidebar-root")
@@ -99,7 +97,7 @@ function makeToolbar<T extends string>(
     onSetColor: (color: Color) => void
     onSetTool: (tool: T) => void
     onExport: (name: string) => void
-    onLoadImage: (image: Image) => void
+    onLoadImage: (image: HTMLImageElement) => void
 
     addListener: WebDrawingEngine["addListener"]
   },
@@ -172,7 +170,7 @@ function makeToolbar<T extends string>(
   })
   inputTray.append(exportButton)
 
-  const fileInput = document.createElement("input") 
+  const fileInput = document.createElement("input")
   fileInput.type = "file"
   fileInput.accept = "image/*"
   fileInput.addEventListener(
@@ -199,7 +197,7 @@ function makeToolbar<T extends string>(
   const clearButton = document.createElement("button")
   clearButton.classList.add("clear-button")
   clearButton.innerText = options.state.hasDrawn ? "Clear" : "Load"
-  
+
   clearButton.addEventListener("click", (e) => {
     e.preventDefault()
     if (!options.state.hasDrawn) {

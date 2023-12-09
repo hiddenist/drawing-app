@@ -2,8 +2,6 @@ export interface LayerSettings {
   clearBeforeDrawing?: boolean
 }
 
-export type Image = ImageData | HTMLImageElement | HTMLCanvasElement | ImageBitmap
-
 export class Layer {
   protected readonly _gl: WebGLRenderingContext
   protected _texture?: WebGLTexture
@@ -12,12 +10,12 @@ export class Layer {
   public constructor(
     gl: WebGLRenderingContext,
     protected _settings: LayerSettings = {},
-    fromImage: Image | null = null
+    fromSource: TexImageSource | null = null
   ) {
     this._gl = gl
 
-    if (fromImage) {
-      this._texture = this.createTexture(gl, fromImage)
+    if (fromSource) {
+      this._texture = this.createTexture(gl, fromSource)
     }
   }
 
@@ -25,35 +23,43 @@ export class Layer {
     return this._settings
   }
 
-  protected createTexture(gl: WebGLRenderingContext, image: Image | null = null) {
+  protected createTexture(gl: WebGLRenderingContext, source: TexImageSource | null = null) {
     const texture = gl.createTexture()
     if (!texture) {
       throw new Error("Could not create texture")
     }
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
-    const { width, height } = this.gl.canvas
-
+    const target = gl.TEXTURE_2D
     const level = 0
     const internalFormat = gl.RGBA
-    const border = 0
     const srcFormat = gl.RGBA
     const srcType = gl.UNSIGNED_BYTE
-    const srcFormat = gl.RGBA;
-    const srcType = gl.UNSIGNED_BYTE;
-    const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
-    gl.texImage2D
-    gl.TEXTURE_2D,
-    level,
-    internalFormat,
-    width,
-    height,
-    border,
-    srcFormat,
-    srcType,
-    image,
-    )
-    gl.UNSIGNED_BYTE, image)
+    const border = 0
+
+    if (source) {
+      gl.texImage2D(
+        target,
+        level,
+        internalFormat,
+        srcFormat,
+        srcType,
+        source
+      )
+    } else {
+      const { width, height } = this.gl.canvas
+      gl.texImage2D(
+        target,
+        level,
+        internalFormat,
+        width,
+        height,
+        border,
+        srcFormat,
+        srcType,
+        null
+      )
+    }
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)

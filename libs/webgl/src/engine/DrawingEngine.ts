@@ -3,7 +3,6 @@ import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import type { Vec2 } from "@libs/shared"
 import { BaseProgram, Color } from "@libs/shared"
 import { Layer } from "./Layer"
-import type { Image } from "./Layer"
 
 interface AvailablePrograms {
   lineDrawing: LineDrawingProgram
@@ -292,7 +291,7 @@ export class DrawingEngine {
     this.callListeners("draw", { path, options, tool: this.state.tool })
   }
 
-  public loadImage(image: Image) {
+  public loadImage(image: TexImageSource) {
     const imageLayer = new Layer(this.gl, { ...this.savedDrawingLayer.settings }, image)
     this.savedDrawingLayer = imageLayer
     this.render()
