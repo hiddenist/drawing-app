@@ -102,9 +102,18 @@ function makeToolbar<T extends string>(
     addListener: WebDrawingEngine["addListener"]
   },
 ) {
+  const localState = {
+    title: "My Drawing",
+  }
   const toolbar = document.createElement("div")
   toolbar.classList.add("toolbar")
   root.append(toolbar)
+
+  const hasDrawnCallbacks = new Set<(value: boolean) => void>()
+  const setHasDrawn = (value: boolean) => {
+    options.state.hasDrawn = value
+    hasDrawnCallbacks.forEach((cb) => cb(value))
+  }
 
   const picker = new ColorPicker(toolbar, {
     initialColor: options.initialColor,
@@ -162,14 +171,6 @@ function makeToolbar<T extends string>(
   })
   inputTray.append(toolSelect)
 
-  const exportButton = document.createElement("button")
-  exportButton.classList.add("export-button")
-  exportButton.innerText = "Export"
-  exportButton.addEventListener("click", () => {
-    options.onExport("drawing.png")
-  })
-  inputTray.append(exportButton)
-
   const fileInput = document.createElement("input")
   fileInput.type = "file"
   fileInput.accept = "image/*"
@@ -194,27 +195,40 @@ function makeToolbar<T extends string>(
     }
   )
 
-  const clearButton = document.createElement("button")
-  clearButton.classList.add("clear-button")
-  clearButton.innerText = options.state.hasDrawn ? "Clear" : "Load"
-
-  clearButton.addEventListener("click", (e) => {
-    e.preventDefault()
+  const exportButton = document.createElement("button")
+  exportButton.classList.add("export-button")
+  exportButton.innerText = options.state.hasDrawn ? "Export" : "Import"
+  hasDrawnCallbacks.add((value) => {
+    exportButton.innerText = value ? "Export" : "Import"
+  })
+  exportButton.style.minWidth = "6chr"
+  exportButton.addEventListener("click", () => {
     if (!options.state.hasDrawn) {
       fileInput.click()
       return
     }
+    const title = prompt("What would you like to name the image?", localState.title)
+    if (!title) return
+    localState.title = title
+    const filename = title.replace(/[^a-z0-9]/gi, "_").toLowerCase()
+    options.onExport(`${filename || "drawing"}.png`)
+  })
+  inputTray.append(exportButton)
+
+  const clearButton = document.createElement("button")
+  clearButton.classList.add("clear-button")
+  clearButton.innerText = "Clear"
+  clearButton.addEventListener("click", (e) => {
+    e.preventDefault()
     if (!confirm("Are you sure you want to clear the canvas?")) {
       return
     }
     options.onClear()
-    options.state.hasDrawn = false
-    clearButton.innerText = "Load"
+    setHasDrawn(false)
   })
   inputTray.append(clearButton)
   options.addListener("draw", () => {
-    options.state.hasDrawn = true
-    clearButton.innerText = "Clear"
+    setHasDrawn(true)
   })
 
   const opacitySlider = makeSlider({
