@@ -13,15 +13,17 @@ export declare global {
   }
 }
 
-type HTMLProps<T extends HTMLElement, E extends HTMLElementEventMap = HTMLElementEventMap> = OmitFunctions<
-  Omit<Partial<T>, "style">
-> & {
-  [K in `on${keyof E}`]?: (event: E[K]) => void
-} & {
-  ref?: (element: T) => void
-  style?: Partial<CSSStyleDeclaration>
+type PropsWithoutFunctions<T extends HTMLElement> = Without<T, Function>
+type HTMLProps<T extends HTMLElement> = Partial<PropsWithoutFunctions<WithPartial<T, "style">> & WithRef<T>>
+
+type WithRef<T extends HTMLElement> = {
+  ref: (element: T) => void
 }
 
-type OmitFunctions<T> = {
-  [K in keyof T as T[K] extends Function ? never : K]: T[K]
+type Without<T, E> = {
+  [K in keyof T as T[K] extends E ? never : K]: T[K]
+}
+
+type WithPartial<T, P extends keyof T> = {
+  [K in keyof T]: K extends P ? Partial<T[K]> : T[K]
 }
