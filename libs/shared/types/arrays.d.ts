@@ -19,7 +19,9 @@ export type FlatArray<T extends any[]> = T extends [infer F, ...infer R]
  */
 export type VectorArray<Size extends number> = ArrayOfLength<Size, number>
 
-type Vec2 = VectorArray<2>
+export type Vec2 = VectorArray<2>
+export type Vec3 = VectorArray<3>
+export type Vec4 = VectorArray<4>
 
 /**
  * A two dimensional array of numbers with static lengths.

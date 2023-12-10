@@ -1,16 +1,28 @@
 {
-  "extends": "./tsconfig.base.json",
-  "exclude": [
-    "**/node_modules",
-    "**/*.spec.ts",
-    "**/*.test.ts",
-    "**/*.spec.d.ts",
-    "**/*.test.d.ts",
-    "**/*.spec.tsx",
-    "**/*.test.tsx",
-    "**/*.spec.js",
-    "**/*.test.js",
-    "**/*.spec.jsx",
-    "**/*.test.jsx"
-  ]
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "rootDir": ".",
+    "typeRoots": ["types", "node_modules/@types"],
+
+    "esModuleInterop": true
+  },
+  "exclude": ["**/node_modules", "**/*.spec.*", "**/*.test.*"]
 }

@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "generate": "npx tsx src/generate.ts"
+    "generate": "npx tsx src/generate.ts",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "@schemastore/package": "^0.0.10",

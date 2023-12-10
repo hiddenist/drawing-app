@@ -3,5 +3,8 @@
   "version": "0.0.0",
   "description": "Shared classes, utilities, etc that multiple other libs use",
   "private": false,
-  "main": "./src/exports.ts"
+  "main": "./src/exports.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  }
 }

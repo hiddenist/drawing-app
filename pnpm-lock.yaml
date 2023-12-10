@@ -35,6 +35,9 @@ importers:
       '@libs/color-picker':
         specifier: workspace:*
         version: link:../../libs/color-picker
+      '@libs/jsx-factory':
+        specifier: workspace:*
+        version: link:../../libs/jsx-factory
       '@libs/webgl':
         specifier: workspace:*
         version: link:../../libs/webgl
@@ -44,6 +47,8 @@ importers:
       '@libs/shared':
         specifier: workspace:*
         version: link:../shared
+
+  libs/jsx-factory: {}
 
   libs/shared: {}
 

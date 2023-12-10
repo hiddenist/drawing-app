@@ -1,11 +1,9 @@
 {
-  "name": "@libs/webgl",
-  "private": true,
+  "name": "@libs/jsx-factory",
   "version": "0.0.0",
+  "description": "",
+  "private": false,
   "main": "./src/exports.ts",
-  "dependencies": {
-    "@libs/shared": "workspace:*"
-  },
   "scripts": {
     "type-check": "tsc --noEmit"
   }

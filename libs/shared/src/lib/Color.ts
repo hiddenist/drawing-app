@@ -1,4 +1,4 @@
-import { VectorArray } from "../types/arrays"
+import { Vec3, Vec4 } from "../../types/arrays"
 
 export type RbgArray = [
   /** Red as an 8 bit number (0 to 255) */
@@ -34,7 +34,7 @@ export class Color {
     blue: number,
   )
   public constructor(
-    firstParam: Readonly<VectorArray<3 | 4>> | Readonly<Uint8ClampedArray> | number | string,
+    firstParam: Readonly<Vec3 | Vec4> | Readonly<Uint8ClampedArray> | number | string,
     g: typeof firstParam extends number ? number : never,
     b: typeof firstParam extends number ? number : never,
   ) {

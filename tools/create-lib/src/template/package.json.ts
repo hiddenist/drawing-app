@@ -8,6 +8,9 @@ export default function generate(options: Required<CreateLibOptions>) {
     description: options.description,
     private: options.isPrivate,
     main: `./src/${options.mainFileName}`,
+    scripts: {
+      "type-check": "tsc --noEmit",
+    },
   }
 
   return JSON.stringify(packageJson, null, 2)
