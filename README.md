@@ -1,3 +1,13 @@
+# Drawing App
+
+![image](https://github.com/hiddenist/drawing-app/assets/563879/7447c3e1-92a8-408e-982f-b498e3619ee4)
+
+This is a 2d web-based drawing application. I started this as a hobby project, because I have no idea what a shader is and thought learning WebGL could be fun!
+
+Check out the app here: [hiddenist.github.io/drawing-app](https://hiddenist.github.io/drawing-app/)
+
+The app is missing a number of features, most notably an undo or eraser tool. If you have an idea you want to see added, feel free to [create and issue](https://github.com/hiddenist/drawing-app/issues/new) to request it. Thanks for checking this out!
+
 ## Local Setup
 
 ### Prerequisites
@@ -6,7 +16,7 @@
 - pnpm: https://pnpm.io/installation
 
 > [!TIP]
-> You can [create a shorter](https://pnpm.io/installation#using-a-shorter-alias) alias for `pnpm`, such as `pn`, to make it easier to type.
+> You can [create a shorter alias](https://pnpm.io/installation#using-a-shorter-alias) for `pnpm`, such as `pn`, to make it easier to type.
 
 ### Install packages
 
