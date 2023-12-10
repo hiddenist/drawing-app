@@ -35,14 +35,20 @@ importers:
       '@libs/color-picker':
         specifier: workspace:*
         version: link:../../libs/color-picker
+      '@libs/drawing-engine':
+        specifier: workspace:*
+        version: link:../../libs/drawing-engine
       '@libs/jsx-factory':
         specifier: workspace:*
         version: link:../../libs/jsx-factory
-      '@libs/webgl':
-        specifier: workspace:*
-        version: link:../../libs/webgl
 
   libs/color-picker:
+    dependencies:
+      '@libs/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  libs/drawing-engine:
     dependencies:
       '@libs/shared':
         specifier: workspace:*
@@ -51,12 +57,6 @@ importers:
   libs/jsx-factory: {}
 
   libs/shared: {}
-
-  libs/webgl:
-    dependencies:
-      '@libs/shared':
-        specifier: workspace:*
-        version: link:../shared
 
   tools/create-lib:
     devDependencies:
