@@ -73,11 +73,11 @@ export function EditableNumericLabel(props: {
       style={{ caretColor: "currentColor" }}
       contentEditable={isFirefox() ? "true" : "plaintext-only"}
       ref={props.ref}
-      onkeydown={handleKeyPress}
-      onclick={handleClick}
-      onwheel={handleScrollWheel}
-      onpaste={handlePaste}
-      onblur={handleBlur}
+      onKeyDown={handleKeyPress}
+      onClick={handleClick}
+      onWheel={handleScrollWheel}
+      onPaste={handlePaste}
+      onBlur={handleBlur}
     >
       {props.displayValue}
     </span>
