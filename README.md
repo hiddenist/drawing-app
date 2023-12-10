@@ -5,7 +5,8 @@
 - Node.js: https://nodejs.org/en/
 - pnpm: https://pnpm.io/installation
 
-> [!TIP] You can [create a shorter](https://pnpm.io/installation#using-a-shorter-alias) alias for `pnpm`, such as `pn`, to make it easier tp type.
+> [!TIP]
+> You can [create a shorter](https://pnpm.io/installation#using-a-shorter-alias) alias for `pnpm`, such as `pn`, to make it easier to type.
 
 ### Install packages
 
