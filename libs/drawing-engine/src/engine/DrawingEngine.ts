@@ -73,8 +73,17 @@ export class DrawingEngine {
   protected state: DrawingState
   protected programs: AvailablePrograms
   protected drawingHistory: Array<HistoryItem>
+  /**
+   * Saved drawing layer is the layer that actions, like brush strokes, are saved to after the user finishes drawing
+   * (e.g. releases the mouse, lifts the stylus, etc).
+   */
   protected savedDrawingLayer: Layer
-  protected activePathLayer: Layer
+  /**
+   * Active drawing layer is the layer that is updated as the user is drawing.
+   * It's cleared and redrawn on each frame, and then merged down to the saved drawing layer when the user finishes
+   * drawing.
+   */
+  protected activeDrawingLayer: Layer
 
   protected tools: Record<Tool, ToolBindings>
 
@@ -97,7 +106,7 @@ export class DrawingEngine {
     }
 
     this.savedDrawingLayer = new Layer(gl)
-    this.activePathLayer = new Layer(gl, { clearBeforeDrawing: true })
+    this.activeDrawingLayer = new Layer(gl, { clearBeforeDrawing: true })
 
     this.programs = {
       lineDrawing: new LineDrawingProgram(gl, this.state.pixelDensity),
@@ -199,9 +208,9 @@ export class DrawingEngine {
 
   public clearCanvas() {
     this.savedDrawingLayer.clear()
-    this.activePathLayer.clear()
+    this.activeDrawingLayer.clear()
     this.clearCurrent()
-    this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
+    this.programs.textureDrawing.draw(this.activeDrawingLayer, this.savedDrawingLayer)
 
     this.callListeners("clear", undefined)
   }
@@ -275,7 +284,7 @@ export class DrawingEngine {
 
   protected updateActivePath() {
     if (this.state.currentPath.points.length > 0) {
-      this.drawLine(this.activePathLayer, this.state.currentPath, DrawType.STATIC_DRAW)
+      this.drawLine(this.activeDrawingLayer, this.state.currentPath, DrawType.STATIC_DRAW)
     }
   }
 
@@ -298,7 +307,7 @@ export class DrawingEngine {
   }
 
   protected render() {
-    this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
+    this.programs.textureDrawing.draw(this.activeDrawingLayer, this.savedDrawingLayer)
   }
 
   public addListener<E extends DrawingEngineEventName>(eventName: E, cb: DrawingEventHandler<E>) {
@@ -328,9 +337,9 @@ export class DrawingEngine {
       return
     }
 
-    const copy = this.programs.textureDrawing.mergeDown(this.activePathLayer, this.savedDrawingLayer)
+    const copy = this.programs.textureDrawing.mergeDown(this.activeDrawingLayer, this.savedDrawingLayer)
     this.savedDrawingLayer.clear()
-    this.activePathLayer.clear()
+    this.activeDrawingLayer.clear()
     this.savedDrawingLayer = copy
     this.render()
     this.drawingHistory.push({
