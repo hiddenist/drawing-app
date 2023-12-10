@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@libs/color-picker": "workspace:*",
-    "@libs/jsx-factory": "workspace:*",
-    "@libs/webgl": "workspace:*"
+    "@libs/drawing-engine": "workspace:*",
+    "@libs/jsx-factory": "workspace:*"
   }
 }

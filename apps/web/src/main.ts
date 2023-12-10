@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { WebDrawingEngine, Tools } from "@libs/webgl"
+import { WebDrawingEngine, Tools } from "@libs/drawing-engine"
 import { ColorPicker } from "@libs/color-picker"
 import { Color } from "@libs/shared"
 
