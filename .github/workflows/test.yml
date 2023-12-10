@@ -18,7 +18,7 @@ jobs:
         uses: "./.github/actions/setup-pnpm"
 
       - name: Verify TypeScript types
-        run: pnpm typecheck
+        run: pnpm type-check
 
       - name: Check for linting errors
         run: pnpm lint
