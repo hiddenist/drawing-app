@@ -1,10 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
-  "include": ["src", "../../declarations.d.ts", "../../libs/jsx-factory/src/types/jsx.d.ts"],
-  "references": [{ "path": "./tsconfig.node.json" }],
-  "compilerOptions": {
-    "jsx": "preserve",
-    "jsxFactory": "DOMcreateElement",
-    "jsxFragmentFactory": "DOMcreateFragment"
-  }
+  "extends": "../../tsconfig.jsx.json",
+  "include": ["src", "types"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxFactory": "DOMcreateElement",
+    "jsxFragmentFactory": "DOMcreateFragment",
+    "lib": ["dom", "dom.iterable", "esnext"]
+  },
+  "files": ["./libs/jsx-factory/types/index.d.ts"]
+}

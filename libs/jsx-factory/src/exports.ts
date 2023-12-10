@@ -12,11 +12,10 @@
  *       "dom.iterable"
  *     ]
  *   }
- *
+ *s
  */
 
 export { createDomElement } from "./lib/create-dom-element"
 export { createDomFragment } from "./lib/create-dom-fragment"
 
-export type * from "./types/function-component"
-import "./types/jsx.d.ts"
+export type { FunctionComponent } from "../types/function-component"

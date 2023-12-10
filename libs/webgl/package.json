@@ -5,5 +5,8 @@
   "main": "./src/exports.ts",
   "dependencies": {
     "@libs/shared": "workspace:*"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
   }
 }

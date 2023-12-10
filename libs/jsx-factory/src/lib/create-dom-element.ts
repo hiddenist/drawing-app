@@ -1,6 +1,6 @@
 import { AttributeMapper } from "./attribute-mapper"
 import { escapeHtml } from "./escape-html"
-import { FunctionComponent } from "../types/function-component"
+import { FunctionComponent } from "../../types/function-component"
 
 export function createDomElement(
   tag: FunctionComponent | string,
