@@ -155,7 +155,7 @@ export class DrawingEngine {
     this.savedDrawingLayer.clear()
     this.activeDrawingLayer.clear()
     this.clearCurrent()
-    this.program.draw(this.activeDrawingLayer, this.savedDrawingLayer)
+    this.render()
 
     this.callListeners("clear", undefined)
   }
