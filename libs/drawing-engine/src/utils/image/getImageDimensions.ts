@@ -1,4 +1,6 @@
-export function getImageDimensions(image: TexImageSource) {
+import { SourceImage } from "./SourceImage"
+
+export function getImageDimensions(image: SourceImage) {
   let width = 0
   let height = 0
 
