@@ -2,6 +2,7 @@ import { Color, getEventPosition } from "@libs/shared"
 import { DrawingEngine, DrawingEngineOptions, Tools } from "./DrawingEngine"
 import { Vec2 } from "@libs/shared"
 import { getImageDimensions } from "../utils/image/getImageDimensions"
+import { SourceImage } from "../utils/image/SourceImage"
 
 interface IWebDrawingEngine {
   canvas: Readonly<HTMLCanvasElement>
@@ -94,7 +95,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     return this
   }
 
-  public loadImage(image: TexImageSource): void {
+  public loadImage(image: SourceImage): void {
     // const size = getImageDimensions(image) ?? { width: 0, height: 0 }
     // if (size.width > this.canvas.width || size.height > this.canvas.height) {
     //   if (confirm("The image is larger than the canvas. Do you want to resize the canvas?")) {
