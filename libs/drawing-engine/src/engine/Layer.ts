@@ -42,7 +42,7 @@ export class Layer {
     const { width, height } = this.gl.canvas
 
     if (source) {
-      const croppedSource = getCroppedImage(source, width, height)
+      const croppedSource = getCroppedImage(source, width, height, true)
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
       gl.texImage2D(target, level, internalFormat, srcFormat, srcType, croppedSource)
     } else {
