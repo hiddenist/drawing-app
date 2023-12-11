@@ -1,6 +1,6 @@
 import { InputPoint } from "./InputPoint"
 import { DrawLineOptions, LineDrawingProgram } from "../programs/LineDrawingProgram"
-import { DrawingEngine, DrawingEngineEvent } from "../engine/DrawingEngine"
+import { DrawingEngine, DrawingEngineEvent, DrawingEngineEventMap, DrawingEventHandler } from "../engine/DrawingEngine"
 import { ToolNames } from "./Tools"
 
 export type LineHistoryEntry = {
