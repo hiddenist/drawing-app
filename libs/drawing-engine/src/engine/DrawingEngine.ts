@@ -306,6 +306,18 @@ export class DrawingEngine {
     this.render()
   }
 
+  public resizeCanvas(width: number, height: number) {
+    this.state.width = width
+    this.state.height = height
+    this.gl.canvas.width = width
+    this.gl.canvas.height = height
+    this.resizeViewport(width, height)
+  }
+
+  protected resizeViewport(width: number, height: number, offsetX = 0, offsetY = 0) {
+    this.gl.viewport(offsetX, offsetY, width, height)
+  }
+
   protected render() {
     this.programs.textureDrawing.draw(this.activeDrawingLayer, this.savedDrawingLayer)
   }
