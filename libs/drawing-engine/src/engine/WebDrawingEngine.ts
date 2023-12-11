@@ -95,12 +95,12 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
   }
 
   public loadImage(image: TexImageSource): void {
-    const size = getImageDimensions(image) ?? { width: 0, height: 0 }
-    if (size.width > this.canvas.width || size.height > this.canvas.height) {
-      if (confirm("The image is larger than the canvas. Do you want to resize the canvas?")) {
-        this.resizeCanvas(size.width / this.pixelDensity, size.height / this.pixelDensity)
-      }
-    }
+    // const size = getImageDimensions(image) ?? { width: 0, height: 0 }
+    // if (size.width > this.canvas.width || size.height > this.canvas.height) {
+    //   if (confirm("The image is larger than the canvas. Do you want to resize the canvas?")) {
+    //     this.resizeCanvas(size.width / this.pixelDensity, size.height / this.pixelDensity)
+    //   }
+    // }
     super.loadImage(image)
   }
 
