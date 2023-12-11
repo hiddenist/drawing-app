@@ -3,6 +3,7 @@ import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import type { Vec2 } from "@libs/shared"
 import { BaseProgram, Color } from "@libs/shared"
 import { Layer } from "./Layer"
+import { SourceImage } from "../utils/image/SourceImage"
 
 interface AvailablePrograms {
   lineDrawing: LineDrawingProgram
@@ -319,10 +320,10 @@ export class DrawingEngine {
     this.callListeners("draw", { path, options, tool: this.state.tool })
   }
 
-  public loadImage(image: TexImageSource) {
-    const imageLayer = new Layer(this.gl, { ...this.savedDrawingLayer.settings }, image)
-    this.savedDrawingLayer = imageLayer
-    this.render()
+  public loadImage(image: SourceImage) {
+    const imageLayer = new Layer(this.gl, { ...this.activeDrawingLayer.settings }, image)
+    this.activeDrawingLayer = imageLayer
+    this.commitToSavedLayer()
   }
 
   public resizeCanvas(width: number, height: number) {
