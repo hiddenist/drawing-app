@@ -3,6 +3,7 @@ import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import type { Vec2 } from "@libs/shared"
 import { BaseProgram, Color } from "@libs/shared"
 import { Layer } from "./Layer"
+import { SourceImage } from "../utils/image/SourceImage"
 
 interface AvailablePrograms {
   lineDrawing: LineDrawingProgram
@@ -67,14 +68,24 @@ export interface ToolBindings {
   onMove?: (positions: ReadonlyArray<Vec2>, pressure: ReadonlyArray<number>) => void
   onRelease?: (position: Readonly<Vec2>, pressure: Readonly<[number]>) => void
   onCancel?: () => void
+  onCommit?: () => void
 }
 
 export class DrawingEngine {
   protected state: DrawingState
   protected programs: AvailablePrograms
   protected drawingHistory: Array<HistoryItem>
+  /**
+   * Saved drawing layer is the layer that actions, like brush strokes, are saved to after the user finishes drawing
+   * (e.g. releases the mouse, lifts the stylus, etc).
+   */
   protected savedDrawingLayer: Layer
-  protected activePathLayer: Layer
+  /**
+   * Active drawing layer is the layer that is updated as the user is drawing.
+   * It's cleared and redrawn on each frame, and then merged down to the saved drawing layer when the user finishes
+   * drawing.
+   */
+  protected activeDrawingLayer: Layer
 
   protected tools: Record<Tool, ToolBindings>
 
@@ -97,7 +108,7 @@ export class DrawingEngine {
     }
 
     this.savedDrawingLayer = new Layer(gl)
-    this.activePathLayer = new Layer(gl, { clearBeforeDrawing: true })
+    this.activeDrawingLayer = new Layer(gl, { clearBeforeDrawing: true })
 
     this.programs = {
       lineDrawing: new LineDrawingProgram(gl, this.state.pixelDensity),
@@ -115,7 +126,21 @@ export class DrawingEngine {
         this.addPositions(positions, pressure)
       },
       onRelease: () => {
-        this.commitPath()
+        this.commitToSavedLayer()
+      },
+      onCommit: () => {
+        const path = this.clearCurrentPath()
+
+        this.state.isPressed = false
+        if (path.points.length === 0) {
+          return
+        }
+
+        this.drawingHistory.push({
+          path,
+          tool: this.getCurrentTool(),
+          options: this.getLineOptions(),
+        })
       },
     }
     this.tools = {
@@ -164,23 +189,27 @@ export class DrawingEngine {
     return this.state.tool
   }
 
+  public get activeTool() {
+    return this.tools[this.state.tool]
+  }
+
   public setTool(tool: Tool) {
     if (this.state.tool === tool) {
       return
     }
-    this.commitPath()
+    this.commitToSavedLayer()
     this.state.prevTool = this.state.tool
     this.state.tool = tool
     this.callListeners("changeTool", { tool })
   }
 
   public setColor(color: Color) {
-    this.commitPath()
+    this.commitToSavedLayer()
     this.state.color = color
   }
 
   public setOpacity(opacity: number) {
-    this.commitPath()
+    this.commitToSavedLayer()
     this.state.opacity = opacity
   }
 
@@ -199,9 +228,9 @@ export class DrawingEngine {
 
   public clearCanvas() {
     this.savedDrawingLayer.clear()
-    this.activePathLayer.clear()
+    this.activeDrawingLayer.clear()
     this.clearCurrent()
-    this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
+    this.programs.textureDrawing.draw(this.activeDrawingLayer, this.savedDrawingLayer)
 
     this.callListeners("clear", undefined)
   }
@@ -275,7 +304,7 @@ export class DrawingEngine {
 
   protected updateActivePath() {
     if (this.state.currentPath.points.length > 0) {
-      this.drawLine(this.activePathLayer, this.state.currentPath, DrawType.STATIC_DRAW)
+      this.drawLine(this.activeDrawingLayer, this.state.currentPath, DrawType.STATIC_DRAW)
     }
   }
 
@@ -291,14 +320,26 @@ export class DrawingEngine {
     this.callListeners("draw", { path, options, tool: this.state.tool })
   }
 
-  public loadImage(image: TexImageSource) {
-    const imageLayer = new Layer(this.gl, { ...this.savedDrawingLayer.settings }, image)
-    this.savedDrawingLayer = imageLayer
-    this.render()
+  public loadImage(image: SourceImage) {
+    const imageLayer = new Layer(this.gl, { ...this.activeDrawingLayer.settings }, image)
+    this.activeDrawingLayer = imageLayer
+    this.commitToSavedLayer()
+  }
+
+  public resizeCanvas(width: number, height: number) {
+    this.state.width = width
+    this.state.height = height
+    this.gl.canvas.width = width
+    this.gl.canvas.height = height
+    this.resizeViewport(width, height)
+  }
+
+  protected resizeViewport(width: number, height: number, offsetX = 0, offsetY = 0) {
+    this.gl.viewport(offsetX, offsetY, width, height)
   }
 
   protected render() {
-    this.programs.textureDrawing.draw(this.activePathLayer, this.savedDrawingLayer)
+    this.programs.textureDrawing.draw(this.activeDrawingLayer, this.savedDrawingLayer)
   }
 
   public addListener<E extends DrawingEngineEventName>(eventName: E, cb: DrawingEventHandler<E>) {
@@ -321,23 +362,14 @@ export class DrawingEngine {
     this.listeners[eventName]?.forEach((listener) => listener({ eventName, ...data }))
   }
 
-  protected commitPath() {
-    const path = this.clearCurrentPath()
-    this.state.isPressed = false
-    if (path.points.length === 0) {
-      return
-    }
-
-    const copy = this.programs.textureDrawing.mergeDown(this.activePathLayer, this.savedDrawingLayer)
+  protected commitToSavedLayer() {
+    const copy = this.programs.textureDrawing.mergeDown(this.activeDrawingLayer, this.savedDrawingLayer)
     this.savedDrawingLayer.clear()
-    this.activePathLayer.clear()
+    this.activeDrawingLayer.clear()
     this.savedDrawingLayer = copy
     this.render()
-    this.drawingHistory.push({
-      path,
-      options: this.getLineOptions(),
-      tool: this.state.tool,
-    })
+
+    this.activeTool.onCommit?.()
   }
 
   private clearCurrentPath(): Readonly<LineInfo> {

@@ -1,6 +1,7 @@
 import { Color, getEventPosition } from "@libs/shared"
 import { DrawingEngine, DrawingEngineOptions, Tools } from "./DrawingEngine"
 import { Vec2 } from "@libs/shared"
+import { SourceImage } from "../utils/image/SourceImage"
 
 interface IWebDrawingEngine {
   canvas: Readonly<HTMLCanvasElement>
@@ -87,11 +88,20 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
   }
 
   public resizeCanvas(width: number, height: number) {
-    this.canvas.width = width * this.pixelDensity
-    this.canvas.height = height * this.pixelDensity
     this.canvas.style.width = `${width}px`
     this.canvas.style.height = `${height}px`
+    super.resizeCanvas(width * this.pixelDensity, height * this.pixelDensity)
     return this
+  }
+
+  public loadImage(image: SourceImage): void {
+    // const size = getImageDimensions(image) ?? { width: 0, height: 0 }
+    // if (size.width > this.canvas.width || size.height > this.canvas.height) {
+    //   if (confirm("The image is larger than the canvas. Do you want to resize the canvas?")) {
+    //     this.resizeCanvas(size.width / this.pixelDensity, size.height / this.pixelDensity)
+    //   }
+    // }
+    super.loadImage(image)
   }
 
   private bindBrowserEvents() {
