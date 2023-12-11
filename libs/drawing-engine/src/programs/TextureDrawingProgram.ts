@@ -4,7 +4,6 @@ import { TextureProgramBase } from "./base/TextureProgramBase"
 export class TextureDrawingProgram extends TextureProgramBase {
   constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
-    console.log("TextureDrawingProgram constructor")
   }
 
   public createTextureImage(layer: Layer, drawImage: () => void) {

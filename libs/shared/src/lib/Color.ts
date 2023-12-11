@@ -270,8 +270,6 @@ export class Color {
       blue = x
     }
 
-    console.log({ red, green, blue })
-
     return [255 * (red + m), 255 * (green + m), 255 * (blue + m)]
   }
 

@@ -67,6 +67,7 @@ export interface ToolBindings {
   onMove?: (positions: ReadonlyArray<Vec2>, pressure: ReadonlyArray<number>) => void
   onRelease?: (position: Readonly<Vec2>, pressure: Readonly<[number]>) => void
   onCancel?: () => void
+  onCommit?: () => void
 }
 
 export class DrawingEngine {
@@ -124,7 +125,21 @@ export class DrawingEngine {
         this.addPositions(positions, pressure)
       },
       onRelease: () => {
-        this.commitPath()
+        this.commitToSavedLayer()
+      },
+      onCommit: () => {
+        const path = this.clearCurrentPath()
+
+        this.state.isPressed = false
+        if (path.points.length === 0) {
+          return
+        }
+
+        this.drawingHistory.push({
+          path,
+          tool: this.getCurrentTool(),
+          options: this.getLineOptions(),
+        })
       },
     }
     this.tools = {
@@ -173,23 +188,27 @@ export class DrawingEngine {
     return this.state.tool
   }
 
+  public get activeTool() {
+    return this.tools[this.state.tool]
+  }
+
   public setTool(tool: Tool) {
     if (this.state.tool === tool) {
       return
     }
-    this.commitPath()
+    this.commitToSavedLayer()
     this.state.prevTool = this.state.tool
     this.state.tool = tool
     this.callListeners("changeTool", { tool })
   }
 
   public setColor(color: Color) {
-    this.commitPath()
+    this.commitToSavedLayer()
     this.state.color = color
   }
 
   public setOpacity(opacity: number) {
-    this.commitPath()
+    this.commitToSavedLayer()
     this.state.opacity = opacity
   }
 
@@ -342,23 +361,14 @@ export class DrawingEngine {
     this.listeners[eventName]?.forEach((listener) => listener({ eventName, ...data }))
   }
 
-  protected commitPath() {
-    const path = this.clearCurrentPath()
-    this.state.isPressed = false
-    if (path.points.length === 0) {
-      return
-    }
-
+  protected commitToSavedLayer() {
     const copy = this.programs.textureDrawing.mergeDown(this.activeDrawingLayer, this.savedDrawingLayer)
     this.savedDrawingLayer.clear()
     this.activeDrawingLayer.clear()
     this.savedDrawingLayer = copy
     this.render()
-    this.drawingHistory.push({
-      path,
-      options: this.getLineOptions(),
-      tool: this.state.tool,
-    })
+
+    this.activeTool.onCommit?.()
   }
 
   private clearCurrentPath(): Readonly<LineInfo> {
