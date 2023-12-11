@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { WebDrawingEngine, Tools } from "@libs/drawing-engine"
+import { WebDrawingEngine, ToolNames } from "@libs/drawing-engine"
 import { ColorPicker } from "@libs/color-picker"
 import { Color } from "@libs/shared"
 
@@ -24,9 +24,8 @@ function main() {
   })
 
   const tools = [
-    { value: Tools.brush, label: "Brush" },
-    { value: Tools.pressureSensitiveBrush, label: "Pressure-Sensitive Brush" },
-    { value: Tools.eyedropper, label: "Grab Color" },
+    { value: ToolNames.line, label: "Brush" },
+    { value: ToolNames.eyedropper, label: "Grab Color" },
     // { value: "erase", label: "Eraser" },
   ] as const
 
@@ -37,7 +36,7 @@ function main() {
     state,
     initialColor: engine.getCurrentColor(),
     initialOpacity: (engine.getOpacity() * 100) / 255,
-    initialWeight: engine.lineWeight,
+    initialWeight: engine.tools.line.getLineWeight(),
 
     onClear() {
       engine.clearCanvas()
@@ -46,7 +45,7 @@ function main() {
       engine.setOpacity((opacity * 255) / 100)
     },
     onSetLineWeight(weight) {
-      engine.setLineWeight(weight)
+      engine.tools.line.setLineWeight(weight)
     },
     onSetColor(color) {
       engine.setColor(color)
@@ -65,7 +64,7 @@ function main() {
       link.click()
     },
     tools: tools,
-    initialTool: engine.getCurrentTool(),
+    initialTool: engine.activeTool.toolName,
 
     addListener: engine.addListener.bind(engine),
   })
