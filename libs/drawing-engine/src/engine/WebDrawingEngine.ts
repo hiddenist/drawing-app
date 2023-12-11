@@ -1,7 +1,9 @@
 import { Color, getEventPosition } from "@libs/shared"
-import { DrawingEngine, DrawingEngineOptions, Tools } from "./DrawingEngine"
+import { DrawingEngine, DrawingEngineOptions } from "./DrawingEngine"
+import { ToolNames } from "../tools/Tools"
 import { Vec2 } from "@libs/shared"
 import { SourceImage } from "../utils/image/SourceImage"
+import { InputPoint } from "../tools/InputPoint"
 
 interface IWebDrawingEngine {
   canvas: Readonly<HTMLCanvasElement>
@@ -109,8 +111,8 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
       if (event.isPrimary === false) {
         return
       }
-      const handle = this.handlePointerDown(position, [event.pressure])
-      if (handle?.hideCursor) {
+      this.handlePointerDown(position)
+      if (this.activeTool.toolName === ToolNames.line) {
         this.canvas.style.setProperty("cursor", "none")
       }
     })
@@ -118,21 +120,21 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
       if (event.isPrimary === false) {
         return
       }
-      let positions = [position]
-      let pressure = [event.pressure]
+      let positions: InputPoint[] = [[...position, event.pressure]]
       try {
-        positions = event.getCoalescedEvents().map((coalsecedEvent) => this.getCanvasPosition(coalsecedEvent))
-        pressure = event.getCoalescedEvents().map((coalsecedEvent) => coalsecedEvent.pressure)
+        positions = event
+          .getCoalescedEvents()
+          .map((coalsecedEvent) => [...this.getCanvasPosition(coalsecedEvent), coalsecedEvent.pressure])
       } catch (error) {
         console.warn("Could not get coalesced events", error)
       }
-      this.handlePointerMove(positions, pressure)
+      this.handlePointerMove(positions)
     })
     this.listenOnPositionEvent("pointerup", ({ position, event }) => {
       if (event.isPrimary === false) {
         return
       }
-      this.handlePointerUp(position, [event.pressure])
+      this.handlePointerUp(position)
       this.canvas.style.removeProperty("cursor")
     })
 
@@ -142,7 +144,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
 
     window.addEventListener("keydown", (event) => {
       if (event.key === "Control" && !this.state.isPressed) {
-        this.setTool(Tools.eyedropper)
+        this.setTool(ToolNames.eyedropper)
         return
       }
     })
@@ -150,7 +152,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     window.addEventListener("keyup", (event) => {
       if (event.key === "Escape") {
         this.handleCancel()
-      } else if (event.key === "Control" && this.state.tool === Tools.eyedropper) {
+      } else if (event.key === "Control" && this.state.tool === ToolNames.eyedropper) {
         this.handleCancel()
       }
     })

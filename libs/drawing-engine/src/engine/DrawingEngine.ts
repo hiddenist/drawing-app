@@ -1,32 +1,24 @@
-import { LineDrawingProgram, DrawLineOptions, DrawType, LineInfo } from "../programs/LineDrawingProgram"
 import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import type { Vec2 } from "@libs/shared"
-import { BaseProgram, Color } from "@libs/shared"
+import { Color } from "@libs/shared"
 import { Layer } from "./Layer"
 import { SourceImage } from "../utils/image/SourceImage"
+import { ToolName, ToolNames } from "../exports"
+import { LineHistoryEntry, LineTool } from "../tools/LineTool"
+import { InputPoint } from "../tools/InputPoint"
+import { EyeDropperHistoryEntry, EyeDropperTool } from "../tools/EyeDropperTool"
 
-interface AvailablePrograms {
-  lineDrawing: LineDrawingProgram
-  textureDrawing: TextureDrawingProgram
-}
+type HistoryItem = LineHistoryEntry | EyeDropperHistoryEntry
 
-interface HistoryItem {
-  path: Readonly<LineInfo>
-  tool: Tool
-  options: Required<Omit<DrawLineOptions, "drawType">>
-}
-
-interface DrawingState {
+interface DrawingEngineState {
   color: Color
   opacity: number
-  currentPath: LineInfo
-  lineWeight: number
-  isPressed: boolean
   pixelDensity: number
   width: number
   height: number
-  tool: Tool
-  prevTool: Tool
+  tool: ToolName
+  prevTool: ToolName
+  isPressed: boolean
 }
 
 export interface DrawingEngineOptions {
@@ -40,8 +32,14 @@ export interface DrawingEngineEventMap {
   pickColor: { color: Color }
   previewColor: { color: Color | null }
   clear: undefined
-  changeTool: { tool: Tool }
+  changeTool: { tool: ToolName }
+
+  press: { position: Readonly<InputPoint> }
+  move: { positions: ReadonlyArray<InputPoint>; isPressed: boolean }
+  release: { position: Readonly<InputPoint> }
+  cancel: undefined
 }
+
 export type DrawingEngineEvent<T extends DrawingEngineEventName> = {
   eventName: T
 } & (DrawingEngineEventMap[T] extends undefined ? {} : DrawingEngineEventMap[T])
@@ -52,29 +50,12 @@ type DrawingEventListeners = {
   [Key in DrawingEngineEventName]: Array<DrawingEventHandler<Key>>
 }
 
-export const Tools = {
-  brush: "brush",
-  // todo: eraser: "eraser",
-  pressureSensitiveBrush: "pressureSensitiveBrush",
-  eyedropper: "eyedropper",
-} as const
-
-const defaultTool = Tools.pressureSensitiveBrush
-
-export type Tool = (typeof Tools)[keyof typeof Tools]
-
-export interface ToolBindings {
-  onPress?: (position: Readonly<Vec2>, pressure: Readonly<[number]>) => { hideCursor?: boolean } | void
-  onMove?: (positions: ReadonlyArray<Vec2>, pressure: ReadonlyArray<number>) => void
-  onRelease?: (position: Readonly<Vec2>, pressure: Readonly<[number]>) => void
-  onCancel?: () => void
-  onCommit?: () => void
-}
+const defaultTool = ToolNames.line
 
 export class DrawingEngine {
-  protected state: DrawingState
-  protected programs: AvailablePrograms
-  protected drawingHistory: Array<HistoryItem>
+  protected state: DrawingEngineState
+  protected program: TextureDrawingProgram
+  protected history: Array<HistoryItem>
   /**
    * Saved drawing layer is the layer that actions, like brush strokes, are saved to after the user finishes drawing
    * (e.g. releases the mouse, lifts the stylus, etc).
@@ -87,7 +68,10 @@ export class DrawingEngine {
    */
   protected activeDrawingLayer: Layer
 
-  protected tools: Record<Tool, ToolBindings>
+  public readonly tools: {
+    [ToolNames.line]: LineTool
+    [ToolNames.eyedropper]: EyeDropperTool
+  }
 
   private listeners: Partial<DrawingEventListeners> = {}
 
@@ -99,8 +83,6 @@ export class DrawingEngine {
       ...options,
       color: Color.BLACK,
       opacity: 255,
-      currentPath: { points: [] },
-      lineWeight: 20,
       isPressed: false,
       pixelDensity: options.pixelDensity ?? 1,
       tool: defaultTool,
@@ -110,70 +92,18 @@ export class DrawingEngine {
     this.savedDrawingLayer = new Layer(gl)
     this.activeDrawingLayer = new Layer(gl, { clearBeforeDrawing: true })
 
-    this.programs = {
-      lineDrawing: new LineDrawingProgram(gl, this.state.pixelDensity),
-      textureDrawing: new TextureDrawingProgram(gl, this.state.pixelDensity),
-    }
+    this.program = new TextureDrawingProgram(gl, this.state.pixelDensity)
 
-    this.drawingHistory = []
-
-    const brushBindings: ToolBindings = {
-      onPress: (position, pressure) => {
-        this.addPosition(position, pressure)
-        return { hideCursor: true }
-      },
-      onMove: (positions, pressure) => {
-        this.addPositions(positions, pressure)
-      },
-      onRelease: () => {
-        this.commitToSavedLayer()
-      },
-      onCommit: () => {
-        const path = this.clearCurrentPath()
-
-        this.state.isPressed = false
-        if (path.points.length === 0) {
-          return
-        }
-
-        this.drawingHistory.push({
-          path,
-          tool: this.getCurrentTool(),
-          options: this.getLineOptions(),
-        })
-      },
-    }
+    this.history = []
     this.tools = {
-      [Tools.brush]: brushBindings,
-      [Tools.pressureSensitiveBrush]: brushBindings,
-      [Tools.eyedropper]: {
-        onCancel: () => {
-          this.setTool(this.state.prevTool ?? defaultTool)
-          this.callListeners("previewColor", { color: null })
-        },
-        onPress: (pos) => {
-          this.pickColor(pos)
-        },
-        onMove: (positions) => {
-          const color = BaseProgram.getColorAtPosition(this.gl, positions[positions.length - 1])
-          if (!color) {
-            return
-          }
-          this.callListeners("previewColor", { color })
-        },
-        onRelease: (position) => {
-          if (this.pickColor(position)) {
-            const prevTool = this.state.prevTool ?? defaultTool
-            this.setTool(prevTool === Tools.eyedropper ? defaultTool : prevTool)
-          } else {
-            this.handleCancel()
-          }
-        },
-      },
+      [ToolNames.line]: new LineTool(this),
+      [ToolNames.eyedropper]: new EyeDropperTool(this),
     }
+
+    this.callListeners("changeTool", { tool: this.state.tool })
   }
 
-  protected get pixelDensity() {
+  public get pixelDensity() {
     return this.state.pixelDensity
   }
 
@@ -185,7 +115,7 @@ export class DrawingEngine {
     return this.state.color
   }
 
-  public getCurrentTool() {
+  public getCurrentToolName() {
     return this.state.tool
   }
 
@@ -193,7 +123,7 @@ export class DrawingEngine {
     return this.tools[this.state.tool]
   }
 
-  public setTool(tool: Tool) {
+  public setTool(tool: ToolName) {
     if (this.state.tool === tool) {
       return
     }
@@ -201,6 +131,10 @@ export class DrawingEngine {
     this.state.prevTool = this.state.tool
     this.state.tool = tool
     this.callListeners("changeTool", { tool })
+  }
+
+  public usePrevTool() {
+    this.setTool(this.state.prevTool)
   }
 
   public setColor(color: Color) {
@@ -217,20 +151,11 @@ export class DrawingEngine {
     return this.state.opacity
   }
 
-  public get lineWeight(): number {
-    return this.state.lineWeight
-  }
-
-  public setLineWeight(weight: number): typeof this {
-    this.state.lineWeight = weight
-    return this
-  }
-
   public clearCanvas() {
     this.savedDrawingLayer.clear()
     this.activeDrawingLayer.clear()
     this.clearCurrent()
-    this.programs.textureDrawing.draw(this.activeDrawingLayer, this.savedDrawingLayer)
+    this.program.draw(this.activeDrawingLayer, this.savedDrawingLayer)
 
     this.callListeners("clear", undefined)
   }
@@ -240,84 +165,33 @@ export class DrawingEngine {
     this.gl.clear(this.gl.COLOR_BUFFER_BIT)
   }
 
-  protected getLineOptions(): Required<Omit<DrawLineOptions, "drawType">> {
-    return {
-      color: this.state.color,
-      opacity: this.state.opacity,
-      diameter: this.lineWeight,
-    }
-  }
-
-  protected handlePointerDown(position: Readonly<Vec2>, pressure: Readonly<[number]>) {
+  protected handlePointerDown(position: Readonly<InputPoint>) {
     this.state.isPressed = true
-    return this.tools[this.state.tool].onPress?.(position, pressure)
+    this.callListeners("press", { position })
   }
 
-  protected handlePointerUp(position: Readonly<Vec2>, pressure: Readonly<[number]>) {
+  protected handlePointerUp(position: Readonly<InputPoint>) {
     this.state.isPressed = false
-    return this.tools[this.state.tool].onRelease?.(position, pressure)
+    this.callListeners("release", { position })
   }
 
-  protected handlePointerMove(positions: ReadonlyArray<Vec2>, pressure: ReadonlyArray<number>) {
-    return this.tools[this.state.tool].onMove?.(positions, pressure)
+  protected handlePointerMove(positions: ReadonlyArray<InputPoint>) {
+    this.callListeners("move", { positions, isPressed: this.state.isPressed })
   }
 
   protected handleCancel() {
-    this.tools[this.state.tool].onCancel?.()
+    this.callListeners("cancel", undefined)
   }
 
-  protected pickColor(position: Readonly<Vec2>) {
-    const color = BaseProgram.getColorAtPosition(this.gl, position)
-    if (!color) {
-      return false
-    }
-    this.setColor(color)
-    this.callListeners("pickColor", { color })
-    return true
-  }
-
-  public addPosition(position: Readonly<Vec2>, pressure: Readonly<[number]>) {
-    this.addPositions([[...position]], pressure)
-  }
-
-  public addPositions(positions: ReadonlyArray<Vec2>, pressure: ReadonlyArray<number>) {
-    if (this.state.isPressed) {
-      this.state.currentPath.points.push(...positions.flat())
-      if (pressure) this.addPressure(pressure)
-      this.updateActivePath()
-    }
-  }
-
-  protected isPositionInCanvas(position: Readonly<Vec2>) {
+  public isPositionInCanvas(position: Readonly<Vec2>) {
     return position[0] >= 0 && position[0] <= this.state.width && position[1] >= 0 && position[1] <= this.state.height
   }
 
-  private addPressure(pressure: ReadonlyArray<number>) {
-    if (this.state.tool !== Tools.pressureSensitiveBrush) {
-      return
-    }
-    if (!this.state.currentPath.pressure) {
-      this.state.currentPath.pressure = []
-    }
-    this.state.currentPath.pressure.push(...pressure)
-  }
-
-  protected updateActivePath() {
-    if (this.state.currentPath.points.length > 0) {
-      this.drawLine(this.activeDrawingLayer, this.state.currentPath, DrawType.STATIC_DRAW)
-    }
-  }
-
-  public drawLine(layer: Layer, path: LineInfo, drawType?: DrawLineOptions["drawType"]) {
-    const options = this.getLineOptions()
-    this.programs.textureDrawing.createTextureImage(layer, () => {
-      this.programs.lineDrawing.draw(path, {
-        drawType,
-        ...options,
-      })
-    })
+  public draw(drawCallback: () => void): this {
+    const layer = this.activeDrawingLayer
+    this.program.createTextureImage(layer, drawCallback)
     this.render()
-    this.callListeners("draw", { path, options, tool: this.state.tool })
+    return this
   }
 
   public loadImage(image: SourceImage) {
@@ -339,7 +213,7 @@ export class DrawingEngine {
   }
 
   protected render() {
-    this.programs.textureDrawing.draw(this.activeDrawingLayer, this.savedDrawingLayer)
+    this.program.draw(this.activeDrawingLayer, this.savedDrawingLayer)
   }
 
   public addListener<E extends DrawingEngineEventName>(eventName: E, cb: DrawingEventHandler<E>) {
@@ -354,27 +228,26 @@ export class DrawingEngine {
 
   public removeListener<E extends DrawingEngineEventName>(eventName: E, cb: DrawingEventHandler<E>) {
     const index = this.listeners[eventName]?.indexOf(cb) ?? -1
+    if (index === -1) {
+      return this
+    }
     this.listeners[eventName]?.splice(index, 1)
     return this
   }
 
-  protected callListeners<E extends DrawingEngineEventName>(eventName: E, data: DrawingEngineEventMap[E]) {
+  public callListeners<E extends DrawingEngineEventName>(eventName: E, data: DrawingEngineEventMap[E]) {
     this.listeners[eventName]?.forEach((listener) => listener({ eventName, ...data }))
   }
 
-  protected commitToSavedLayer() {
-    const copy = this.programs.textureDrawing.mergeDown(this.activeDrawingLayer, this.savedDrawingLayer)
+  public commitToSavedLayer() {
+    const copy = this.program.mergeDown(this.activeDrawingLayer, this.savedDrawingLayer)
     this.savedDrawingLayer.clear()
     this.activeDrawingLayer.clear()
     this.savedDrawingLayer = copy
     this.render()
-
-    this.activeTool.onCommit?.()
   }
 
-  private clearCurrentPath(): Readonly<LineInfo> {
-    const copy = this.state.currentPath
-    this.state.currentPath = { points: [] }
-    return copy
+  public addHistory(historyItem: HistoryItem) {
+    this.history.push(historyItem)
   }
 }
