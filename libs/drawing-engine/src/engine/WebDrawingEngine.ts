@@ -1,7 +1,6 @@
 import { Color, getEventPosition } from "@libs/shared"
 import { DrawingEngine, DrawingEngineOptions, Tools } from "./DrawingEngine"
 import { Vec2 } from "@libs/shared"
-import { getImageDimensions } from "../utils/image/getImageDimensions"
 import { SourceImage } from "../utils/image/SourceImage"
 
 interface IWebDrawingEngine {
