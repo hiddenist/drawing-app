@@ -53,7 +53,7 @@ type DrawingEventListeners = {
 const defaultTool = ToolNames.line
 
 export class DrawingEngine {
-  protected state: DrawingEngineState
+  protected _state: DrawingEngineState
   protected program: TextureDrawingProgram
   protected history: Array<HistoryItem>
   /**
@@ -79,7 +79,7 @@ export class DrawingEngine {
     public gl: WebGLRenderingContext,
     protected readonly options: DrawingEngineOptions,
   ) {
-    this.state = {
+    this._state = {
       ...options,
       color: Color.BLACK,
       opacity: 255,
@@ -103,12 +103,20 @@ export class DrawingEngine {
     this.callListeners("changeTool", { tool: this.state.tool })
   }
 
+  public get state(): Readonly<DrawingEngineState> {
+    return this._state
+  }
+
+  protected setState<K extends keyof DrawingEngineState>(key: K, value: DrawingEngineState[K]) {
+    this._state[key] = value
+  }
+
   public get pixelDensity() {
     return this.state.pixelDensity
   }
 
   protected set pixelDensity(pixelDensity: number) {
-    this.state.pixelDensity = pixelDensity
+    this._state.pixelDensity = pixelDensity
   }
 
   public getCurrentColor() {
@@ -128,8 +136,8 @@ export class DrawingEngine {
       return
     }
     this.commitToSavedLayer()
-    this.state.prevTool = this.state.tool
-    this.state.tool = tool
+    this.setState("prevTool", this.state.tool)
+    this.setState("tool", tool)
     this.callListeners("changeTool", { tool })
   }
 
@@ -139,12 +147,12 @@ export class DrawingEngine {
 
   public setColor(color: Color) {
     this.commitToSavedLayer()
-    this.state.color = color
+    this.setState("color", color)
   }
 
   public setOpacity(opacity: number) {
     this.commitToSavedLayer()
-    this.state.opacity = opacity
+    this.setState("opacity", opacity)
   }
 
   public getOpacity() {
@@ -166,12 +174,12 @@ export class DrawingEngine {
   }
 
   protected handlePointerDown(position: Readonly<InputPoint>) {
-    this.state.isPressed = true
+    this.setState("isPressed", true)
     this.callListeners("press", { position })
   }
 
   protected handlePointerUp(position: Readonly<InputPoint>) {
-    this.state.isPressed = false
+    this.setState("isPressed", false)
     this.callListeners("release", { position })
   }
 
@@ -201,8 +209,8 @@ export class DrawingEngine {
   }
 
   public resizeCanvas(width: number, height: number) {
-    this.state.width = width
-    this.state.height = height
+    this.setState("width", width)
+    this.setState("height", height)
     this.gl.canvas.width = width
     this.gl.canvas.height = height
     this.resizeViewport(width, height)
