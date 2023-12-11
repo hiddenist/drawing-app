@@ -1,6 +1,6 @@
 # Drawing App
 
-![image](https://github.com/hiddenist/drawing-app/assets/563879/7447c3e1-92a8-408e-982f-b498e3619ee4)
+![Screenshot](https://github.com/hiddenist/drawing-app/assets/563879/2bd5299e-c7db-4a15-b5b4-86e613782f79)
 
 This is a 2d web-based drawing application. I started this as a hobby project, because I have no idea what a shader is and thought learning WebGL could be fun!
 
