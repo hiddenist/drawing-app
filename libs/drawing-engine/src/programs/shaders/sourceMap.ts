@@ -2,7 +2,10 @@ import positionVertexSource from "./position.vertex.glsl"
 import colorFragmentSource from "./color.fragment.glsl"
 import textureVertexSource from "./texture.vertex.glsl"
 import textureFragmentSource from "./texture.fragment.glsl"
+import brushVertexSource from "./brush.vertex.glsl"
+import brushFragmentSource from "./brush.fragment.glsl"
 import normalizeCoords from "./inc/normalizeCoords.glsl"
+import softBrush from "./inc/softBrush.glsl"
 
 /**
  * A map of shader source code.
@@ -15,7 +18,10 @@ const sourceMap = {
   "color.fragment": colorFragmentSource,
   "texture.vertex": textureVertexSource,
   "texture.fragment": textureFragmentSource,
+  "brush.vertex": brushVertexSource,
+  "brush.fragment": brushFragmentSource,
   normalizeCoords,
+  softBrush,
 }
 export default sourceMap
 
@@ -23,18 +29,23 @@ type NameMap = Record<keyof typeof sourceMap, Record<string, string>>
 
 // would be neat if I could run something to generate the uniformNames and attributeNames objects from the sourceMap
 
-const includableScripts = {
+const reusableUniforms = {
   normalizeCoords: {
-    source: normalizeCoords,
-    uniforms: {
-      canvasSize: "uCanvasSize",
-    },
+    canvasSize: "uCanvasSize",
+  },
+  softBrush: {
+    opacity: "uOpacity",
+    strokeRadiusMax: "uStrokeRadiusMax",
+    strokeRadiusMin: "uStrokeRadiusMin",
+    hardness: "uHardness",
+    flow: "uFlow",
+    strokeLength: "uStrokeLength",
   },
 } as const
 
 export const uniformNames = {
   "position.vertex": {
-    ...includableScripts.normalizeCoords.uniforms,
+    ...reusableUniforms.normalizeCoords,
   },
   "color.fragment": {
     color: "uColor",
@@ -43,6 +54,14 @@ export const uniformNames = {
   "texture.fragment": {
     foreground: "uForegroundTexture",
     background: "uBackgroundTexture",
+  },
+  "brush.vertex": {
+    ...reusableUniforms.normalizeCoords,
+  },
+  "brush.fragment": {
+    color: "uColor",
+    isPremultipliedAlpha: "uIsPremultipliedAlpha",
+    ...reusableUniforms.softBrush,
   },
 } as const satisfies Readonly<Partial<NameMap>>
 
@@ -53,5 +72,9 @@ export const attributeNames = {
   "texture.vertex": {
     position: "aPosition",
     textureCoordinates: "aTexcoord",
+  },
+  "brush.vertex": {
+    position: "aPosition",
+    bounds: "aBounds",
   },
 } as const satisfies Readonly<Partial<NameMap>>
