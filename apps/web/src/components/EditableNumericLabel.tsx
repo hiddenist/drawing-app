@@ -36,7 +36,7 @@ export function EditableNumericLabel(props: {
           props.onCancel()
           break
         }
-        props.onChange()
+        props.onChange(value)
         target.blur()
         break
       case "Escape":
