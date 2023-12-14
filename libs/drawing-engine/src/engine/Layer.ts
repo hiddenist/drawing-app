@@ -46,13 +46,12 @@ export class Layer {
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
       gl.texImage2D(target, level, internalFormat, srcFormat, srcType, croppedSource)
     } else {
-      const transparentPixels = new Uint8ClampedArray(width * height * 4)
-      gl.texImage2D(target, level, internalFormat, width, height, border, srcFormat, srcType, transparentPixels)
+      gl.texImage2D(target, level, internalFormat, width, height, border, srcFormat, srcType, null)
     }
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-    // gl.bindTexture(gl.TEXTURE_2D, null)
+    gl.bindTexture(gl.TEXTURE_2D, null)
     return texture
   }
 
