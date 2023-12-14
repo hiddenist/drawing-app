@@ -33,7 +33,7 @@ export function EditableNumericLabel(props: {
         e.preventDefault()
         const value = parseInt(target.innerText)
         if (isNaN(value)) {
-          props.handleCancel()
+          props.onCancel()
           break
         }
         props.onChange()
