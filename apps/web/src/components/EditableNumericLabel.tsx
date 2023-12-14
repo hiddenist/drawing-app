@@ -31,11 +31,16 @@ export function EditableNumericLabel(props: {
         break
       case "Enter":
         e.preventDefault()
+        const value = parseInt(target.innerText)
+        if (isNaN(value)) {
+          props.handleCancel()
+          break
+        }
+        props.onChange()
         target.blur()
         break
       case "Escape":
         e.preventDefault()
-        target.blur()
         props.onCancel()
         break
       default:
@@ -64,8 +69,14 @@ export function EditableNumericLabel(props: {
     })
   }
 
-  const handleBlur = () => {
-    props.onCancel()
+  const handleBlur = (e: FocusEvent) => {
+    const target = e.target as HTMLSpanElement
+    const value = parseInt(target.innerText)
+    if (isNaN(value)) {
+      props.onCancel()
+      return
+    }
+    props.onChange(value)
   }
 
   return (
