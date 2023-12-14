@@ -187,7 +187,7 @@ export class DrawingEngine {
     return position[0] >= 0 && position[0] <= this.state.width && position[1] >= 0 && position[1] <= this.state.height
   }
 
-  public draw(drawCallback: () => HistoryEntry | undefined): this {
+  public draw(drawCallback: () => HistoryItem | undefined): this {
     const layer = this.activeDrawingLayer
     this.program.createTextureImage(layer, () => {
       const drawData = drawCallback()
