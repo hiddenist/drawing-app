@@ -1,7 +1,7 @@
 import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import type { Vec2 } from "@libs/shared"
 import { Color } from "@libs/shared"
-import { Layer } from "./Layer"
+import { Layer, LayerSettings } from "./Layer"
 import { SourceImage } from "../utils/image/SourceImage"
 import { ToolName, ToolNames } from "../exports"
 import { LineHistoryEntry, LineTool } from "../tools/LineTool"
@@ -89,8 +89,8 @@ export class DrawingEngine {
       prevTool: defaultTool,
     }
 
-    this.savedDrawingLayer = new Layer(gl)
-    this.activeDrawingLayer = new Layer(gl, { clearBeforeDrawing: true })
+    this.savedDrawingLayer = this.makeLayer()
+    this.activeDrawingLayer = this.makeLayer({ clearBeforeDrawing: true })
 
     this.program = new TextureDrawingProgram(gl, this.state.pixelDensity)
 
@@ -101,6 +101,10 @@ export class DrawingEngine {
     }
 
     this.callListeners("changeTool", { tool: this.state.tool })
+  }
+
+  private makeLayer(options?: Partial<LayerSettings>) {
+    return new Layer(this.gl, options)
   }
 
   public get pixelDensity() {
@@ -138,7 +142,6 @@ export class DrawingEngine {
   }
 
   public setColor(color: Color) {
-    this.commitToSavedLayer()
     this.state.color = color
   }
 
