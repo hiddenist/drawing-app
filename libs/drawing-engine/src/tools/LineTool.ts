@@ -108,7 +108,7 @@ export class LineTool {
     }
     const path = this.currentPath
     this.engine.draw(() => {
-      const pressure = this.options.pressureEnabled ? path.map(([, , pressure]) => pressure ?? 1.0) : undefined
+      const pressure = this.options.pressureEnabled ? path.map(([, , pressure]) => pressure ?? 0.0) : undefined
       this.program.draw(
         {
           points: path.map(([x, y]) => [x, y]).flat(),
@@ -120,8 +120,8 @@ export class LineTool {
     })
   }
 
-  private hasPressure([_, ...points]: number[]) {
-    return !points.some((point) => point === 0)
+  private hasPressure(points: number[]) {
+    return points.some((point) => point !== 0)
   }
 
   protected getLineOptions(): Required<Omit<DrawLineOptions, "drawType">> {

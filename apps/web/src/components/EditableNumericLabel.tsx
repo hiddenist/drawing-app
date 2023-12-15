@@ -31,11 +31,16 @@ export function EditableNumericLabel(props: {
         break
       case "Enter":
         e.preventDefault()
+        const value = parseInt(target.innerText)
+        if (isNaN(value)) {
+          props.onCancel()
+          break
+        }
+        props.onChange(value)
         target.blur()
         break
       case "Escape":
         e.preventDefault()
-        target.blur()
         props.onCancel()
         break
       default:
@@ -64,8 +69,33 @@ export function EditableNumericLabel(props: {
     })
   }
 
-  const handleBlur = () => {
-    props.onCancel()
+  const handleBlur = (e: FocusEvent) => {
+    const target = e.target as HTMLSpanElement
+    const value = parseInt(target.innerText)
+    if (isNaN(value)) {
+      props.onCancel()
+      return
+    }
+    props.onChange(value)
+  }
+
+  let lastTouchY: number | null = null
+  const handleTouchMove = (e: TouchEvent) => {
+    e.preventDefault()
+    if (lastTouchY === null) {
+      lastTouchY = e.touches[0].clientY
+      return
+    }
+    if (e.touches[0].clientY > lastTouchY) {
+      props.onChange((value) => value - 1)
+    } else {
+      props.onChange((value) => value + 1)
+    }
+    lastTouchY = e.touches[0].clientY
+  }
+
+  const handleTouchEnd = () => {
+    lastTouchY = null
   }
 
   return (
@@ -78,6 +108,8 @@ export function EditableNumericLabel(props: {
       onWheel={handleScrollWheel}
       onPaste={handlePaste}
       onBlur={handleBlur}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
     >
       {props.displayValue}
     </span>
