@@ -79,6 +79,25 @@ export function EditableNumericLabel(props: {
     props.onChange(value)
   }
 
+  let lastTouchY: number | null = null
+  const handleTouchMove = (e: TouchEvent) => {
+    e.preventDefault()
+    if (lastTouchY === null) {
+      lastTouchY = e.touches[0].clientY
+      return
+    }
+    if (e.touches[0].clientY > lastTouchY) {
+      props.onChange((value) => value - 1)
+    } else {
+      props.onChange((value) => value + 1)
+    }
+    lastTouchY = e.touches[0].clientY
+  }
+
+  const handleTouchEnd = () => {
+    lastTouchY = null
+  }
+
   return (
     <span
       style={{ caretColor: "currentColor" }}
@@ -89,6 +108,8 @@ export function EditableNumericLabel(props: {
       onWheel={handleScrollWheel}
       onPaste={handlePaste}
       onBlur={handleBlur}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
     >
       {props.displayValue}
     </span>
