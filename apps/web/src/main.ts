@@ -24,9 +24,9 @@ function main() {
   })
 
   const tools = [
-    { value: ToolNames.line, label: "Brush" },
+    { value: ToolNames.brush, label: "Brush" },
     { value: ToolNames.eyedropper, label: "Grab Color" },
-    // { value: "erase", label: "Eraser" },
+    { value: ToolNames.eraser, label: "Eraser" },
   ] as const
 
   const state = {
@@ -36,7 +36,11 @@ function main() {
     state,
     initialColor: engine.getCurrentColor(),
     initialOpacity: (engine.getOpacity() * 100) / 255,
-    initialWeight: engine.tools.line.getLineWeight(),
+
+    getLineWeight: () => {
+      if ("setLineWeight" in engine.activeTool) return engine.activeTool.getLineWeight()
+      else return null
+    },
 
     onClear() {
       engine.clearCanvas()
@@ -45,7 +49,8 @@ function main() {
       engine.setOpacity((opacity * 255) / 100)
     },
     onSetLineWeight(weight) {
-      engine.tools.line.setLineWeight(weight)
+      const tool = "setLineWeight" in engine.activeTool ? engine.activeTool : engine.tools.brush
+      tool.setLineWeight(weight)
     },
     onSetColor(color) {
       engine.setColor(color)
@@ -64,7 +69,7 @@ function main() {
       link.click()
     },
     tools: tools,
-    initialTool: engine.activeTool.toolName,
+    initialTool: engine.getCurrentToolName(),
 
     addListener: engine.addListener.bind(engine),
   })
@@ -84,9 +89,9 @@ function makeToolbar<T extends string>(
   options: {
     state: { hasDrawn: boolean }
     initialColor?: Color
-    initialWeight?: number
     initialOpacity?: number
     initialTool?: T
+    getLineWeight: () => number | null
 
     tools: ReadonlyArray<{ label: string; value: T }>
 
@@ -165,8 +170,14 @@ function makeToolbar<T extends string>(
     }
     toolSelect.append(option)
   })
+
+  let setWeightRef: { setValue?: (weight: number | string) => void } = {}
   toolSelect.addEventListener("change", () => {
     options.onSetTool(toolSelect.value as T)
+    const weight = options.getLineWeight()
+    if (weight) {
+      setWeightRef.setValue?.(weight)
+    }
   })
   inputTray.append(toolSelect)
 
@@ -237,6 +248,7 @@ function makeToolbar<T extends string>(
     labelAppend: "%",
     min: 0,
     max: 100,
+    controlRef: setWeightRef,
     getDisplayValue: (value) => value.toFixed(0),
     onChange(value) {
       options.onSetOpacity(value)
@@ -248,9 +260,16 @@ function makeToolbar<T extends string>(
   const weightSlider = SliderInput({
     className: "weight-slider",
     label: "Line weight",
-    initialValue: options.initialWeight ?? 5,
+    initialValue:
+      options.getLineWeight() ??
+      (() => {
+        const weight = 5
+        options.onSetLineWeight(weight)
+        return weight
+      })(),
     min: 1,
     max: 256,
+    controlRef: setWeightRef,
     getDisplayValue: (value) => value.toString(),
     onChange(value) {
       options.onSetLineWeight(value)

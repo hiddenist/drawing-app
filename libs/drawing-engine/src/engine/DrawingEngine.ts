@@ -1,4 +1,5 @@
 import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
+import { LineDrawingProgram } from "../programs/LineDrawingProgram"
 import type { Vec2 } from "@libs/shared"
 import { Color } from "@libs/shared"
 import { Layer, LayerSettings } from "./Layer"
@@ -50,7 +51,7 @@ type DrawingEventListeners = {
   [Key in DrawingEngineEventName]: Array<DrawingEventHandler<Key>>
 }
 
-const defaultTool = ToolNames.line
+const defaultTool = ToolNames.brush
 
 export class DrawingEngine {
   protected state: DrawingEngineState
@@ -69,7 +70,8 @@ export class DrawingEngine {
   protected activeDrawingLayer: Layer
 
   public readonly tools: {
-    [ToolNames.line]: LineTool
+    [ToolNames.brush]: LineTool
+    [ToolNames.eraser]: LineTool
     [ToolNames.eyedropper]: EyeDropperTool
   }
 
@@ -95,8 +97,10 @@ export class DrawingEngine {
     this.program = new TextureDrawingProgram(gl, this.state.pixelDensity)
 
     this.history = []
+    const lineProgram = new LineDrawingProgram(gl, this.state.pixelDensity)
     this.tools = {
-      [ToolNames.line]: new LineTool(this),
+      [ToolNames.brush]: new LineTool(this, lineProgram, ToolNames.brush),
+      [ToolNames.eraser]: new LineTool(this, lineProgram, ToolNames.eraser),
       [ToolNames.eyedropper]: new EyeDropperTool(this),
     }
 
@@ -121,6 +125,15 @@ export class DrawingEngine {
 
   public getCurrentToolName() {
     return this.state.tool
+  }
+
+  protected getDrawMode(tool = this.getCurrentToolName()) {
+    switch (tool) {
+      case ToolNames.eraser:
+        return "erase"
+      default:
+        return "draw"
+    }
   }
 
   public get activeTool() {
@@ -220,8 +233,8 @@ export class DrawingEngine {
     this.gl.viewport(offsetX, offsetY, width, height)
   }
 
-  protected render() {
-    this.program.draw(this.activeDrawingLayer, this.savedDrawingLayer)
+  protected render(mode: "erase" | "draw" = this.getDrawMode()) {
+    this.program[mode](this.activeDrawingLayer, this.savedDrawingLayer)
   }
 
   public addListener<E extends DrawingEngineEventName>(eventName: E, cb: DrawingEventHandler<E>) {
@@ -248,11 +261,11 @@ export class DrawingEngine {
   }
 
   public commitToSavedLayer() {
-    const copy = this.program.mergeDown(this.activeDrawingLayer, this.savedDrawingLayer)
+    const copy = this.program.mergeDown(this.activeDrawingLayer, this.savedDrawingLayer, this.getDrawMode())
     this.savedDrawingLayer.clear()
     this.activeDrawingLayer.clear()
     this.savedDrawingLayer = copy
-    this.render()
+    this.render("draw")
   }
 
   public addHistory(historyItem: HistoryItem) {
