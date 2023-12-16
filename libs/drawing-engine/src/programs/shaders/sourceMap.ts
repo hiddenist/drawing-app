@@ -43,6 +43,7 @@ export const uniformNames = {
   "texture.fragment": {
     foreground: "uForegroundTexture",
     background: "uBackgroundTexture",
+    isEraseMode: "uIsEraseMode",
   },
 } as const satisfies Readonly<Partial<NameMap>>
 

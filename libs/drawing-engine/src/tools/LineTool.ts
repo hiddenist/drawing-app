@@ -1,26 +1,26 @@
 import { InputPoint } from "./InputPoint"
 import { DrawLineOptions, LineDrawingProgram } from "../programs/LineDrawingProgram"
 import { DrawingEngine, DrawingEngineEvent } from "../engine/DrawingEngine"
-import { ToolNames } from "./Tools"
+import { ToolName } from "./Tools"
 
 export type LineHistoryEntry = {
-  tool: "line"
+  tool: ToolName
   path: InputPoint[]
   options: Required<Omit<DrawLineOptions, "drawType">>
 }
 
 export class LineTool {
-  static readonly TOOL_NAME = ToolNames.line
-  public readonly toolName = LineTool.TOOL_NAME
   private currentPath: InputPoint[] = []
-  private readonly program: LineDrawingProgram
   private options = {
     pressureEnabled: true,
     lineWeight: 5,
   }
 
-  constructor(protected readonly engine: DrawingEngine) {
-    this.program = new LineDrawingProgram(engine.gl, engine.pixelDensity)
+  constructor(
+    protected readonly engine: DrawingEngine,
+    protected readonly program: LineDrawingProgram,
+    public readonly toolName: ToolName,
+  ) {
     this.setupListeners()
   }
 

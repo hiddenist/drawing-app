@@ -46,22 +46,30 @@ export class TextureDrawingProgram extends TextureProgramBase {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
   }
 
-  public mergeDown(foreground: Layer, background: Layer) {
+  public mergeDown(foreground: Layer, background: Layer, mode: "draw" | "erase") {
     const { gl } = this
     const copy = new Layer(gl)
     this.createTextureImage(copy, () => {
-      this.drawTextures(foreground.texture, background.texture)
+      this[mode](foreground, background)
     })
     return copy
   }
 
   public draw(foreground: Layer, background: Layer) {
-    this.drawTextures(foreground.texture, background.texture)
+    this.drawTextures(foreground.texture, background.texture, false)
   }
 
-  protected drawTextures(front: WebGLTexture, back: WebGLTexture) {
+  public erase(eraseLayer: Layer, imageLayer: Layer) {
+    const front = eraseLayer.texture
+    const back = imageLayer.texture
+    this.drawTextures(front, back, true)
+  }
+
+  protected drawTextures(front: WebGLTexture, back: WebGLTexture, isEraseMode: boolean) {
     const { gl } = this
     this.useProgram()
+
+    gl.uniform1i(this.getUniformLocation("isEraseMode"), isEraseMode ? 1 : 0)
 
     gl.uniform1i(this.getUniformLocation("background"), 1)
     gl.activeTexture(gl.TEXTURE1)

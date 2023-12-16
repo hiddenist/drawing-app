@@ -112,7 +112,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
         return
       }
       this.handlePointerDown(position)
-      if (this.activeTool.toolName === ToolNames.line) {
+      if (this.getCurrentToolName() === ToolNames.brush) {
         this.canvas.style.setProperty("cursor", "none")
       }
     })
