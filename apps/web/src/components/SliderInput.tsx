@@ -10,6 +10,7 @@ interface SliderInputProps {
   min: number
   max: number
   className?: string
+  controlRef: { setValue?: (weight: number) => void }
 }
 
 export function SliderInput(props: SliderInputProps) {
@@ -45,6 +46,7 @@ export function SliderInput(props: SliderInputProps) {
     props.onChange(value)
     data.currentValue = value
   }
+  props.controlRef.setValue = setValue
 
   const labelElem = (
     <span>

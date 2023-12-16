@@ -170,10 +170,14 @@ function makeToolbar<T extends string>(
     }
     toolSelect.append(option)
   })
+
+  let setWeightRef: { setValue?: (weight: number | string) => void } = {}
   toolSelect.addEventListener("change", () => {
     options.onSetTool(toolSelect.value as T)
-    // todo: set current line weight when switching tools
-    options.getLineWeight()
+    const weight = options.getLineWeight()
+    if (weight) {
+      setWeightRef.setValue?.(weight)
+    }
   })
   inputTray.append(toolSelect)
 
@@ -244,6 +248,7 @@ function makeToolbar<T extends string>(
     labelAppend: "%",
     min: 0,
     max: 100,
+    controlRef: setWeightRef,
     getDisplayValue: (value) => value.toFixed(0),
     onChange(value) {
       options.onSetOpacity(value)
@@ -264,6 +269,7 @@ function makeToolbar<T extends string>(
       })(),
     min: 1,
     max: 256,
+    controlRef: setWeightRef,
     getDisplayValue: (value) => value.toString(),
     onChange(value) {
       options.onSetLineWeight(value)
