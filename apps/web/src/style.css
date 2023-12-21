@@ -26,8 +26,10 @@ main canvas {
   display: block;
 }
 
-main[data-tool="colorPicker"] canvas {
-  cursor: copy;
+main[data-tool="eyedropper"] canvas {
+  cursor:
+    url(./public/dropper.svg) 2 22,
+    crosshair;
 }
 
 main .drawing-canvas-container {
