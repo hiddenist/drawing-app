@@ -16,6 +16,14 @@ export type HslArray = [
   /** Lightness as a percentage (0 to 100) */
   lightness: number,
 ]
+export type HsvArray = [
+  /** Hue as a degree (0 to 360) */
+  hue: number,
+  /** Saturation as a percentage (0 to 100) */
+  saturation: number,
+  /** Value as a percentage (0 to 100) */
+  value: number,
+]
 
 export class Color {
   static readonly BLACK = new Color(0, 0, 0)
@@ -193,6 +201,40 @@ export class Color {
     const saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min)
 
     return [hue, saturation * 100, lightness * 100]
+  }
+
+  public getHsvValues(): HsvArray {
+    const redPercent = this.r / 255
+    const greenPercent = this.g / 255
+    const bluePercent = this.b / 255
+
+    const max = Math.max(redPercent, greenPercent, bluePercent)
+    const min = Math.min(redPercent, greenPercent, bluePercent)
+    const value = max
+
+    if (max === min) return [0, 0, value * 100]
+
+    const delta = max - min
+    let hue = 0
+    switch (max) {
+      case redPercent:
+        hue = ((greenPercent - bluePercent) / delta) % 6
+        break
+      case greenPercent:
+        hue = (bluePercent - redPercent) / delta + 2
+        break
+      case bluePercent:
+        hue = (redPercent - greenPercent) / delta + 4
+        break
+    }
+    hue *= 60
+    if (hue < 0) {
+      hue += 360
+    }
+
+    const saturation = max === 0 ? 0 : delta / max
+
+    return [hue, saturation * 100, value * 100]
   }
 
   public equals(color: Color): boolean {

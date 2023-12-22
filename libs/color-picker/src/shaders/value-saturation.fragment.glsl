@@ -2,6 +2,7 @@ precision mediump float;
 
 uniform float uHue;
 uniform vec3 uSelectedColor;
+uniform vec2 uMarkerPosition;
 
 varying vec2 vResolution;
 
@@ -33,63 +34,38 @@ vec3 hsv2rgb(vec3 hsv) {
   return rgb + m;
 }
 
-vec3 rgb2hsv(vec3 rgb) {
-  float cmax = max(rgb.r, max(rgb.g, rgb.b));
-  float cmin = min(rgb.r, min(rgb.g, rgb.b));
-  float delta = cmax - cmin;
-
-  float hue = 0.0;
-  float sat = 0.0;
-  float val = cmax;
-
-  if(delta != 0.0) {
-    if(cmax == rgb.r) {
-      hue = 60.0 * mod((rgb.g - rgb.b) / delta, 6.0);
-    } else if(cmax == rgb.g) {
-      hue = 60.0 * ((rgb.b - rgb.r) / delta + 2.0);
-    } else {
-      hue = 60.0 * ((rgb.r - rgb.g) / delta + 4.0);
-    }
-
-    if(cmax != 0.0) {
-      sat = delta / cmax;
-    }
-  }
-
-  return vec3(hue, sat, val);
-}
-
 float luminance(vec3 color) {
   vec3 adjustedColor = color / vec3(255.0);
   return 0.2126 * adjustedColor.r + 0.7152 * adjustedColor.g + 0.0722 * adjustedColor.b;
 }
 
-vec3 drawCurrentPositionMarker(vec3 color, float markerDiameter, float markerLineWidth) {
-  if(uSelectedColor.x < 0.0) {
-    return color;
-  }
-  vec3 hsv = rgb2hsv(uSelectedColor);
-  vec2 pos = vec2(hsv.y, hsv.z / 255.0) * vec2(vResolution);
-
+bool isOnMarkerLine(vec2 pos, float markerDiameter, float markerWidth) {
   float dx = abs(gl_FragCoord.x - pos.x);
   float dy = abs(gl_FragCoord.y - pos.y);
 
   float distOut = floor(markerDiameter / 2.0);
-  float distIn = distOut - markerLineWidth;
+  float distIn = distOut - markerWidth;
 
   bool inX = dx > distIn && dx < distOut && (dy < distOut);
   bool inY = dy > distIn && dy < distOut && (dx < distOut);
 
-  if(!(inX || inY)) {
-    return color;
-  }
+  return inX || inY;
+}
 
-  float lum = luminance(uSelectedColor);
+vec3 getContrastingColor(vec3 color) {
+  float lum = luminance(color);
   if(lum < 0.5) {
     return vec3(1.0, 1.0, 1.0);
   }
   return vec3(0.0, 0.0, 0.0);
+}
 
+vec3 drawMarker(vec3 backgroundColor, vec2 pos, float markerDiameter, float markerWidth) {
+  vec2 mirrorY = vec2(pos.x, vResolution.y - pos.y);
+  if(isOnMarkerLine(mirrorY, markerDiameter, markerWidth)) {
+    return getContrastingColor(uSelectedColor);
+  }
+  return backgroundColor;
 }
 
 void main() {
@@ -98,5 +74,5 @@ void main() {
   vec3 hsv = vec3(mod(uHue, 360.0), st.x, st.y);
   vec3 rgb = hsv2rgb(hsv);
 
-  gl_FragColor = vec4(drawCurrentPositionMarker(rgb, 7.0, 1.0), 1.0);
+  gl_FragColor = vec4(drawMarker(rgb, uMarkerPosition, 7.0, 1.0), 1.0);
 }
