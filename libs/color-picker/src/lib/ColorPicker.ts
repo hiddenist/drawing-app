@@ -7,6 +7,7 @@ export class ColorPicker {
   private readonly onPreviewColor: (color: Color | null) => void
   private currentColor: Color
   private readonly canvas: HTMLCanvasElement
+  private markerPosition: [x: number, y: number] | null = null
 
   constructor(
     private readonly root: HTMLElement,
@@ -78,6 +79,7 @@ export class ColorPicker {
     })
     canvas.addEventListener("pointerup", (e) => {
       const color = this.getCanvasColor(e)
+      this.markerPosition = getEventPosition(e)
       this.onSetColor(color)
     })
 
@@ -94,7 +96,7 @@ export class ColorPicker {
       lastMoveEvent = e
       e.preventDefault()
       const color = this.getCanvasColor(e)
-      this.setColorPreview(color)
+      this.setColorPreview(color, getEventPosition(e))
     })
     window.addEventListener("pointerup", (e) => {
       const isMobile = window.matchMedia("(max-width: 800px)").matches
@@ -104,6 +106,7 @@ export class ColorPicker {
       }
       if (lastMoveEvent && e.target !== canvas) {
         const color = this.getCanvasColor(lastMoveEvent)
+        this.markerPosition = getEventPosition(lastMoveEvent)
         lastMoveEvent = null
         this.onSetColor(color)
         return
@@ -111,8 +114,8 @@ export class ColorPicker {
     })
   }
 
-  private draw(color = this.currentColor) {
-    this.program.draw(this.getHue(), color)
+  private draw(color = this.currentColor, markerPosition = this.markerPosition) {
+    this.program.draw(this.getHue(), color, markerPosition ?? undefined)
   }
 
   public setHue(hue: number) {
@@ -129,13 +132,23 @@ export class ColorPicker {
   }
 
   public setColor(color: Color) {
+    this.markerPosition = this.getPositionFromColor(color)
     this.onSetColor(color)
     this.currentColor = color
   }
 
-  public setColorPreview(color: Color | null) {
+  private getPositionFromColor(color: Color): [x: number, y: number] {
+    const [_, saturation, value] = color.getHsvValues()
+    const x = (saturation / 100) * this.canvas.width
+    const y = (1 - value / 100) * this.canvas.height
+    return [x, y]
+  }
+
+  public setColorPreview(color: Color | null, markerPosition?: [x: number, y: number]) {
     this.onPreviewColor(color)
-    this.draw(color ?? this.currentColor)
+    const drawColor = color ?? this.currentColor
+    this.markerPosition = markerPosition ?? this.getPositionFromColor(drawColor)
+    this.draw(drawColor, this.markerPosition)
   }
 
   public getColor(): Color {

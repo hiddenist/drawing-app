@@ -7,6 +7,7 @@ const UNIFORM_NAMES = {
   uResolution: "uResolution",
   uHue: "uHue",
   uSelectedColor: "uSelectedColor",
+  uMarkerPosition: "uMarkerPosition",
 } as const
 const ATTRIBUTE_NAMES = {
   aPosition: "aPosition",
@@ -18,6 +19,8 @@ export class ValueSaturationGradientColorProgram extends BaseGradientColorProgra
 > {
   private hue: number = 0
   private selectedColor?: Color
+  private markerPosition?: [x: number, y: number]
+
   constructor(gl: WebGLRenderingContext) {
     const program = ValueSaturationGradientColorProgram.createProgramStatic(gl)
     const programInfo = ValueSaturationGradientColorProgram.createProgramInfoStatic(gl, program)
@@ -40,13 +43,14 @@ export class ValueSaturationGradientColorProgram extends BaseGradientColorProgra
     return ValueSaturationGradientColorProgram.createProgramInfoStatic(context, program)
   }
 
-  public draw(hue?: number, selectedColor?: Color) {
+  public draw(hue?: number, selectedColor?: Color, markerPosition?: [x: number, y: number]) {
     if (selectedColor && selectedColor.saturation > 0) {
       this.hue = selectedColor.hue
     } else if (hue !== undefined) {
       this.hue = hue
     }
     this.selectedColor = selectedColor
+    this.markerPosition = markerPosition
 
     super.draw()
   }
@@ -54,6 +58,7 @@ export class ValueSaturationGradientColorProgram extends BaseGradientColorProgra
   protected setUniforms() {
     this.gl.uniform1f(this.getUniformLocation("uHue"), this.hue)
     this.gl.uniform3fv(this.getUniformLocation("uSelectedColor"), this.selectedColor?.vec3 ?? [-1, -1, -1])
+    this.gl.uniform2fv(this.getUniformLocation("uMarkerPosition"), this.markerPosition ?? [-1, -1])
   }
 
   public setHue(hue: number) {
