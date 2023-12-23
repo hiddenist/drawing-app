@@ -5,11 +5,10 @@ import { Color } from "@libs/shared"
 import { Layer, LayerSettings } from "./Layer"
 import { SourceImage } from "../utils/image/SourceImage"
 import { ToolName, ToolNames } from "../exports"
-import { LineHistoryEntry, LineTool } from "../tools/LineTool"
+import { LineDrawInfo, LineTool } from "../tools/LineTool"
 import { InputPoint } from "../tools/InputPoint"
-import { EyeDropperHistoryEntry, EyeDropperTool } from "../tools/EyeDropperTool"
-
-type HistoryItem = LineHistoryEntry | EyeDropperHistoryEntry
+import { EyeDropperInfo, EyeDropperTool } from "../tools/EyeDropperTool"
+import { CanvasHistory, HistoryState } from "./CanvasHistory"
 
 interface DrawingEngineState {
   color: Color
@@ -28,8 +27,12 @@ export interface DrawingEngineOptions {
   pixelDensity?: number
 }
 
+type ToolInfo = LineDrawInfo | EyeDropperInfo
+
 export interface DrawingEngineEventMap {
-  draw: HistoryItem
+  draw: ToolInfo
+  undo: { toolInfo: HistoryState["toolInfo"]; undosLeft: number }
+  redo: { toolInfo: HistoryState["toolInfo"]; redosLeft: number }
   pickColor: { color: Color }
   previewColor: { color: Color | null }
   clear: undefined
@@ -56,7 +59,6 @@ const defaultTool = ToolNames.brush
 export class DrawingEngine {
   protected state: DrawingEngineState
   protected program: TextureDrawingProgram
-  protected history: Array<HistoryItem>
   /**
    * Saved drawing layer is the layer that actions, like brush strokes, are saved to after the user finishes drawing
    * (e.g. releases the mouse, lifts the stylus, etc).
@@ -76,6 +78,7 @@ export class DrawingEngine {
   }
 
   private listeners: Partial<DrawingEventListeners> = {}
+  protected history: CanvasHistory
 
   constructor(
     public gl: WebGLRenderingContext,
@@ -91,12 +94,15 @@ export class DrawingEngine {
       prevTool: defaultTool,
     }
 
+    this.history = new CanvasHistory(this, {
+      maxHistory: 10,
+    })
+
     this.savedDrawingLayer = this.makeLayer()
     this.activeDrawingLayer = this.makeLayer({ clearBeforeDrawing: true })
 
     this.program = new TextureDrawingProgram(gl, this.state.pixelDensity)
 
-    this.history = []
     const lineProgram = new LineDrawingProgram(gl, this.state.pixelDensity)
     this.tools = {
       [ToolNames.brush]: new LineTool(this, lineProgram, ToolNames.brush),
@@ -167,10 +173,14 @@ export class DrawingEngine {
     return this.state.opacity
   }
 
-  public clearCanvas() {
+  public _clear() {
     this.savedDrawingLayer.clear()
     this.activeDrawingLayer.clear()
     this.clearCurrent()
+  }
+
+  public clearCanvas() {
+    this._clear()
     this.program.draw(this.activeDrawingLayer, this.savedDrawingLayer)
 
     this.callListeners("clear", undefined)
@@ -203,7 +213,7 @@ export class DrawingEngine {
     return position[0] >= 0 && position[0] <= this.state.width && position[1] >= 0 && position[1] <= this.state.height
   }
 
-  public draw(drawCallback: () => HistoryItem | undefined): this {
+  public draw(drawCallback: () => DrawingEngineEventMap["draw"] | undefined): this {
     const layer = this.activeDrawingLayer
     this.program.createTextureImage(layer, () => {
       const drawData = drawCallback()
@@ -268,7 +278,39 @@ export class DrawingEngine {
     this.render("draw")
   }
 
-  public addHistory(historyItem: HistoryItem) {
-    this.history.push(historyItem)
+  public addHistory(toolInfo: ToolInfo) {
+    this.history.save(toolInfo)
+  }
+
+  public async undo() {
+    const toolInfo = await this.history.undo()
+    if (!toolInfo) {
+      return
+    }
+    if (toolInfo.tool === "eyedropper" && "previousColor" in toolInfo) {
+      this.setColor(toolInfo.previousColor.copy())
+    } else {
+      this.setTool(toolInfo.tool)
+    }
+    const undosLeft = this.history.getHistory().undo.length
+    this.callListeners("undo", { toolInfo, undosLeft })
+  }
+
+  public async redo() {
+    const toolInfo = await this.history.redo()
+    if (!toolInfo) {
+      return
+    }
+    if (toolInfo.tool === "eyedropper" && "color" in toolInfo) {
+      this.setColor(toolInfo.color.copy())
+    } else {
+      this.setTool(toolInfo.tool)
+    }
+    const redosLeft = this.history.getHistory().redo.length
+    this.callListeners("redo", { toolInfo, redosLeft })
+  }
+
+  public getHistory() {
+    return this.history.getHistory()
   }
 }

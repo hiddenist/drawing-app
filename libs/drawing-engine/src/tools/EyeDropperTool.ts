@@ -3,13 +3,14 @@ import { DrawingEngine, DrawingEngineEvent } from "../engine/DrawingEngine"
 import { InputPoint } from "./InputPoint"
 import { ToolNames } from "./Tools"
 
-export type EyeDropperHistoryEntry = {
+export type EyeDropperInfo = {
   tool: "eyedropper"
   color: Readonly<Color>
   previousColor: Readonly<Color>
 }
 
 export class EyeDropperTool {
+  public readonly updatesImageData = false
   public static readonly TOOL_NAME = ToolNames.eyedropper
   public readonly toolName = EyeDropperTool.TOOL_NAME
   constructor(public readonly engine: DrawingEngine) {
@@ -68,8 +69,14 @@ export class EyeDropperTool {
     if (!color) {
       return false
     }
+    const previousColor = this.engine.getCurrentColor()
     this.engine.setColor(color)
     this.engine.callListeners("pickColor", { color })
+    this.engine.addHistory({
+      tool: this.toolName,
+      color,
+      previousColor,
+    })
     return true
   }
 }

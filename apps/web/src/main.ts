@@ -68,6 +68,12 @@ function main() {
       link.href = url
       link.click()
     },
+    onUndo() {
+      engine.undo()
+    },
+    onRedo() {
+      engine.redo()
+    },
     tools: tools,
     initialTool: engine.getCurrentToolName(),
 
@@ -102,6 +108,9 @@ function makeToolbar<T extends string>(
     onSetTool: (tool: T) => void
     onExport: (name: string) => void
     onLoadImage: (image: HTMLImageElement) => void
+
+    onUndo: () => void
+    onRedo: () => void
 
     addListener: WebDrawingEngine["addListener"]
   },
@@ -224,6 +233,39 @@ function makeToolbar<T extends string>(
     options.onExport(`${filename || "drawing"}.png`)
   })
   inputTray.append(exportButton)
+
+  const undoButton = document.createElement("button")
+  const redoButton = document.createElement("button")
+  undoButton.classList.add("undo-button")
+  redoButton.classList.add("redo-button")
+  undoButton.innerText = "Undo"
+  redoButton.innerText = "Redo"
+  undoButton.disabled = true
+  redoButton.disabled = true
+  inputTray.append(undoButton)
+  inputTray.append(redoButton)
+  undoButton.addEventListener("click", (e) => {
+    e.preventDefault()
+    options.onUndo()
+  })
+  redoButton.addEventListener("click", (e) => {
+    e.preventDefault()
+    options.onRedo()
+  })
+  options.addListener("draw", () => {
+    undoButton.disabled = false
+    redoButton.disabled = true
+  })
+  options.addListener("undo", ({ undosLeft }) => {
+    console.log({ undosLeft })
+    undoButton.disabled = undosLeft === 0
+    redoButton.disabled = false
+  })
+  options.addListener("redo", ({ redosLeft }) => {
+    console.log({ redosLeft })
+    undoButton.disabled = false
+    redoButton.disabled = redosLeft === 0
+  })
 
   const clearButton = document.createElement("button")
   clearButton.classList.add("clear-button")
