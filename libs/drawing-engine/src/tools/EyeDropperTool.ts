@@ -1,5 +1,5 @@
 import { BaseProgram, Color } from "@libs/shared"
-import { DrawingEngine, DrawingEngineEvent } from "../engine/DrawingEngine"
+import { DrawingEngine, DrawingEngineEvent, EventType } from "../engine/DrawingEngine"
 import { InputPoint } from "./InputPoint"
 import { ToolNames } from "./Tools"
 
@@ -23,40 +23,40 @@ export class EyeDropperTool {
       cancel: this.onCancel.bind(this),
     }
 
-    this.engine.addListener("changeTool", ({ tool }) => {
+    this.engine.addListener(EventType.changeTool, ({ tool }) => {
       if (tool === this.toolName) {
-        this.engine.addListener("press", listeners.press)
-        this.engine.addListener("move", listeners.move)
-        this.engine.addListener("release", listeners.release)
-        this.engine.addListener("cancel", listeners.cancel)
+        this.engine.addListener(EventType.press, listeners.press)
+        this.engine.addListener(EventType.move, listeners.move)
+        this.engine.addListener(EventType.release, listeners.release)
+        this.engine.addListener(EventType.cancel, listeners.cancel)
       } else {
-        this.engine.removeListener("press", listeners.press)
-        this.engine.removeListener("move", listeners.move)
-        this.engine.removeListener("release", listeners.release)
-        this.engine.removeListener("cancel", listeners.cancel)
+        this.engine.removeListener(EventType.press, listeners.press)
+        this.engine.removeListener(EventType.move, listeners.move)
+        this.engine.removeListener(EventType.release, listeners.release)
+        this.engine.removeListener(EventType.cancel, listeners.cancel)
       }
     })
   }
 
   onCancel() {
     this.engine.usePrevTool()
-    this.engine.callListeners("previewColor", { color: null })
+    this.engine.callListeners(EventType.previewColor, { color: null })
   }
 
-  onPress({ position }: DrawingEngineEvent<"press">) {
+  onPress({ position }: DrawingEngineEvent<EventType.press>) {
     this.pickColor(position)
   }
 
-  onMove({ positions }: DrawingEngineEvent<"move">) {
+  onMove({ positions }: DrawingEngineEvent<EventType.move>) {
     const [x, y] = positions[positions.length - 1] ?? [0, 0]
     const color = BaseProgram.getColorAtPosition(this.engine.gl, [x, y])
     if (!color) {
       return
     }
-    this.engine.callListeners("previewColor", { color })
+    this.engine.callListeners(EventType.previewColor, { color })
   }
 
-  onRelease({ position }: DrawingEngineEvent<"release">) {
+  onRelease({ position }: DrawingEngineEvent<EventType.release>) {
     if (this.pickColor(position)) {
       this.engine.usePrevTool()
     } else {
@@ -70,7 +70,7 @@ export class EyeDropperTool {
       return false
     }
     this.engine.setColor(color)
-    this.engine.callListeners("pickColor", { color })
+    this.engine.callListeners(EventType.pickColor, { color })
     return true
   }
 }

@@ -1,6 +1,6 @@
 import { InputPoint } from "./InputPoint"
 import { DrawLineOptions, LineDrawingProgram } from "../programs/LineDrawingProgram"
-import { DrawingEngine, DrawingEngineEvent } from "../engine/DrawingEngine"
+import { DrawingEngine, DrawingEngineEvent, EventType } from "../engine/DrawingEngine"
 import { ToolName } from "./Tools"
 
 export type LineDrawInfo = {
@@ -42,37 +42,37 @@ export class LineTool {
       changeTool: this.onChangeTool.bind(this),
     }
 
-    this.engine.addListener("changeTool", ({ tool }) => {
+    this.engine.addListener(EventType.changeTool, ({ tool }) => {
       if (tool === this.toolName) {
-        this.engine.addListener("press", listeners.press)
-        this.engine.addListener("move", listeners.move)
-        this.engine.addListener("release", listeners.release)
-        this.engine.addListener("cancel", listeners.cancel)
-        this.engine.addListener("changeTool", listeners.changeTool)
+        this.engine.addListener(EventType.press, listeners.press)
+        this.engine.addListener(EventType.move, listeners.move)
+        this.engine.addListener(EventType.release, listeners.release)
+        this.engine.addListener(EventType.cancel, listeners.cancel)
+        this.engine.addListener(EventType.changeTool, listeners.changeTool)
       } else {
-        this.engine.removeListener("press", listeners.press)
-        this.engine.removeListener("move", listeners.move)
-        this.engine.removeListener("release", listeners.release)
-        this.engine.removeListener("cancel", listeners.cancel)
-        this.engine.removeListener("changeTool", listeners.changeTool)
+        this.engine.removeListener(EventType.press, listeners.press)
+        this.engine.removeListener(EventType.move, listeners.move)
+        this.engine.removeListener(EventType.release, listeners.release)
+        this.engine.removeListener(EventType.cancel, listeners.cancel)
+        this.engine.removeListener(EventType.changeTool, listeners.changeTool)
       }
     })
   }
 
-  protected onPress({ position }: DrawingEngineEvent<"press">) {
+  protected onPress({ position }: DrawingEngineEvent<EventType.press>) {
     this.addPosition(position)
     this.draw()
     return { hideCursor: true }
   }
 
-  protected onMove({ positions, isPressed }: DrawingEngineEvent<"move">) {
+  protected onMove({ positions, isPressed }: DrawingEngineEvent<EventType.move>) {
     if (isPressed) {
       this.addPositions(positions)
       this.draw()
     }
   }
 
-  protected onRelease({ position }: DrawingEngineEvent<"release">) {
+  protected onRelease({ position }: DrawingEngineEvent<EventType.release>) {
     this.addPosition(position)
     this.draw()
     this.commit()

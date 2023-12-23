@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { WebDrawingEngine, ToolNames } from "@libs/drawing-engine"
+import { WebDrawingEngine, EventType, ToolNames } from "@libs/drawing-engine"
 import { ColorPicker } from "@libs/color-picker"
 import { Color } from "@libs/shared"
 
@@ -140,13 +140,13 @@ function makeToolbar<T extends string>(
     },
   })
 
-  options.addListener("draw", () => {
+  options.addListener(EventType.draw, () => {
     recentColors.setSelectedColor(picker.getColor())
   })
-  options.addListener("pickColor", ({ color }) => {
+  options.addListener(EventType.pickColor, ({ color }) => {
     picker.setColor(color)
   })
-  options.addListener("previewColor", ({ color }) => {
+  options.addListener(EventType.previewColor, ({ color }) => {
     picker.setColorPreview(color)
   })
 
@@ -158,7 +158,7 @@ function makeToolbar<T extends string>(
 
   const toolSelect = document.createElement("select")
 
-  options.addListener("changeTool", ({ tool }) => {
+  options.addListener(EventType.changeTool, ({ tool }) => {
     toolSelect.value = tool
   })
   toolSelect.classList.add("tool-select")
@@ -252,15 +252,15 @@ function makeToolbar<T extends string>(
     e.preventDefault()
     options.onRedo()
   })
-  options.addListener("draw", () => {
+  options.addListener(EventType.draw, () => {
     undoButton.disabled = false
     redoButton.disabled = true
   })
-  options.addListener("undo", ({ canUndo }) => {
+  options.addListener(EventType.undo, ({ canUndo }) => {
     undoButton.disabled = !canUndo
     redoButton.disabled = false
   })
-  options.addListener("redo", ({ canRedo }) => {
+  options.addListener(EventType.redo, ({ canRedo }) => {
     undoButton.disabled = false
     redoButton.disabled = !canRedo
   })
@@ -277,7 +277,7 @@ function makeToolbar<T extends string>(
     setHasDrawn(false)
   })
   inputTray.append(clearButton)
-  options.addListener("draw", () => {
+  options.addListener(EventType.draw, () => {
     setHasDrawn(true)
   })
 

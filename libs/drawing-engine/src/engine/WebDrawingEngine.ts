@@ -1,5 +1,5 @@
 import { Color, getEventPosition } from "@libs/shared"
-import { DrawingEngine, DrawingEngineOptions } from "./DrawingEngine"
+import { DrawingEngine, DrawingEngineOptions, EventType } from "./DrawingEngine"
 import { ToolNames } from "../tools/Tools"
 import { Vec2 } from "@libs/shared"
 import { SourceImage } from "../utils/image/SourceImage"
@@ -42,7 +42,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
 
     this.bindBrowserEvents()
 
-    this.addListener("changeTool", ({ tool }) => {
+    this.addListener(EventType.changeTool, ({ tool }) => {
       this.root.dataset.tool = tool
     })
   }
@@ -161,13 +161,13 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
   /**
    * Add multiple events to one listener.
    */
-  // private addListeners<K extends keyof HTMLElementEventMap>(
+  // private addListenersEventType.Kextends keyof HTMLElementEventMap>(
   //   eventNames: Array<K>,
   //   handler?: (event: DrawingEvent<HTMLElementEventMap[K]>) => void,
   //   element: HTMLElement = this.root,
   // ) {
   //   for (const eventName of eventNames) {
-  //     this.addListener(eventName, handler, element)
+  //     this.addListener(EventType.ventName handler, element)
   //   }
   // }
 

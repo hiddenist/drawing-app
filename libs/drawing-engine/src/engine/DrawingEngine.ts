@@ -29,29 +29,40 @@ export interface DrawingEngineOptions {
 
 type ToolInfo = LineDrawInfo
 
-export interface DrawingEngineEventMap {
-  draw: ToolInfo
-  undo: { toolInfo: HistoryState["toolInfo"] | null; canUndo: boolean }
-  redo: { toolInfo: HistoryState["toolInfo"] | null; canRedo: boolean }
-  pickColor: { color: Color }
-  previewColor: { color: Color | null }
-  clear: undefined
-  changeTool: { tool: ToolName }
-
-  press: { position: Readonly<InputPoint> }
-  move: { positions: ReadonlyArray<InputPoint>; isPressed: boolean }
-  release: { position: Readonly<InputPoint> }
-  cancel: undefined
+export enum EventType {
+  draw = "draw",
+  undo = "undo",
+  redo = "redo",
+  pickColor = "pickColor",
+  previewColor = "previewColor",
+  clear = "clear",
+  changeTool = "changeTool",
+  press = "press",
+  move = "move",
+  release = "release",
+  cancel = "cancel",
 }
 
-export type DrawingEngineEvent<T extends DrawingEngineEventName> = {
+export interface DrawingEngineEventMap {
+  [EventType.draw]: ToolInfo
+  [EventType.undo]: { toolInfo: HistoryState["toolInfo"] | null; canUndo: boolean }
+  [EventType.redo]: { toolInfo: HistoryState["toolInfo"] | null; canRedo: boolean }
+  [EventType.pickColor]: { color: Color }
+  [EventType.previewColor]: { color: Color | null }
+  [EventType.clear]: undefined
+  [EventType.changeTool]: { tool: ToolName }
+  [EventType.press]: { position: Readonly<InputPoint> }
+  [EventType.move]: { positions: ReadonlyArray<InputPoint>; isPressed: boolean }
+  [EventType.release]: { position: Readonly<InputPoint> }
+  [EventType.cancel]: undefined
+}
+export type DrawingEngineEvent<T extends EventType> = {
   eventName: T
 } & (DrawingEngineEventMap[T] extends undefined ? {} : DrawingEngineEventMap[T])
-export type DrawingEngineEventName = keyof DrawingEngineEventMap
-export type DrawingEventHandler<T extends DrawingEngineEventName> = (event: DrawingEngineEvent<T>) => void
+export type DrawingEventHandler<T extends EventType> = (event: DrawingEngineEvent<T>) => void
 
 type DrawingEventListeners = {
-  [Key in DrawingEngineEventName]: Array<DrawingEventHandler<Key>>
+  [Key in EventType]: Array<DrawingEventHandler<Key>>
 }
 
 const defaultTool = ToolNames.brush
@@ -110,7 +121,7 @@ export class DrawingEngine {
       [ToolNames.eyedropper]: new EyeDropperTool(this),
     }
 
-    this.callListeners("changeTool", { tool: this.state.tool })
+    this.callListeners(EventType.changeTool, { tool: this.state.tool })
   }
 
   private makeLayer(options?: Partial<LayerSettings>) {
@@ -153,7 +164,7 @@ export class DrawingEngine {
     this.commitToSavedLayer()
     this.state.prevTool = this.state.tool
     this.state.tool = tool
-    this.callListeners("changeTool", { tool })
+    this.callListeners(EventType.changeTool, { tool })
   }
 
   public usePrevTool() {
@@ -183,7 +194,7 @@ export class DrawingEngine {
     this._clear()
     this.program.draw(this.activeDrawingLayer, this.savedDrawingLayer)
 
-    this.callListeners("clear", undefined)
+    this.callListeners(EventType.clear, undefined)
   }
 
   protected clearCurrent() {
@@ -193,20 +204,20 @@ export class DrawingEngine {
 
   protected handlePointerDown(position: Readonly<InputPoint>) {
     this.state.isPressed = true
-    this.callListeners("press", { position })
+    this.callListeners(EventType.press, { position })
   }
 
   protected handlePointerUp(position: Readonly<InputPoint>) {
     this.state.isPressed = false
-    this.callListeners("release", { position })
+    this.callListeners(EventType.release, { position })
   }
 
   protected handlePointerMove(positions: ReadonlyArray<InputPoint>) {
-    this.callListeners("move", { positions, isPressed: this.state.isPressed })
+    this.callListeners(EventType.move, { positions, isPressed: this.state.isPressed })
   }
 
   protected handleCancel() {
-    this.callListeners("cancel", undefined)
+    this.callListeners(EventType.cancel, undefined)
   }
 
   public isPositionInCanvas(position: Readonly<Vec2>) {
@@ -218,7 +229,7 @@ export class DrawingEngine {
     this.program.createTextureImage(layer, () => {
       const drawData = drawCallback()
       if (drawData) {
-        this.callListeners("draw", drawData)
+        this.callListeners(EventType.draw, drawData)
       }
     })
     this.render()
@@ -247,7 +258,7 @@ export class DrawingEngine {
     this.program[mode](this.activeDrawingLayer, this.savedDrawingLayer)
   }
 
-  public addListener<E extends DrawingEngineEventName>(eventName: E, cb: DrawingEventHandler<E>) {
+  public addListener<E extends EventType>(eventName: E, cb: DrawingEventHandler<E>) {
     let listeners = this.listeners[eventName]
     if (!listeners) {
       listeners = []
@@ -257,7 +268,7 @@ export class DrawingEngine {
     return this
   }
 
-  public removeListener<E extends DrawingEngineEventName>(eventName: E, cb: DrawingEventHandler<E>) {
+  public removeListener<E extends EventType>(eventName: E, cb: DrawingEventHandler<E>) {
     const index = this.listeners[eventName]?.indexOf(cb) ?? -1
     if (index === -1) {
       return this
@@ -266,7 +277,7 @@ export class DrawingEngine {
     return this
   }
 
-  public callListeners<E extends DrawingEngineEventName>(eventName: E, data: DrawingEngineEventMap[E]) {
+  public callListeners<E extends EventType>(eventName: E, data: DrawingEngineEventMap[E]) {
     this.listeners[eventName]?.forEach((listener) => listener({ eventName, ...data }))
   }
 

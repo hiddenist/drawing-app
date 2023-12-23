@@ -1,5 +1,5 @@
 import { LineDrawInfo } from "../tools/LineTool"
-import { DrawingEngine } from "./DrawingEngine"
+import { DrawingEngine, EventType } from "./DrawingEngine"
 
 type ToolInfo = LineDrawInfo
 
@@ -65,7 +65,7 @@ export class CanvasHistory {
   }
   public async undo() {
     if (!this.canUndo()) {
-      this.engine.callListeners("undo", { toolInfo: null, canUndo: false })
+      this.engine.callListeners(EventType.undo, { toolInfo: null, canUndo: false })
       return
     }
     const undoneState = this.history.pop()
@@ -77,12 +77,12 @@ export class CanvasHistory {
     this.redoHistory.push(undoneState)
 
     const toolInfo = await this.drawState(currentState)
-    this.engine.callListeners("undo", { toolInfo, canUndo: this.canUndo() })
+    this.engine.callListeners(EventType.undo, { toolInfo, canUndo: this.canUndo() })
   }
 
   public async redo() {
     if (!this.canRedo()) {
-      this.engine.callListeners("redo", { toolInfo: null, canRedo: false })
+      this.engine.callListeners(EventType.redo, { toolInfo: null, canRedo: false })
       return
     }
     const state = this.redoHistory.pop()
@@ -93,7 +93,7 @@ export class CanvasHistory {
     this.engine.setTool(state.toolInfo.tool)
 
     const toolInfo = await this.drawState(state)
-    this.engine.callListeners("redo", { toolInfo, canRedo: this.canRedo() })
+    this.engine.callListeners(EventType.redo, { toolInfo, canRedo: this.canRedo() })
   }
 
   protected addHistory(state: HistoryState) {
