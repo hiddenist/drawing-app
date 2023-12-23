@@ -3,13 +3,14 @@ import { DrawLineOptions, LineDrawingProgram } from "../programs/LineDrawingProg
 import { DrawingEngine, DrawingEngineEvent } from "../engine/DrawingEngine"
 import { ToolName } from "./Tools"
 
-export type LineHistoryEntry = {
+export type LineDrawInfo = {
   tool: ToolName
   path: InputPoint[]
   options: Required<Omit<DrawLineOptions, "drawType">>
 }
 
 export class LineTool {
+  public readonly updatesImageData = true
   private currentPath: InputPoint[] = []
   private options = {
     pressureEnabled: true,
@@ -90,11 +91,11 @@ export class LineTool {
       return
     }
     this.engine.commitToSavedLayer()
-    this.engine.addHistory(this.getHistoryEntry())
+    this.engine.addHistory(this.getToolInfo())
     this.currentPath = []
   }
 
-  private getHistoryEntry(): LineHistoryEntry {
+  private getToolInfo(): LineDrawInfo {
     return {
       path: structuredClone(this.currentPath),
       options: this.getLineOptions(),
@@ -116,7 +117,7 @@ export class LineTool {
         },
         this.getLineOptions(),
       )
-      return this.getHistoryEntry()
+      return this.getToolInfo()
     })
   }
 
