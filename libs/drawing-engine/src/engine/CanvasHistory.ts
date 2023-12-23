@@ -1,8 +1,7 @@
 import { LineDrawInfo } from "../tools/LineTool"
-import { EyeDropperInfo } from "../tools/EyeDropperTool"
 import { DrawingEngine } from "./DrawingEngine"
 
-type ToolInfo = LineDrawInfo | EyeDropperInfo
+type ToolInfo = LineDrawInfo
 
 export interface HistoryState {
   toolInfo: ToolInfo
@@ -64,29 +63,34 @@ export class CanvasHistory {
       imageData: tool.updatesImageData ? canvas.toDataURL() : null,
     })
   }
+  public async undo() {
+    if (!this.canUndo()) {
+      return
+    }
+    const undoneState = this.history.pop()
+    if (!undoneState) {
+      return
+    }
+    const currentState = this.history[this.history.length - 1]
+    if (currentState) this.engine.setTool(currentState.toolInfo.tool)
+    this.redoHistory.push(undoneState)
+    return await this.drawState(currentState)
+  }
 
   public async redo() {
+    if (!this.canRedo()) {
+      return
+    }
     const state = this.redoHistory.pop()
     if (!state) {
       return
     }
     this.history.push(state)
+    this.engine.setTool(state.toolInfo.tool)
     return await this.drawState(state)
   }
 
-  public async undo() {
-    const state = this.history.pop()
-    console.log("Undoing", state)
-    if (!state) {
-      return
-    }
-    const currentState = this.history[this.history.length - 1]
-    this.redoHistory.push(state)
-    return await this.drawState(currentState)
-  }
-
   protected addHistory(state: HistoryState) {
-    console.log("Adding history", state)
     if (this.history.length >= this.options.maxHistory) {
       this.hasTruncated = true
       this.history.shift()
@@ -101,7 +105,6 @@ export class CanvasHistory {
       return Promise.resolve(null)
     }
     const { toolInfo, imageData } = state
-    console.log("Drawing state", state)
     if (!imageData) {
       return Promise.resolve(toolInfo)
     }

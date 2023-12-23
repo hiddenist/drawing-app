@@ -69,14 +69,8 @@ export class EyeDropperTool {
     if (!color) {
       return false
     }
-    const previousColor = this.engine.getCurrentColor()
     this.engine.setColor(color)
     this.engine.callListeners("pickColor", { color })
-    this.engine.addHistory({
-      tool: this.toolName,
-      color,
-      previousColor,
-    })
     return true
   }
 }

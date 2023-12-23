@@ -7,7 +7,7 @@ import { SourceImage } from "../utils/image/SourceImage"
 import { ToolName, ToolNames } from "../exports"
 import { LineDrawInfo, LineTool } from "../tools/LineTool"
 import { InputPoint } from "../tools/InputPoint"
-import { EyeDropperInfo, EyeDropperTool } from "../tools/EyeDropperTool"
+import { EyeDropperTool } from "../tools/EyeDropperTool"
 import { CanvasHistory, HistoryState } from "./CanvasHistory"
 
 interface DrawingEngineState {
@@ -27,7 +27,7 @@ export interface DrawingEngineOptions {
   pixelDensity?: number
 }
 
-type ToolInfo = LineDrawInfo | EyeDropperInfo
+type ToolInfo = LineDrawInfo
 
 export interface DrawingEngineEventMap {
   draw: ToolInfo
@@ -287,11 +287,6 @@ export class DrawingEngine {
     if (!toolInfo) {
       return
     }
-    if (toolInfo.tool === "eyedropper" && "previousColor" in toolInfo) {
-      this.setColor(toolInfo.previousColor.copy())
-    } else {
-      this.setTool(toolInfo.tool)
-    }
     const undosLeft = this.history.getHistory().undo.length
     this.callListeners("undo", { toolInfo, undosLeft })
   }
@@ -300,11 +295,6 @@ export class DrawingEngine {
     const toolInfo = await this.history.redo()
     if (!toolInfo) {
       return
-    }
-    if (toolInfo.tool === "eyedropper" && "color" in toolInfo) {
-      this.setColor(toolInfo.color.copy())
-    } else {
-      this.setTool(toolInfo.tool)
     }
     const redosLeft = this.history.getHistory().redo.length
     this.callListeners("redo", { toolInfo, redosLeft })
