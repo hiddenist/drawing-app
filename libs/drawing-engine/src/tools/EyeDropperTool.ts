@@ -39,7 +39,11 @@ export class EyeDropperTool {
   }
 
   onCancel() {
-    this.engine.usePrevTool()
+    if (this.engine.getState().prevTool === ToolNames.eraser) {
+      this.engine.setTool(ToolNames.brush)
+    } else {
+      this.engine.usePrevTool()
+    }
     this.engine.callListeners(EventType.previewColor, { color: null })
   }
 

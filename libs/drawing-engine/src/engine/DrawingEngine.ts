@@ -167,6 +167,10 @@ export class DrawingEngine {
     this.callListeners(EventType.changeTool, { tool })
   }
 
+  public getState(): Readonly<DrawingEngineState> {
+    return this.state
+  }
+
   public usePrevTool() {
     this.setTool(this.state.prevTool)
   }

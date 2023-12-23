@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { WebDrawingEngine, EventType, ToolNames } from "@libs/drawing-engine"
+import { WebDrawingEngine, EventType, ToolNames, ToolName } from "@libs/drawing-engine"
 import { ColorPicker } from "@libs/color-picker"
 import { Color } from "@libs/shared"
 
@@ -90,22 +90,22 @@ function main() {
     e.returnValue = ""
   })
 }
-function makeToolbar<T extends string>(
+function makeToolbar(
   root: HTMLElement,
   options: {
     state: { hasDrawn: boolean }
     initialColor?: Color
     initialOpacity?: number
-    initialTool?: T
+    initialTool?: ToolName
     getLineWeight: () => number | null
 
-    tools: ReadonlyArray<{ label: string; value: T }>
+    tools: ReadonlyArray<{ label: string; value: ToolName }>
 
     onClear: () => void
     onSetOpacity: (opacity: number) => void
     onSetLineWeight: (weight: number) => void
     onSetColor: (color: Color) => void
-    onSetTool: (tool: T) => void
+    onSetTool: (tool: ToolName) => void
     onExport: (name: string) => void
     onLoadImage: (image: HTMLImageElement) => void
 
@@ -137,6 +137,7 @@ function makeToolbar<T extends string>(
   const recentColors = recentColorTray({
     onColorSelect(color) {
       picker.setColor(color)
+      options.onSetTool(ToolNames.brush)
     },
   })
 
@@ -182,7 +183,7 @@ function makeToolbar<T extends string>(
 
   let setWeightRef: { setValue?: (weight: number | string) => void } = {}
   toolSelect.addEventListener("change", () => {
-    options.onSetTool(toolSelect.value as T)
+    options.onSetTool(toolSelect.value as ToolName)
     const weight = options.getLineWeight()
     if (weight) {
       setWeightRef.setValue?.(weight)
