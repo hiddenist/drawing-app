@@ -256,15 +256,13 @@ function makeToolbar<T extends string>(
     undoButton.disabled = false
     redoButton.disabled = true
   })
-  options.addListener("undo", ({ undosLeft }) => {
-    console.log({ undosLeft })
-    undoButton.disabled = undosLeft === 0
+  options.addListener("undo", ({ canUndo }) => {
+    undoButton.disabled = !canUndo
     redoButton.disabled = false
   })
-  options.addListener("redo", ({ redosLeft }) => {
-    console.log({ redosLeft })
+  options.addListener("redo", ({ canRedo }) => {
     undoButton.disabled = false
-    redoButton.disabled = redosLeft === 0
+    redoButton.disabled = !canRedo
   })
 
   const clearButton = document.createElement("button")

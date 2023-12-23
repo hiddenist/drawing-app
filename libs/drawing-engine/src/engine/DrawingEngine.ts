@@ -31,8 +31,8 @@ type ToolInfo = LineDrawInfo
 
 export interface DrawingEngineEventMap {
   draw: ToolInfo
-  undo: { toolInfo: HistoryState["toolInfo"]; undosLeft: number }
-  redo: { toolInfo: HistoryState["toolInfo"]; redosLeft: number }
+  undo: { toolInfo: HistoryState["toolInfo"] | null; canUndo: boolean }
+  redo: { toolInfo: HistoryState["toolInfo"] | null; canRedo: boolean }
   pickColor: { color: Color }
   previewColor: { color: Color | null }
   clear: undefined
@@ -282,22 +282,12 @@ export class DrawingEngine {
     this.history.save(toolInfo)
   }
 
-  public async undo() {
-    const toolInfo = await this.history.undo()
-    if (!toolInfo) {
-      return
-    }
-    const undosLeft = this.history.getHistory().undo.length
-    this.callListeners("undo", { toolInfo, undosLeft })
+  public undo() {
+    return this.history.undo()
   }
 
-  public async redo() {
-    const toolInfo = await this.history.redo()
-    if (!toolInfo) {
-      return
-    }
-    const redosLeft = this.history.getHistory().redo.length
-    this.callListeners("redo", { toolInfo, redosLeft })
+  public redo() {
+    return this.history.redo()
   }
 
   public getHistory() {

@@ -32,16 +32,6 @@ export function getCroppedImage(source: SourceImage, width: number, height: numb
     }
   }
   const [offsetX, offsetY] = getImageOffset(canvas, imageWidth, imageHeight)
-  console.log({
-    imageWidth,
-    imageHeight,
-    offsetX,
-    offsetY,
-    width,
-    height,
-    aspectRatio,
-    canvasAspectRatio,
-  })
   ctx.drawImage(source, offsetX, offsetY, imageWidth, imageHeight)
   return canvas
 }

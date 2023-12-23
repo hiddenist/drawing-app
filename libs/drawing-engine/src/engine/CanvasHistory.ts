@@ -65,6 +65,7 @@ export class CanvasHistory {
   }
   public async undo() {
     if (!this.canUndo()) {
+      this.engine.callListeners("undo", { toolInfo: null, canUndo: false })
       return
     }
     const undoneState = this.history.pop()
@@ -74,11 +75,14 @@ export class CanvasHistory {
     const currentState = this.history[this.history.length - 1]
     if (currentState) this.engine.setTool(currentState.toolInfo.tool)
     this.redoHistory.push(undoneState)
-    return await this.drawState(currentState)
+
+    const toolInfo = await this.drawState(currentState)
+    this.engine.callListeners("undo", { toolInfo, canUndo: this.canUndo() })
   }
 
   public async redo() {
     if (!this.canRedo()) {
+      this.engine.callListeners("redo", { toolInfo: null, canRedo: false })
       return
     }
     const state = this.redoHistory.pop()
@@ -87,7 +91,9 @@ export class CanvasHistory {
     }
     this.history.push(state)
     this.engine.setTool(state.toolInfo.tool)
-    return await this.drawState(state)
+
+    const toolInfo = await this.drawState(state)
+    this.engine.callListeners("redo", { toolInfo, canRedo: this.canRedo() })
   }
 
   protected addHistory(state: HistoryState) {
