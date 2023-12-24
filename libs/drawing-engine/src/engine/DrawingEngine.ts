@@ -304,8 +304,4 @@ export class DrawingEngine {
   public redo() {
     return this.history.redo()
   }
-
-  public getHistory() {
-    return this.history.getHistory()
-  }
 }
