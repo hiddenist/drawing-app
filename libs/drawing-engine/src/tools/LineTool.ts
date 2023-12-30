@@ -91,7 +91,7 @@ export class LineTool {
       return
     }
     this.engine.commitToSavedLayer()
-    this.engine.addHistory(this.getToolInfo())
+    this.engine.callListeners(EventType.commit, this.getToolInfo())
     this.currentPath = []
   }
 

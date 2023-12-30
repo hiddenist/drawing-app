@@ -5,10 +5,10 @@ import { Color } from "@libs/shared"
 import { Layer, LayerSettings } from "./Layer"
 import { SourceImage } from "../utils/image/SourceImage"
 import { ToolName, ToolNames } from "../exports"
-import { LineDrawInfo, LineTool } from "../tools/LineTool"
+import { LineTool } from "../tools/LineTool"
 import { InputPoint } from "../tools/InputPoint"
 import { EyeDropperTool } from "../tools/EyeDropperTool"
-import { CanvasHistory, HistoryState } from "./CanvasHistory"
+import { CanvasHistory, ToolInfo } from "./CanvasHistory"
 
 interface DrawingEngineState {
   color: Color
@@ -27,11 +27,10 @@ export interface DrawingEngineOptions {
   pixelDensity?: number
 }
 
-type ToolInfo = LineDrawInfo
-
 export enum EventType {
   engineLoaded = "engineLoaded",
   draw = "draw",
+  commit = "commit",
   undo = "undo",
   redo = "redo",
   pickColor = "pickColor",
@@ -45,9 +44,11 @@ export enum EventType {
 }
 
 export interface DrawingEngineEventMap {
+  [EventType.engineLoaded]: undefined
   [EventType.draw]: ToolInfo
-  [EventType.undo]: { toolInfo: HistoryState["toolInfo"] | null; canUndo: boolean }
-  [EventType.redo]: { toolInfo: HistoryState["toolInfo"] | null; canRedo: boolean }
+  [EventType.commit]: ToolInfo
+  [EventType.undo]: { toolInfo: ToolInfo | null; canUndo: boolean }
+  [EventType.redo]: { toolInfo: ToolInfo | null; canRedo: boolean }
   [EventType.pickColor]: { color: Color }
   [EventType.previewColor]: { color: Color | null }
   [EventType.clear]: undefined
@@ -56,7 +57,6 @@ export interface DrawingEngineEventMap {
   [EventType.move]: { positions: ReadonlyArray<InputPoint>; isPressed: boolean }
   [EventType.release]: { position: Readonly<InputPoint> }
   [EventType.cancel]: undefined
-  [EventType.engineLoaded]: undefined
 }
 export type DrawingEngineEvent<T extends EventType> = {
   eventName: T
@@ -314,10 +314,6 @@ export class DrawingEngine {
     this.activeDrawingLayer.clear()
     this.savedDrawingLayer = copy
     this.render("draw")
-  }
-
-  public addHistory(toolInfo: ToolInfo) {
-    this.history?.add(toolInfo)
   }
 
   public undo() {

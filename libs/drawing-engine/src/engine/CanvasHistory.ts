@@ -2,12 +2,9 @@ import { LineDrawInfo } from "../tools/LineTool"
 import { DrawingEngine, EventType } from "./DrawingEngine"
 import { Database } from "./Database"
 
-type ToolInfo = LineDrawInfo
+type ClearInfo = { tool: "clear" }
 
-export interface HistoryState {
-  toolInfo: ToolInfo
-  imageData: Blob | null
-}
+export type ToolInfo = LineDrawInfo | ClearInfo
 
 interface HistoryEntry {
   imageData: Blob | null
@@ -61,7 +58,14 @@ export class CanvasHistory {
     protected readonly engine: DrawingEngine,
     protected options: HistoryOptions,
     protected db: HistoryDatabase,
-  ) {}
+  ) {
+    this.engine.addListener(EventType.commit, (toolInfo) => {
+      this.add(toolInfo)
+    })
+    this.engine.addListener(EventType.clear, () => {
+      this.add({ tool: "clear" })
+    })
+  }
 
   static async create(engine: DrawingEngine, options: Partial<HistoryOptions> = {}) {
     const db = await HistoryDatabase.create()
@@ -98,7 +102,8 @@ export class CanvasHistory {
 
   private async save(toolInfo: ToolInfo) {
     const canvas = this.engine.htmlCanvas
-    const tool = this.engine.tools[toolInfo.tool]
+    const toolName = toolInfo.tool
+    const tool = toolName === "clear" ? { updatesImageData: false } : this.engine.tools[toolName]
 
     const current = await this.getIncompleteEntry()
     current.entry.actions.push(toolInfo)
@@ -192,33 +197,48 @@ export class CanvasHistory {
   }
 
   protected async appendHistoryKey(key: IDBValidKey) {
-    const db = this.db
     this.history.unshift(key)
-    if (this.history.length >= this.options.maxHistory) {
-      this.hasTruncated = true
-      const first = this.history.pop()
-      if (first) {
-        db.history.delete(first)
-      }
+    this.truncateHistory()
+  }
+
+  protected truncateHistory() {
+    if (this.history.length <= this.options.maxHistory) {
+      return
+    }
+
+    const first = this.history.pop()
+    if (first) {
+      this.db.history.delete(first)
     }
   }
 
-  protected async drawHistoryEntry(entry: Readonly<HistoryEntry> | null) {
-    if (!entry) {
-      if (!this.hasTruncated) this.engine.clearCanvas()
-      return Promise.resolve(null)
-    }
+  protected async drawHistoryEntry(entry: Readonly<HistoryEntry>) {
     const { actions, imageData } = entry
+
     if (!imageData) {
       this.engine._clear()
       return Promise.resolve(null)
     }
+
     await this.drawBlob(imageData)
-    await this.drawActions(actions)
+    await this.drawActions(CanvasHistory.getActionsSinceClear(entry.actions))
+
     return actions[actions.length - 1]
   }
 
-  protected async drawActions(actions: Array<ToolInfo>) {
+  protected static getActionsSinceClear(actions: Array<ToolInfo>): Array<Exclude<ToolInfo, ClearInfo>> {
+    const result: Array<Exclude<ToolInfo, ClearInfo>> = []
+    for (const action of actions) {
+      if (action.tool === "clear") {
+        result.splice(0)
+      } else {
+        result.push(action)
+      }
+    }
+    return result
+  }
+
+  protected async drawActions(actions: Array<Exclude<ToolInfo, ClearInfo>>) {
     for (const action of actions) {
       const tool = this.engine.tools[action.tool]
       if (!tool) {
@@ -231,6 +251,7 @@ export class CanvasHistory {
   protected drawBlob(blob: Blob): Promise<HTMLImageElement> {
     const image = new Image()
     image.src = URL.createObjectURL(blob)
+
     return new Promise<HTMLImageElement>((resolve, reject) => {
       image.onload = () => {
         this.engine._clear()
@@ -249,6 +270,7 @@ export class CanvasHistory {
 
   public canUndo() {
     const minStates = this.hasTruncated ? 1 : 0
+
     return this.history.length > minStates
   }
 
