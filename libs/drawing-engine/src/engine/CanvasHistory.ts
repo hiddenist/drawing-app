@@ -32,16 +32,23 @@ class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
 
   protected static schema = {
     [HistoryStores.history]: {
-      keyPath: "id",
       autoIncrement: true,
     },
   }
 
   static async create() {
-    const db = await Database.createDb(() => {
-      db.createObjectStore(HistoryStores.history, this.schema[HistoryStores.history])
-    })
-    return new HistoryDatabase(db)
+    return new HistoryDatabase(
+      await Database.createDb(
+        "history",
+        (db, resolve) => {
+          const store = db.createObjectStore(HistoryStores.history, this.schema[HistoryStores.history])
+          store.transaction.oncomplete = () => {
+            resolve()
+          }
+        },
+        1,
+      ),
+    )
   }
 }
 

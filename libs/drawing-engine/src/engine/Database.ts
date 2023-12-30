@@ -145,46 +145,54 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
   }
 
   static async create<SchemaStoreNames extends string, Schema extends Record<SchemaStoreNames, any>>(
+    dbname: string,
     createSchemaCallback: (db: IDBDatabase) => void,
+    version?: number,
   ) {
-    const db = await this.createDb(createSchemaCallback)
+    const db = await this.createDb(dbname, createSchemaCallback, version)
     return new Database<SchemaStoreNames, Schema>(db)
   }
 
-  protected static createDb(createSchemaCallback: (db: IDBDatabase) => void) {
+  protected static createDb(
+    dbname: string,
+    createSchemaCallback: (db: IDBDatabase, resolve: () => void, reject: (error: Error) => void) => void,
+    version?: number,
+  ) {
+    console.log("Creating db", dbname, version)
     return new Promise<IDBDatabase>((resolve, reject) => {
-      const idbRequest = indexedDB.open("drawing-engine", 1)
-      idbRequest.addEventListener("onupgradeneeded", () => {
+      const idbRequest = indexedDB.open(dbname, version)
+
+      idbRequest.onupgradeneeded = () => {
         const db = idbRequest.result
-        createSchemaCallback(db)
-        resolve(db)
-      })
+        createSchemaCallback(db, () => resolve(db), reject)
+      }
+
+      idbRequest.onblocked = () => {
+        reject(new Error("Database is blocked"))
+      }
 
       idbRequest.addEventListener("success", () => {
         const db = idbRequest.result
-        if (!db.version || db.version === idbRequest.result.version) {
+        if (!version || db.version === version) {
           resolve(db)
+        }
+
+        db.onversionchange = () => {
+          console.log("Database version changed")
+        }
+
+        db.onclose = () => {
+          console.log("Database closed")
+        }
+
+        db.onabort = () => {
+          reject(new Error("Database request was aborted"))
         }
       })
 
-      idbRequest.addEventListener("versionchange", () => {
-        console.log("Database version changed")
-      })
-
-      idbRequest.addEventListener("close", () => {
-        console.log("Database closed")
-      })
-
       idbRequest.addEventListener("error", () => {
+        console.log("error")
         reject(new Error("Could not open database"))
-      })
-
-      idbRequest.addEventListener("blocked", () => {
-        reject(new Error("Database is blocked"))
-      })
-
-      idbRequest.addEventListener("abort", () => {
-        reject(new Error("Database request was aborted"))
       })
     })
   }
