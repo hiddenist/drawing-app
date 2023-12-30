@@ -56,32 +56,22 @@ export class CanvasHistory {
   protected history: Array<IDBValidKey> = []
   protected redoStack: Array<ToolInfo> = []
   protected hasTruncated = false
-  protected db: HistoryDatabase | null = null
 
-  constructor(
+  private constructor(
     protected readonly engine: DrawingEngine,
     protected options: HistoryOptions,
-  ) {
-    if (!options.maxHistory || options.maxHistory < 1) {
-      options.maxHistory = 10
-    }
+    protected db: HistoryDatabase,
+  ) {}
 
-    if (!options.actionsPerHistory || options.actionsPerHistory < 1) {
-      options.actionsPerHistory = 10
-    }
-
-    HistoryDatabase.create().then(async (db) => {
-      this.db = db
-      await this.restoreHistoryFromDb()
-    })
+  static async create(engine: DrawingEngine, options: Partial<HistoryOptions> = {}) {
+    const db = await HistoryDatabase.create()
+    const history = new CanvasHistory(engine, { maxHistory: 10, actionsPerHistory: 10, ...options }, db)
+    await history.restoreHistoryFromDb()
+    return history
   }
 
   protected async restoreHistoryFromDb() {
-    const db = this.db
-    if (!db) {
-      throw new Error("Database not initialized")
-    }
-    const historyKeys = await db.history.getAllKeys()
+    const historyKeys = await this.db.history.getAllKeys()
     this.history = historyKeys.reverse()
     const state = await this.getCurrentEntry()
     if (state) {
@@ -101,15 +91,14 @@ export class CanvasHistory {
     return this.options
   }
 
+  public add(toolInfo: ToolInfo) {
+    this.redoStack = []
+    this.save(toolInfo)
+  }
+
   private async save(toolInfo: ToolInfo) {
-    const canvas = this.engine.gl.canvas
-    if (!(canvas instanceof HTMLCanvasElement)) {
-      throw new Error("Canvas is not an HTMLCanvasElement")
-    }
+    const canvas = this.engine.htmlCanvas
     const tool = this.engine.tools[toolInfo.tool]
-    if (!tool) {
-      throw new Error(`Tool ${toolInfo.tool} not found`)
-    }
 
     const current = await this.getIncompleteEntry()
     current.entry.actions.push(toolInfo)
@@ -126,9 +115,6 @@ export class CanvasHistory {
       )
     }
 
-    if (!this.db) {
-      throw new Error("Database not initialized")
-    }
     await this.db.history.put(current.key, current.entry)
     return current
   }
@@ -149,9 +135,6 @@ export class CanvasHistory {
     if (!key) {
       return null
     }
-    if (!this.db) {
-      throw new Error("Database not initialized")
-    }
     const entry = await this.db.history.get(key)
     return { key, entry }
   }
@@ -160,9 +143,6 @@ export class CanvasHistory {
     const state: HistoryEntry = {
       imageData: null,
       actions: [],
-    }
-    if (!this.db) {
-      throw new Error("Database not initialized")
     }
     const key = await this.db.history.add(state)
     this.appendHistoryKey(key)
@@ -173,9 +153,6 @@ export class CanvasHistory {
     if (!this.canUndo()) {
       this.engine.callListeners(EventType.undo, { toolInfo: null, canUndo: false })
       return
-    }
-    if (!this.db) {
-      throw new Error("Database not initialized")
     }
     const key = this.history[0]
     if (!key) {
@@ -204,16 +181,10 @@ export class CanvasHistory {
   }
 
   public async redo() {
-    if (!this.canRedo()) {
-      this.engine.callListeners(EventType.redo, { toolInfo: null, canRedo: false })
-      return
-    }
-    if (!this.db) {
-      throw new Error("Database not initialized")
-    }
     const toolInfo = this.redoStack.pop()
     if (!toolInfo) {
-      throw new Error("Could not get tool info from redo stack")
+      this.engine.callListeners(EventType.redo, { toolInfo: null, canRedo: false })
+      return
     }
     const current = await this.save(toolInfo)
     await this.drawHistoryEntry(current.entry)
@@ -221,10 +192,6 @@ export class CanvasHistory {
   }
 
   protected async appendHistoryKey(key: IDBValidKey) {
-    if (!this.db) {
-      throw new Error("Database not initialized")
-    }
-
     const db = this.db
     this.history.push(key)
     if (this.history.length >= this.options.maxHistory) {
@@ -257,7 +224,7 @@ export class CanvasHistory {
       if (!tool) {
         throw new Error(`Tool ${action.tool} not found`)
       }
-      await tool.drawFromHistory(action.path, action.options)
+      tool.drawFromHistory(action.path, action.options)
     }
   }
 

@@ -1,6 +1,57 @@
 export class Database<SchemaStoreNames extends string, Schema extends Record<SchemaStoreNames, any>> {
   protected constructor(protected db: IDBDatabase) {}
 
+  static async create<SchemaStoreNames extends string, Schema extends Record<SchemaStoreNames, any>>(
+    dbname: string,
+    createSchemaCallback: (db: IDBDatabase) => void,
+    version?: number,
+  ) {
+    const db = await this.createDb(dbname, createSchemaCallback, version)
+    return new Database<SchemaStoreNames, Schema>(db)
+  }
+
+  protected static createDb(
+    dbname: string,
+    createSchemaCallback: (db: IDBDatabase, resolve: () => void, reject: (error: Error) => void) => void,
+    version?: number,
+  ) {
+    return new Promise<IDBDatabase>((resolve, reject) => {
+      const idbRequest = indexedDB.open(dbname, version)
+
+      idbRequest.onupgradeneeded = () => {
+        const db = idbRequest.result
+        createSchemaCallback(db, () => resolve(db), reject)
+      }
+
+      idbRequest.onblocked = () => {
+        reject(new Error("Database is blocked"))
+      }
+
+      idbRequest.onsuccess = () => {
+        const db = idbRequest.result
+        if (!version || db.version === version) {
+          resolve(db)
+        }
+
+        db.onversionchange = () => {
+          console.debug("Database version changed")
+        }
+
+        db.onclose = () => {
+          console.debug("Database closed")
+        }
+
+        db.onabort = () => {
+          reject(new Error("Database request was aborted"))
+        }
+      }
+
+      idbRequest.onerror = () => {
+        reject(new Error("Could not open database"))
+      }
+    })
+  }
+
   public getStore<StoreName extends SchemaStoreNames>(storeName: StoreName) {
     return {
       add: (state: Schema[StoreName]) => this.add(storeName, state),
@@ -16,122 +67,36 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
     }
   }
 
-  protected getOrCreateStore<StoreName extends SchemaStoreNames>(storeName: StoreName) {
-    const transaction = this.db.transaction(storeName, "readwrite")
-    const objectStore = transaction.objectStore(storeName)
-    return objectStore
-  }
-
-  public add<StoreName extends SchemaStoreNames>(storeName: StoreName, state: Schema[StoreName]) {
-    return new Promise<IDBValidKey>((resolve, reject) => {
-      const transaction = this.db.transaction(storeName, "readwrite")
-      const objectStore = transaction.objectStore(storeName)
-      const request = objectStore.add(state)
-      request.addEventListener("success", () => {
-        resolve(request.result)
-      })
-      request.addEventListener("error", () => {
-        reject(request.error)
-      })
-    })
-  }
-
-  public put<StoreName extends SchemaStoreNames>(storeName: StoreName, key: IDBValidKey, state: Schema[StoreName]) {
-    return new Promise<IDBValidKey>((resolve, reject) => {
-      const transaction = this.db.transaction(storeName, "readwrite")
-      const objectStore = transaction.objectStore(storeName)
-      const request = objectStore.put(state, key)
-      request.addEventListener("success", () => {
-        resolve(request.result)
-      })
-      request.addEventListener("error", () => {
-        reject(request.error)
-      })
-    })
-  }
-
-  public count<StoreName extends SchemaStoreNames>(storeName: StoreName) {
-    return new Promise<number>((resolve, reject) => {
-      const transaction = this.db.transaction(storeName, "readonly")
-      const objectStore = transaction.objectStore(storeName)
-      const request = objectStore.count()
-      request.addEventListener("success", () => {
-        resolve(request.result)
-      })
-      request.addEventListener("error", () => {
-        reject(request.error)
-      })
-    })
-  }
-
   public get<StoreName extends SchemaStoreNames>(storeName: StoreName, key: IDBValidKey) {
-    return new Promise<Schema[StoreName]>((resolve, reject) => {
-      const transaction = this.db.transaction(storeName, "readwrite")
-      const objectStore = transaction.objectStore(storeName)
-      const request = objectStore.get(key)
-      request.addEventListener("success", () => {
-        resolve(request.result)
-      })
-      request.addEventListener("error", () => {
-        reject(request.error)
-      })
-    })
+    return this.promisifyRequest(this.getObjectStore(storeName, "readonly").get(key))
   }
 
   public getAll<StoreName extends SchemaStoreNames>(storeName: StoreName) {
-    return new Promise<Schema[StoreName][]>((resolve, reject) => {
-      const transaction = this.db.transaction(storeName, "readwrite")
-      const objectStore = transaction.objectStore(storeName)
-      const request = objectStore.getAll()
-      request.addEventListener("success", () => {
-        resolve(request.result)
-      })
-      request.addEventListener("error", () => {
-        reject(request.error)
-      })
-    })
-  }
-
-  public delete<StoreName extends SchemaStoreNames>(storeName: StoreName, key: IDBValidKey) {
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(storeName, "readwrite")
-      const objectStore = transaction.objectStore(storeName)
-      const request = objectStore.delete(key)
-      request.addEventListener("success", () => {
-        resolve(request.result)
-      })
-      request.addEventListener("error", () => {
-        reject(request.error)
-      })
-    })
-  }
-
-  public clear<StoreName extends SchemaStoreNames>(storeName: StoreName) {
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(storeName, "readwrite")
-      const objectStore = transaction.objectStore(storeName)
-      const request = objectStore.clear()
-      request.addEventListener("success", () => {
-        resolve(request.result)
-      })
-      request.addEventListener("error", () => {
-        reject(request.error)
-      })
-    })
+    return this.promisifyRequest(this.getObjectStore(storeName, "readonly").getAll())
   }
 
   public getAllKeys<StoreName extends SchemaStoreNames>(storeName: StoreName) {
-    return new Promise<IDBValidKey[]>((resolve, reject) => {
-      const transaction = this.db.transaction(storeName, "readwrite")
-      const objectStore = transaction.objectStore(storeName)
-      const request = objectStore.getAllKeys()
-      request.addEventListener("success", () => {
-        resolve(request.result)
-      })
-      request.addEventListener("error", () => {
-        reject(request.error)
-      })
-    })
+    return this.promisifyRequest(this.getObjectStore(storeName, "readonly").getAllKeys())
+  }
+
+  public count<StoreName extends SchemaStoreNames>(storeName: StoreName) {
+    return this.promisifyRequest(this.getObjectStore(storeName, "readonly").count())
+  }
+
+  public add<StoreName extends SchemaStoreNames>(storeName: StoreName, state: Schema[StoreName]) {
+    return this.promisifyRequest(this.getObjectStore(storeName, "readwrite").add(state))
+  }
+
+  public put<StoreName extends SchemaStoreNames>(storeName: StoreName, key: IDBValidKey, state: Schema[StoreName]) {
+    return this.promisifyRequest(this.getObjectStore(storeName, "readwrite").put(state, key))
+  }
+
+  public delete<StoreName extends SchemaStoreNames>(storeName: StoreName, key: IDBValidKey) {
+    return this.promisifyRequest(this.getObjectStore(storeName, "readwrite").delete(key))
+  }
+
+  public clear<StoreName extends SchemaStoreNames>(storeName: StoreName) {
+    return this.promisifyRequest(this.getObjectStore(storeName, "readwrite").clear())
   }
 
   public async getLastKey<StoreName extends SchemaStoreNames>(storeName: StoreName) {
@@ -144,55 +109,19 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
     return keys[0]
   }
 
-  static async create<SchemaStoreNames extends string, Schema extends Record<SchemaStoreNames, any>>(
-    dbname: string,
-    createSchemaCallback: (db: IDBDatabase) => void,
-    version?: number,
-  ) {
-    const db = await this.createDb(dbname, createSchemaCallback, version)
-    return new Database<SchemaStoreNames, Schema>(db)
+  private getObjectStore<StoreName extends SchemaStoreNames>(storeName: StoreName, access: IDBTransactionMode) {
+    const transaction = this.db.transaction(storeName, access)
+    const objectStore = transaction.objectStore(storeName)
+    return objectStore
   }
 
-  protected static createDb(
-    dbname: string,
-    createSchemaCallback: (db: IDBDatabase, resolve: () => void, reject: (error: Error) => void) => void,
-    version?: number,
-  ) {
-    console.log("Creating db", dbname, version)
-    return new Promise<IDBDatabase>((resolve, reject) => {
-      const idbRequest = indexedDB.open(dbname, version)
-
-      idbRequest.onupgradeneeded = () => {
-        const db = idbRequest.result
-        createSchemaCallback(db, () => resolve(db), reject)
-      }
-
-      idbRequest.onblocked = () => {
-        reject(new Error("Database is blocked"))
-      }
-
-      idbRequest.addEventListener("success", () => {
-        const db = idbRequest.result
-        if (!version || db.version === version) {
-          resolve(db)
-        }
-
-        db.onversionchange = () => {
-          console.log("Database version changed")
-        }
-
-        db.onclose = () => {
-          console.log("Database closed")
-        }
-
-        db.onabort = () => {
-          reject(new Error("Database request was aborted"))
-        }
+  private promisifyRequest<T>(request: IDBRequest<T>) {
+    return new Promise<T>((resolve, reject) => {
+      request.addEventListener("success", () => {
+        resolve(request.result)
       })
-
-      idbRequest.addEventListener("error", () => {
-        console.log("error")
-        reject(new Error("Could not open database"))
+      request.addEventListener("error", () => {
+        reject(request.error)
       })
     })
   }

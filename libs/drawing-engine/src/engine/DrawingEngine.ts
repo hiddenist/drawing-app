@@ -30,6 +30,7 @@ export interface DrawingEngineOptions {
 type ToolInfo = LineDrawInfo
 
 export enum EventType {
+  engineLoaded = "engineLoaded",
   draw = "draw",
   undo = "undo",
   redo = "redo",
@@ -55,6 +56,7 @@ export interface DrawingEngineEventMap {
   [EventType.move]: { positions: ReadonlyArray<InputPoint>; isPressed: boolean }
   [EventType.release]: { position: Readonly<InputPoint> }
   [EventType.cancel]: undefined
+  [EventType.engineLoaded]: undefined
 }
 export type DrawingEngineEvent<T extends EventType> = {
   eventName: T
@@ -89,7 +91,7 @@ export class DrawingEngine {
   }
 
   private listeners: Partial<DrawingEventListeners> = {}
-  protected history: CanvasHistory
+  protected history: CanvasHistory | null = null
 
   constructor(
     public gl: WebGLRenderingContext,
@@ -105,9 +107,12 @@ export class DrawingEngine {
       prevTool: defaultTool,
     }
 
-    this.history = new CanvasHistory(this, {
+    CanvasHistory.create(this, {
       maxHistory: 10,
       actionsPerHistory: 10,
+    }).then((history) => {
+      this.history = history
+      this.checkLoaded()
     })
 
     this.savedDrawingLayer = this.makeLayer()
@@ -123,6 +128,23 @@ export class DrawingEngine {
     }
 
     this.callListeners(EventType.changeTool, { tool: this.state.tool })
+  }
+
+  get htmlCanvas(): HTMLCanvasElement {
+    if (!(this.gl.canvas instanceof HTMLCanvasElement)) {
+      throw new Error("Canvas is not an HTMLCanvasElement")
+    }
+    return this.gl.canvas
+  }
+
+  public isLoaded() {
+    return this.history !== null
+  }
+
+  private checkLoaded() {
+    if (this.isLoaded()) {
+      this.callListeners(EventType.engineLoaded, undefined)
+    }
   }
 
   private makeLayer(options?: Partial<LayerSettings>) {
@@ -295,14 +317,14 @@ export class DrawingEngine {
   }
 
   public addHistory(toolInfo: ToolInfo) {
-    this.history.save(toolInfo)
+    this.history?.add(toolInfo)
   }
 
   public undo() {
-    return this.history.undo()
+    return this.history?.undo()
   }
 
   public redo() {
-    return this.history.redo()
+    return this.history?.redo()
   }
 }
