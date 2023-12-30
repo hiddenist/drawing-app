@@ -193,10 +193,10 @@ export class CanvasHistory {
 
   protected async appendHistoryKey(key: IDBValidKey) {
     const db = this.db
-    this.history.push(key)
+    this.history.unshift(key)
     if (this.history.length >= this.options.maxHistory) {
       this.hasTruncated = true
-      const first = await db.history.getFirstKey()
+      const first = this.history.pop()
       if (first) {
         db.history.delete(first)
       }
