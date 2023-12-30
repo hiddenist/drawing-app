@@ -6,33 +6,32 @@ type ToolInfo = LineDrawInfo
 
 export interface HistoryState {
   toolInfo: ToolInfo
-  imageData: string | null
+  imageData: Blob | null
+}
+
+interface HistoryEntry {
+  imageData: Blob | null
+  actions: Array<ToolInfo>
 }
 
 interface HistoryOptions {
   maxHistory: number
+  actionsPerHistory: number
 }
 
 enum HistoryStores {
-  undo = "undoHistory",
-  redo = "redoHistory",
+  history = "history",
 }
 
 interface HistorySchema {
-  [HistoryStores.undo]: HistoryState
-  [HistoryStores.redo]: HistoryState
+  [HistoryStores.history]: HistoryEntry
 }
 
 class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
-  public undoHistory = this.getStore(HistoryStores.undo)
-  public redoHistory = this.getStore(HistoryStores.redo)
+  public history = this.getStore(HistoryStores.history)
 
   protected static schema = {
-    [HistoryStores.undo]: {
-      keyPath: "id",
-      autoIncrement: true,
-    },
-    [HistoryStores.redo]: {
+    [HistoryStores.history]: {
       keyPath: "id",
       autoIncrement: true,
     },
@@ -40,16 +39,15 @@ class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
 
   static async create() {
     const db = await Database.createDb(() => {
-      db.createObjectStore(HistoryStores.undo, this.schema[HistoryStores.undo])
-      db.createObjectStore(HistoryStores.redo, this.schema[HistoryStores.redo])
+      db.createObjectStore(HistoryStores.history, this.schema[HistoryStores.history])
     })
     return new HistoryDatabase(db)
   }
 }
 
 export class CanvasHistory {
-  protected redoHistory: Array<IDBValidKey> = []
   protected history: Array<IDBValidKey> = []
+  protected redoStack: Array<ToolInfo> = []
   protected hasTruncated = false
   protected db: HistoryDatabase | null = null
 
@@ -59,6 +57,10 @@ export class CanvasHistory {
   ) {
     if (!options.maxHistory || options.maxHistory < 1) {
       options.maxHistory = 10
+    }
+
+    if (!options.actionsPerHistory || options.actionsPerHistory < 1) {
+      options.actionsPerHistory = 10
     }
 
     HistoryDatabase.create().then(async (db) => {
@@ -72,14 +74,11 @@ export class CanvasHistory {
     if (!db) {
       throw new Error("Database not initialized")
     }
-    const historyKeys = await db.undoHistory.getKeys()
+    const historyKeys = await db.history.getAllKeys()
     this.history = historyKeys.reverse()
-    const redoKeys = await db.redoHistory.getKeys()
-    this.redoHistory = redoKeys.reverse()
-    if (this.history.length > 0) {
-      const last = this.history[this.history.length - 1]
-      const state = await db.undoHistory.get(last)
-      await this.drawState(state)
+    const state = await this.getCurrentEntry()
+    if (state) {
+      await this.drawHistoryEntry(state.entry)
     }
   }
 
@@ -95,7 +94,7 @@ export class CanvasHistory {
     return this.options
   }
 
-  public save(toolInfo: ToolInfo) {
+  private async save(toolInfo: ToolInfo) {
     const canvas = this.engine.gl.canvas
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new Error("Canvas is not an HTMLCanvasElement")
@@ -104,10 +103,63 @@ export class CanvasHistory {
     if (!tool) {
       throw new Error(`Tool ${toolInfo.tool} not found`)
     }
-    this.addHistory({
-      toolInfo,
-      imageData: tool.updatesImageData ? canvas.toDataURL() : null,
-    })
+
+    const current = await this.getIncompleteEntry()
+    current.entry.actions.push(toolInfo)
+
+    if (tool.updatesImageData && current.entry.imageData === null) {
+      current.entry.imageData = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Could not get canvas blob"))
+            return
+          }
+          resolve(blob)
+        }),
+      )
+    }
+
+    if (!this.db) {
+      throw new Error("Database not initialized")
+    }
+    await this.db.history.put(current.key, current.entry)
+    return current
+  }
+
+  protected async getIncompleteEntry(): Promise<{ key: IDBValidKey; entry: HistoryEntry }> {
+    const current = (await this.getCurrentEntry()) ?? null
+    if (!current) {
+      return this.createNewEntry()
+    }
+    if (current.entry.actions.length >= this.options.actionsPerHistory) {
+      return this.createNewEntry()
+    }
+    return current
+  }
+
+  protected async getCurrentEntry(): Promise<{ key: IDBValidKey; entry: HistoryEntry } | null> {
+    const key = this.history[0]
+    if (!key) {
+      return null
+    }
+    if (!this.db) {
+      throw new Error("Database not initialized")
+    }
+    const entry = await this.db.history.get(key)
+    return { key, entry }
+  }
+
+  protected async createNewEntry(): Promise<{ key: IDBValidKey; entry: HistoryEntry }> {
+    const state: HistoryEntry = {
+      imageData: null,
+      actions: [],
+    }
+    if (!this.db) {
+      throw new Error("Database not initialized")
+    }
+    const key = await this.db.history.add(state)
+    this.appendHistoryKey(key)
+    return { key, entry: state }
   }
 
   public async undo() {
@@ -118,18 +170,29 @@ export class CanvasHistory {
     if (!this.db) {
       throw new Error("Database not initialized")
     }
-    const undoneKey = this.history.pop()
-    if (!undoneKey) {
+    const key = this.history[0]
+    if (!key) {
       return
     }
 
-    const undoneState = await this.db.undoHistory.get(undoneKey)
+    const state = await this.db.history.get(key)
+    const undone = state.actions.pop()
+    if (undone) {
+      this.redoStack.push(undone)
+    }
 
-    const currentKey = this.history[this.history.length - 1]
-    const currentState = currentKey ? await this.db.undoHistory.get(currentKey) : null
-    const toolInfo = await this.drawState(currentState)
-    await this.addRedo(undoneState)
-    await this.db.undoHistory.delete(undoneKey)
+    let drawEntry: HistoryEntry
+    if (state.actions.length === 0) {
+      this.db.history.delete(key)
+      this.history.shift()
+      const nextKey = this.history[0]
+      drawEntry = await this.db.history.get(nextKey)
+    } else {
+      this.db.history.put(key, state)
+      drawEntry = state
+    }
+
+    const toolInfo = await this.drawHistoryEntry(drawEntry)
     this.engine.callListeners(EventType.undo, { toolInfo, canUndo: this.canUndo() })
   }
 
@@ -141,61 +204,65 @@ export class CanvasHistory {
     if (!this.db) {
       throw new Error("Database not initialized")
     }
-    const redoneStateKey = this.redoHistory.pop()
-    if (!redoneStateKey) {
-      return
+    const toolInfo = this.redoStack.pop()
+    if (!toolInfo) {
+      throw new Error("Could not get tool info from redo stack")
     }
-
-    const state = await this.db.redoHistory.get(redoneStateKey)
-    const toolInfo = await this.drawState(state)
-    await this.db.undoHistory.save(state)
-    await this.db.redoHistory.delete(redoneStateKey)
+    const current = await this.save(toolInfo)
+    await this.drawHistoryEntry(current.entry)
     this.engine.callListeners(EventType.redo, { toolInfo, canRedo: this.canRedo() })
   }
 
-  protected addHistory(state: HistoryState) {
+  protected async appendHistoryKey(key: IDBValidKey) {
     if (!this.db) {
       throw new Error("Database not initialized")
     }
+
     const db = this.db
-    db.undoHistory.save(state).then(async (key) => {
-      this.history.push(key)
-      if (this.history.length >= this.options.maxHistory) {
-        this.hasTruncated = true
-        const first = await db.undoHistory.getFirstKey()
-        if (first) {
-          db.undoHistory.delete(first)
-        }
+    this.history.push(key)
+    if (this.history.length >= this.options.maxHistory) {
+      this.hasTruncated = true
+      const first = await db.history.getFirstKey()
+      if (first) {
+        db.history.delete(first)
       }
-    })
-    db.redoHistory.deleteAll()
-  }
-
-  protected async addRedo(state: HistoryState) {
-    if (!this.db) {
-      throw new Error("Database not initialized")
     }
-    const key = await this.db.redoHistory.save(state)
-    this.redoHistory.push(key)
   }
 
-  protected drawState(state: Readonly<HistoryState> | null) {
-    if (!state) {
+  protected async drawHistoryEntry(entry: Readonly<HistoryEntry> | null) {
+    if (!entry) {
       if (!this.hasTruncated) this.engine.clearCanvas()
       return Promise.resolve(null)
     }
-    const { toolInfo, imageData } = state
+    const { actions, imageData } = entry
     if (!imageData) {
-      return Promise.resolve(toolInfo)
+      this.engine._clear()
+      return Promise.resolve(null)
     }
-    return new Promise<HistoryState["toolInfo"]>((resolve, reject) => {
-      const image = new Image()
+    await this.drawBlob(imageData)
+    await this.drawActions(actions)
+    return actions[actions.length - 1]
+  }
+
+  protected async drawActions(actions: Array<ToolInfo>) {
+    for (const action of actions) {
+      const tool = this.engine.tools[action.tool]
+      if (!tool) {
+        throw new Error(`Tool ${action.tool} not found`)
+      }
+      await tool.drawFromHistory(action.path, action.options)
+    }
+  }
+
+  protected drawBlob(blob: Blob): Promise<HTMLImageElement> {
+    const image = new Image()
+    image.src = URL.createObjectURL(blob)
+    return new Promise<HTMLImageElement>((resolve, reject) => {
       image.onload = () => {
         this.engine._clear()
         this.engine.loadImage(image)
-        resolve(toolInfo)
+        resolve(image)
       }
-      image.src = imageData
       image.onerror = () => {
         reject(new Error("Could not load image"))
       }
@@ -212,6 +279,6 @@ export class CanvasHistory {
   }
 
   public canRedo() {
-    return this.redoHistory.length > 0
+    return this.redoStack.length > 0
   }
 }

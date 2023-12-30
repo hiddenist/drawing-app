@@ -3,13 +3,14 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
 
   public getStore<StoreName extends SchemaStoreNames>(storeName: StoreName) {
     return {
-      save: (state: Schema[StoreName]) => this.save(storeName, state),
+      add: (state: Schema[StoreName]) => this.add(storeName, state),
+      put: (key: IDBValidKey, state: Schema[StoreName]) => this.put(storeName, key, state),
       count: () => this.count(storeName),
       get: (key: IDBValidKey) => this.get(storeName, key),
       getAll: () => this.getAll(storeName),
       delete: (key: IDBValidKey) => this.delete(storeName, key),
-      deleteAll: () => this.deleteAll(storeName),
-      getKeys: () => this.getKeys(storeName),
+      clear: () => this.clear(storeName),
+      getAllKeys: () => this.getAllKeys(storeName),
       getLastKey: () => this.getLastKey(storeName),
       getFirstKey: () => this.getFirstKey(storeName),
     }
@@ -21,11 +22,25 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
     return objectStore
   }
 
-  public save<StoreName extends SchemaStoreNames>(storeName: StoreName, state: Schema[StoreName]) {
+  public add<StoreName extends SchemaStoreNames>(storeName: StoreName, state: Schema[StoreName]) {
     return new Promise<IDBValidKey>((resolve, reject) => {
       const transaction = this.db.transaction(storeName, "readwrite")
       const objectStore = transaction.objectStore(storeName)
       const request = objectStore.add(state)
+      request.addEventListener("success", () => {
+        resolve(request.result)
+      })
+      request.addEventListener("error", () => {
+        reject(request.error)
+      })
+    })
+  }
+
+  public put<StoreName extends SchemaStoreNames>(storeName: StoreName, key: IDBValidKey, state: Schema[StoreName]) {
+    return new Promise<IDBValidKey>((resolve, reject) => {
+      const transaction = this.db.transaction(storeName, "readwrite")
+      const objectStore = transaction.objectStore(storeName)
+      const request = objectStore.put(state, key)
       request.addEventListener("success", () => {
         resolve(request.result)
       })
@@ -91,7 +106,7 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
     })
   }
 
-  public deleteAll<StoreName extends SchemaStoreNames>(storeName: StoreName) {
+  public clear<StoreName extends SchemaStoreNames>(storeName: StoreName) {
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction(storeName, "readwrite")
       const objectStore = transaction.objectStore(storeName)
@@ -105,7 +120,7 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
     })
   }
 
-  public getKeys<StoreName extends SchemaStoreNames>(storeName: StoreName) {
+  public getAllKeys<StoreName extends SchemaStoreNames>(storeName: StoreName) {
     return new Promise<IDBValidKey[]>((resolve, reject) => {
       const transaction = this.db.transaction(storeName, "readwrite")
       const objectStore = transaction.objectStore(storeName)
@@ -120,12 +135,12 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
   }
 
   public async getLastKey<StoreName extends SchemaStoreNames>(storeName: StoreName) {
-    const keys = await this.getKeys(storeName)
+    const keys = await this.getAllKeys(storeName)
     return keys[keys.length - 1]
   }
 
   public async getFirstKey<StoreName extends SchemaStoreNames>(storeName: StoreName) {
-    const keys = await this.getKeys(storeName)
+    const keys = await this.getAllKeys(storeName)
     return keys[0]
   }
 

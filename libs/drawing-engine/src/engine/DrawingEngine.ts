@@ -107,6 +107,7 @@ export class DrawingEngine {
 
     this.history = new CanvasHistory(this, {
       maxHistory: 10,
+      actionsPerHistory: 10,
     })
 
     this.savedDrawingLayer = this.makeLayer()
