@@ -336,7 +336,7 @@ function recentColorTray({
   tray.classList.add("recent-color-tray")
 
   const updateSelectedClass = (element?: HTMLElement) => {
-    tray.querySelector(".recent-color.selected")?.classList.remove("selected");
+    tray.querySelector(".recent-color.selected")?.classList.remove("selected")
     element?.classList.add("selected")
   }
   return {
