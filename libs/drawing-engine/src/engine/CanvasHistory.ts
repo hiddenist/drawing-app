@@ -69,6 +69,7 @@ class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
 
 export class CanvasHistory {
   protected history: Array<IDBValidKey> = []
+  protected currentEntry: HistoryEntry | null = null
   protected redoStack: Array<ToolInfo> = []
   protected hasTruncated = false
 
@@ -97,6 +98,7 @@ export class CanvasHistory {
     this.history = historyKeys.reverse()
     const state = await this.getCurrentEntry()
     if (state) {
+      this.currentEntry = state.entry
       await this.drawHistoryEntry(state.entry)
     }
   }
@@ -119,11 +121,18 @@ export class CanvasHistory {
   }
 
   private async save(toolInfo: ToolInfo) {
-    const current = await this.getCurrentIncompleteEntry()
-    current.entry.actions.push(toolInfo)
+    if (this.isCurrentEntryFull() || this.currentEntry === null) {
+      this.currentEntry = {
+        actions: [toolInfo],
+        blobId: null,
+      }
+      return await this.saveNewEntry()
+    }
 
-    await this.db.actions.put(current.entry)
-    return current
+    this.currentEntry.actions.push(toolInfo)
+    await this.db.actions.put(this.currentEntry)
+
+    return { key: this.currentEntry.id, entry: this.currentEntry }
   }
 
   protected async saveBlob(canvas: HTMLCanvasElement) {
@@ -141,19 +150,11 @@ export class CanvasHistory {
     return blobId
   }
 
-  protected async getCurrentIncompleteEntry(): Promise<{ key: IDBValidKey; entry: HistoryEntry }> {
-    const current = (await this.getCurrentEntry()) ?? null
-    if (!current) {
-      return this.createNewEntry()
-    }
-    if (current.entry.actions.length >= this.options.actionsPerHistory) {
-      return this.createNewEntry()
-    }
-    return current
-  }
-
   protected async getCurrentEntry(): Promise<{ key: IDBValidKey; entry: HistoryEntry } | null> {
     const key = this.history[0]
+    if (this.currentEntry !== null) {
+      return { key, entry: this.currentEntry }
+    }
     if (!key) {
       return null
     }
@@ -161,14 +162,20 @@ export class CanvasHistory {
     return { key, entry }
   }
 
-  protected async createNewEntry(): Promise<{ key: IDBValidKey; entry: HistoryEntry }> {
-    const state: HistoryEntry = {
-      actions: [],
-      blobId: await this.saveBlob(this.engine.htmlCanvas).catch(() => null),
+  protected async saveNewEntry(): Promise<{ key: IDBValidKey; entry: HistoryEntry }> {
+    if (!this.currentEntry) {
+      this.currentEntry = {
+        actions: [],
+        blobId: null,
+      }
     }
-    const key = await this.db.actions.add(state)
-    this.appendHistoryKey(key)
-    return { key, entry: state }
+    this.currentEntry.blobId = await this.saveBlob(this.engine.htmlCanvas).catch(() => null)
+    const key = await this.db.actions.add(this.currentEntry)
+
+    this.history.unshift(key)
+    this.truncateHistory()
+
+    return { key, entry: this.currentEntry }
   }
 
   public async undo() {
@@ -176,26 +183,27 @@ export class CanvasHistory {
       this.engine.callListeners(EventType.undo, { toolInfo: null, canUndo: false })
       return
     }
-    const key = this.history[0]
-    if (!key) {
+    const currentEntry = await this.getCurrentEntry()
+    if (!currentEntry) {
       return
     }
 
-    const state = await this.db.actions.get(key)
-    const undone = state.actions.pop()
+    const { key, entry } = currentEntry
+
+    const undone = entry.actions.pop()
     if (undone) {
       this.redoStack.push(undone)
     }
 
     let drawEntry: HistoryEntry
-    if (state.actions.length === 0) {
+    if (entry.actions.length === 0) {
       this.db.actions.delete(key)
       this.history.shift()
       const nextKey = this.history[0]
       drawEntry = await this.db.actions.get(nextKey)
     } else {
-      this.db.actions.put(state)
-      drawEntry = state
+      this.db.actions.put(entry)
+      drawEntry = entry
     }
 
     const toolInfo = await this.drawHistoryEntry(drawEntry)
@@ -213,13 +221,16 @@ export class CanvasHistory {
     this.engine.callListeners(EventType.redo, { toolInfo, canRedo: this.canRedo() })
   }
 
-  protected async appendHistoryKey(key: IDBValidKey) {
-    this.history.unshift(key)
-    this.truncateHistory()
+  protected isHistoryFull() {
+    return this.history.length >= this.options.maxHistory
+  }
+
+  protected isCurrentEntryFull() {
+    return this.currentEntry !== null && this.currentEntry.actions.length >= this.options.actionsPerHistory
   }
 
   protected truncateHistory() {
-    if (this.history.length <= this.options.maxHistory) {
+    if (!this.isHistoryFull()) {
       return
     }
 
