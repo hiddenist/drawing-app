@@ -7,7 +7,8 @@ type ClearInfo = { tool: "clear" }
 export type ToolInfo = LineDrawInfo | ClearInfo
 
 interface HistoryEntry {
-  imageData: Blob | null
+  id?: IDBValidKey
+  blobId: IDBValidKey | null
   actions: Array<ToolInfo>
 }
 
@@ -17,31 +18,48 @@ interface HistoryOptions {
 }
 
 enum HistoryStores {
-  history = "history",
+  actions = "actions",
+  blobs = "blobs",
 }
 
 interface HistorySchema {
-  [HistoryStores.history]: HistoryEntry
+  [HistoryStores.actions]: HistoryEntry
+  [HistoryStores.blobs]: Blob
 }
 
 class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
-  public history = this.getStore(HistoryStores.history)
+  static readonly name = "history"
+  public actions = this.getStore(HistoryStores.actions)
+  public blobs = this.getStore(HistoryStores.blobs)
 
   protected static schema = {
-    [HistoryStores.history]: {
+    [HistoryStores.actions]: {
+      keyPath: "id",
+      autoIncrement: true,
+      fields: {
+        blobId: {
+          unique: false,
+        },
+        actions: {
+          unique: false,
+        },
+      },
+    },
+    [HistoryStores.blobs]: {
       autoIncrement: true,
     },
-  }
+  } as const
 
   static async create() {
     return new HistoryDatabase(
       await Database.createDb(
-        "history",
-        (db, resolve) => {
-          const store = db.createObjectStore(HistoryStores.history, this.schema[HistoryStores.history])
-          store.transaction.oncomplete = () => {
-            resolve()
-          }
+        HistoryDatabase.name,
+        async (db, resolve) => {
+          await Promise.all([
+            Database.createObjectStoreAsync(db, HistoryStores.actions, this.schema[HistoryStores.actions]),
+            Database.createObjectStoreAsync(db, HistoryStores.blobs, this.schema[HistoryStores.blobs]),
+          ])
+          resolve()
         },
         1,
       ),
@@ -75,7 +93,7 @@ export class CanvasHistory {
   }
 
   protected async restoreHistoryFromDb() {
-    const historyKeys = await this.db.history.getAllKeys()
+    const historyKeys = await this.db.actions.getAllKeys()
     this.history = historyKeys.reverse()
     const state = await this.getCurrentEntry()
     if (state) {
@@ -101,30 +119,29 @@ export class CanvasHistory {
   }
 
   private async save(toolInfo: ToolInfo) {
-    const canvas = this.engine.htmlCanvas
-    const toolName = toolInfo.tool
-    const tool = toolName === "clear" ? { updatesImageData: false } : this.engine.tools[toolName]
-
-    const current = await this.getIncompleteEntry()
+    const current = await this.getCurrentIncompleteEntry()
     current.entry.actions.push(toolInfo)
 
-    if (tool.updatesImageData && current.entry.imageData === null) {
-      current.entry.imageData = await new Promise<Blob>((resolve, reject) =>
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            reject(new Error("Could not get canvas blob"))
-            return
-          }
-          resolve(blob)
-        }),
-      )
-    }
-
-    await this.db.history.put(current.key, current.entry)
+    await this.db.actions.put(current.key, current.entry)
     return current
   }
 
-  protected async getIncompleteEntry(): Promise<{ key: IDBValidKey; entry: HistoryEntry }> {
+  protected async saveBlob(canvas: HTMLCanvasElement) {
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("Could not get canvas blob"))
+          return
+        }
+        resolve(blob)
+      }),
+    )
+
+    const blobId = await this.db.blobs.add(blob)
+    return blobId
+  }
+
+  protected async getCurrentIncompleteEntry(): Promise<{ key: IDBValidKey; entry: HistoryEntry }> {
     const current = (await this.getCurrentEntry()) ?? null
     if (!current) {
       return this.createNewEntry()
@@ -140,16 +157,16 @@ export class CanvasHistory {
     if (!key) {
       return null
     }
-    const entry = await this.db.history.get(key)
+    const entry = await this.db.actions.get(key)
     return { key, entry }
   }
 
   protected async createNewEntry(): Promise<{ key: IDBValidKey; entry: HistoryEntry }> {
     const state: HistoryEntry = {
-      imageData: null,
       actions: [],
+      blobId: await this.saveBlob(this.engine.htmlCanvas).catch(() => null),
     }
-    const key = await this.db.history.add(state)
+    const key = await this.db.actions.add(state)
     this.appendHistoryKey(key)
     return { key, entry: state }
   }
@@ -164,7 +181,7 @@ export class CanvasHistory {
       return
     }
 
-    const state = await this.db.history.get(key)
+    const state = await this.db.actions.get(key)
     const undone = state.actions.pop()
     if (undone) {
       this.redoStack.push(undone)
@@ -172,12 +189,12 @@ export class CanvasHistory {
 
     let drawEntry: HistoryEntry
     if (state.actions.length === 0) {
-      this.db.history.delete(key)
+      this.db.actions.delete(key)
       this.history.shift()
       const nextKey = this.history[0]
-      drawEntry = await this.db.history.get(nextKey)
+      drawEntry = await this.db.actions.get(nextKey)
     } else {
-      this.db.history.put(key, state)
+      this.db.actions.put(key, state)
       drawEntry = state
     }
 
@@ -207,35 +224,41 @@ export class CanvasHistory {
     }
 
     const first = this.history.pop()
+
     if (first) {
-      this.db.history.delete(first)
+      this.db.actions.delete(first)
     }
   }
 
   protected async drawHistoryEntry(entry: Readonly<HistoryEntry>) {
-    const { actions, imageData } = entry
+    const { actions, blobId } = entry
 
-    if (!imageData) {
-      this.engine._clear()
-      return Promise.resolve(null)
+    const { actions: filteredActions, hasClear } = CanvasHistory.getActionsSinceClear(actions)
+
+    if (!hasClear && blobId) {
+      const blob = await this.db.blobs.get(blobId)
+      await this.drawBlob(blob)
     }
-
-    await this.drawBlob(imageData)
-    await this.drawActions(CanvasHistory.getActionsSinceClear(entry.actions))
+    await this.drawActions(filteredActions)
 
     return actions[actions.length - 1]
   }
 
-  protected static getActionsSinceClear(actions: Array<ToolInfo>): Array<Exclude<ToolInfo, ClearInfo>> {
+  protected static getActionsSinceClear(actions: Array<ToolInfo>): {
+    hasClear: boolean
+    actions: Array<Exclude<ToolInfo, ClearInfo>>
+  } {
     const result: Array<Exclude<ToolInfo, ClearInfo>> = []
+    let hasClear = false
     for (const action of actions) {
       if (action.tool === "clear") {
+        hasClear = true
         result.splice(0)
       } else {
         result.push(action)
       }
     }
-    return result
+    return { actions: result, hasClear }
   }
 
   protected async drawActions(actions: Array<Exclude<ToolInfo, ClearInfo>>) {

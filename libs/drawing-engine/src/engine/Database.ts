@@ -1,3 +1,7 @@
+interface IDBObjectStoreSchema extends IDBObjectStoreParameters {
+  fields?: Record<string, IDBIndexParameters>
+}
+
 export class Database<SchemaStoreNames extends string, Schema extends Record<SchemaStoreNames, any>> {
   protected constructor(protected db: IDBDatabase) {}
 
@@ -48,6 +52,24 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
 
       idbRequest.onerror = () => {
         reject(new Error("Could not open database"))
+      }
+    })
+  }
+
+  protected static createObjectStoreAsync(db: IDBDatabase, storeName: string, schema: IDBObjectStoreSchema = {}) {
+    const { fields = {}, ...options } = schema
+    return new Promise<IDBObjectStore>((resolve, reject) => {
+      const store = db.createObjectStore(storeName, options)
+
+      for (const [fieldName, fieldOptions] of Object.entries(fields)) {
+        store.createIndex(fieldName, fieldName, fieldOptions)
+      }
+
+      store.transaction.oncomplete = () => {
+        resolve(store)
+      }
+      store.transaction.onerror = () => {
+        reject(new Error("Could not create object store"))
       }
     })
   }
