@@ -77,7 +77,7 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
   public getStore<StoreName extends SchemaStoreNames>(storeName: StoreName) {
     return {
       add: (state: Schema[StoreName]) => this.add(storeName, state),
-      put: (key: IDBValidKey, state: Schema[StoreName]) => this.put(storeName, key, state),
+      put: (state: Schema[StoreName], key?: IDBValidKey) => this.put(storeName, state, key),
       count: () => this.count(storeName),
       get: (key: IDBValidKey) => this.get(storeName, key),
       getAll: () => this.getAll(storeName),
@@ -89,11 +89,11 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
     }
   }
 
-  public get<StoreName extends SchemaStoreNames>(storeName: StoreName, key: IDBValidKey) {
+  public get<StoreName extends SchemaStoreNames>(storeName: StoreName, key: IDBValidKey): Promise<Schema[StoreName]> {
     return this.promisifyRequest(this.getObjectStore(storeName, "readonly").get(key))
   }
 
-  public getAll<StoreName extends SchemaStoreNames>(storeName: StoreName) {
+  public getAll<StoreName extends SchemaStoreNames>(storeName: StoreName): Promise<Schema[StoreName][]> {
     return this.promisifyRequest(this.getObjectStore(storeName, "readonly").getAll())
   }
 
@@ -109,7 +109,7 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
     return this.promisifyRequest(this.getObjectStore(storeName, "readwrite").add(state))
   }
 
-  public put<StoreName extends SchemaStoreNames>(storeName: StoreName, key: IDBValidKey, state: Schema[StoreName]) {
+  public put<StoreName extends SchemaStoreNames>(storeName: StoreName, state: Schema[StoreName], key?: IDBValidKey) {
     return this.promisifyRequest(this.getObjectStore(storeName, "readwrite").put(state, key))
   }
 

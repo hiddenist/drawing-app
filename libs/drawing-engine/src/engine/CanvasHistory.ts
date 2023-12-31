@@ -122,7 +122,7 @@ export class CanvasHistory {
     const current = await this.getCurrentIncompleteEntry()
     current.entry.actions.push(toolInfo)
 
-    await this.db.actions.put(current.key, current.entry)
+    await this.db.actions.put(current.entry)
     return current
   }
 
@@ -194,7 +194,7 @@ export class CanvasHistory {
       const nextKey = this.history[0]
       drawEntry = await this.db.actions.get(nextKey)
     } else {
-      this.db.actions.put(key, state)
+      this.db.actions.put(state)
       drawEntry = state
     }
 
