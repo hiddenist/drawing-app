@@ -235,6 +235,7 @@ export class CanvasHistory {
 
     const { actions: filteredActions, hasClear } = CanvasHistory.getActionsSinceClear(actions)
 
+    this.engine._clear()
     if (!hasClear && blobId) {
       const blob = await this.db.blobs.get(blobId)
       await this.drawBlob(blob)
@@ -268,6 +269,7 @@ export class CanvasHistory {
         throw new Error(`Tool ${action.tool} not found`)
       }
       tool.drawFromHistory(action.path, action.options)
+      this.engine.commitToSavedLayer()
     }
   }
 
