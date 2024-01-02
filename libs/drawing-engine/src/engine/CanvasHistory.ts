@@ -50,6 +50,17 @@ class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
     },
   } as const
 
+  public async deleteState(key: IDBValidKey) {
+    const entry = await this.actions.get(key)
+    if (!entry) {
+      return
+    }
+    if (entry.blobId) {
+      await this.blobs.delete(entry.blobId)
+    }
+    return this.actions.delete(key)
+  }
+
   static async create() {
     return new HistoryDatabase(
       await Database.createDb(
@@ -197,10 +208,17 @@ export class CanvasHistory {
 
     let drawEntry: HistoryEntry
     if (entry.actions.length === 0) {
-      this.db.actions.delete(key)
+      await this.db.deleteState(key)
       this.history.shift()
-      const nextKey = this.history[0]
-      drawEntry = await this.db.actions.get(nextKey)
+      if (this.history.length === 0) {
+        drawEntry = {
+          actions: [],
+          blobId: null,
+        }
+      } else {
+        const nextKey = this.history[0]
+        drawEntry = await this.db.actions.get(nextKey)
+      }
     } else {
       this.db.actions.put(entry)
       drawEntry = entry
@@ -237,7 +255,7 @@ export class CanvasHistory {
     const first = this.history.pop()
 
     if (first) {
-      this.db.actions.delete(first)
+      this.db.deleteState(first)
     }
   }
 
