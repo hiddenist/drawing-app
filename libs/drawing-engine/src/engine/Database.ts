@@ -50,7 +50,8 @@ export class Database<SchemaStoreNames extends string, Schema extends Record<Sch
         }
       }
 
-      idbRequest.onerror = () => {
+      idbRequest.onerror = (event) => {
+        console.error(event)
         reject(new Error("Could not open database"))
       }
     })
