@@ -35,7 +35,7 @@ export abstract class PositionColorProgramBase extends BaseProgram<
   }
 
   protected setColor(color: Color): typeof this {
-    this.gl.uniform3fv(this.getUniformLocation("color"), color.vec3)
+    this.gl.uniform3fv(this.getUniformLocation("color"), color.vector)
     return this
   }
 

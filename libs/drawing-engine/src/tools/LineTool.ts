@@ -4,7 +4,7 @@ import { DrawingEngine, DrawingEngineEvent, EventType } from "../engine/DrawingE
 import { ToolName } from "./Tools"
 
 export type LineDrawInfo = {
-  tool: ToolName
+  tool: Exclude<ToolName, "eyedropper">
   path: InputPoint[]
   options: Required<Omit<DrawLineOptions, "drawType">>
 }
@@ -20,7 +20,7 @@ export class LineTool {
   constructor(
     protected readonly engine: DrawingEngine,
     protected readonly program: LineDrawingProgram,
-    public readonly toolName: ToolName,
+    public readonly toolName: LineDrawInfo["tool"],
   ) {
     this.setupListeners()
   }
@@ -91,23 +91,26 @@ export class LineTool {
       return
     }
     this.engine.commitToSavedLayer()
-    this.engine.addHistory(this.getToolInfo())
+    this.engine.callListeners(EventType.commit, this.getToolInfo())
     this.currentPath = []
   }
 
-  private getToolInfo(): LineDrawInfo {
+  private getToolInfo(options = this.getLineOptions()): LineDrawInfo {
     return {
       path: structuredClone(this.currentPath),
-      options: this.getLineOptions(),
+      options,
       tool: this.toolName,
     }
   }
 
-  private draw() {
-    if (this.currentPath.length < 2) {
+  public drawFromHistory(path: LineDrawInfo["path"], options: LineDrawInfo["options"]) {
+    this.draw(path, options)
+  }
+
+  private draw(path = this.currentPath, options = this.getLineOptions()) {
+    if (path.length < 2) {
       return
     }
-    const path = this.currentPath
     this.engine.draw(() => {
       const pressure = this.options.pressureEnabled ? path.map(([, , pressure]) => pressure ?? 0.0) : undefined
       this.program.draw(
@@ -115,9 +118,9 @@ export class LineTool {
           points: path.map(([x, y]) => [x, y]).flat(),
           pressure: pressure && this.hasPressure(pressure) ? pressure : undefined,
         },
-        this.getLineOptions(),
+        options,
       )
-      return this.getToolInfo()
+      return this.getToolInfo(options)
     })
   }
 
@@ -125,7 +128,7 @@ export class LineTool {
     return points.some((point) => point !== 0)
   }
 
-  protected getLineOptions(): Required<Omit<DrawLineOptions, "drawType">> {
+  protected getLineOptions(): LineDrawInfo["options"] {
     return {
       color: this.engine.getCurrentColor(),
       opacity: this.engine.getOpacity(),

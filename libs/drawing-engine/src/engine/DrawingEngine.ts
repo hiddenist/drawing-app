@@ -5,10 +5,10 @@ import { Color } from "@libs/shared"
 import { Layer, LayerSettings } from "./Layer"
 import { SourceImage } from "../utils/image/SourceImage"
 import { ToolName, ToolNames } from "../exports"
-import { LineDrawInfo, LineTool } from "../tools/LineTool"
+import { LineTool } from "../tools/LineTool"
 import { InputPoint } from "../tools/InputPoint"
 import { EyeDropperTool } from "../tools/EyeDropperTool"
-import { CanvasHistory, HistoryState } from "./CanvasHistory"
+import { CanvasHistory, ToolInfo } from "./CanvasHistory"
 
 interface DrawingEngineState {
   color: Color
@@ -27,10 +27,10 @@ export interface DrawingEngineOptions {
   pixelDensity?: number
 }
 
-type ToolInfo = LineDrawInfo
-
 export enum EventType {
+  engineLoaded = "engineLoaded",
   draw = "draw",
+  commit = "commit",
   undo = "undo",
   redo = "redo",
   pickColor = "pickColor",
@@ -44,9 +44,11 @@ export enum EventType {
 }
 
 export interface DrawingEngineEventMap {
+  [EventType.engineLoaded]: undefined
   [EventType.draw]: ToolInfo
-  [EventType.undo]: { toolInfo: HistoryState["toolInfo"] | null; canUndo: boolean }
-  [EventType.redo]: { toolInfo: HistoryState["toolInfo"] | null; canRedo: boolean }
+  [EventType.commit]: ToolInfo
+  [EventType.undo]: { toolInfo: ToolInfo | null; canUndo: boolean }
+  [EventType.redo]: { toolInfo: ToolInfo | null; canRedo: boolean }
   [EventType.pickColor]: { color: Color }
   [EventType.previewColor]: { color: Color | null }
   [EventType.clear]: undefined
@@ -89,7 +91,7 @@ export class DrawingEngine {
   }
 
   private listeners: Partial<DrawingEventListeners> = {}
-  protected history: CanvasHistory
+  protected history: CanvasHistory | null = null
 
   constructor(
     public gl: WebGLRenderingContext,
@@ -105,8 +107,12 @@ export class DrawingEngine {
       prevTool: defaultTool,
     }
 
-    this.history = new CanvasHistory(this, {
+    CanvasHistory.create(this, {
       maxHistory: 10,
+      actionsPerHistory: 10,
+    }).then((history) => {
+      this.history = history
+      this.checkLoaded()
     })
 
     this.savedDrawingLayer = this.makeLayer()
@@ -122,6 +128,23 @@ export class DrawingEngine {
     }
 
     this.callListeners(EventType.changeTool, { tool: this.state.tool })
+  }
+
+  get htmlCanvas(): HTMLCanvasElement {
+    if (!(this.gl.canvas instanceof HTMLCanvasElement)) {
+      throw new Error("Canvas is not an HTMLCanvasElement")
+    }
+    return this.gl.canvas
+  }
+
+  public isLoaded() {
+    return this.history !== null
+  }
+
+  private checkLoaded() {
+    if (this.isLoaded()) {
+      this.callListeners(EventType.engineLoaded, undefined)
+    }
   }
 
   private makeLayer(options?: Partial<LayerSettings>) {
@@ -293,19 +316,11 @@ export class DrawingEngine {
     this.render("draw")
   }
 
-  public addHistory(toolInfo: ToolInfo) {
-    this.history.save(toolInfo)
-  }
-
   public undo() {
-    return this.history.undo()
+    return this.history?.undo()
   }
 
   public redo() {
-    return this.history.redo()
-  }
-
-  public getHistory() {
-    return this.history.getHistory()
+    return this.history?.redo()
   }
 }

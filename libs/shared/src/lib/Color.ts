@@ -28,7 +28,7 @@ export type HsvArray = [
 export class Color {
   static readonly BLACK = new Color(0, 0, 0)
   static readonly WHITE = new Color(255, 255, 255)
-  private vector: Uint8ClampedArray
+  public readonly vector: Uint8ClampedArray
 
   public constructor(colorString: string, _?: never, __?: never, ___?: never)
   public constructor(vector: Readonly<Uint8ClampedArray>, _?: never, __?: never, ___?: never)
@@ -77,10 +77,6 @@ export class Color {
     }
 
     throw new Error("Invalid color parameters")
-  }
-
-  get vec3(): Readonly<Uint8ClampedArray> {
-    return this.vector
   }
 
   public copy(): Color {
