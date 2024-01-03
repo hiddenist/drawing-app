@@ -1,6 +1,7 @@
 import { LineDrawInfo } from "../tools/LineTool"
-import { DrawingEngine, EventType } from "./DrawingEngine"
+import { CallbackQueue } from "./CallbackQueue"
 import { Database } from "./Database"
+import { DrawingEngine, EventType } from "./DrawingEngine"
 
 type ClearInfo = { tool: "clear" }
 
@@ -83,6 +84,7 @@ export class CanvasHistory {
   protected currentEntry: HistoryEntry | null = null
   protected redoStack: Array<ToolInfo> = []
   protected hasTruncated = false
+  private queue: CallbackQueue = new CallbackQueue()
 
   private constructor(
     protected readonly engine: DrawingEngine,
@@ -127,11 +129,21 @@ export class CanvasHistory {
   }
 
   public add(toolInfo: ToolInfo) {
-    this.redoStack = []
-    this.save(toolInfo)
+    this.queue.push(async () => {
+      this.redoStack = []
+      await this._save(toolInfo)
+    })
   }
 
-  private async save(toolInfo: ToolInfo) {
+  public undo() {
+    this.queue.push(() => this._undo())
+  }
+
+  public redo() {
+    this.queue.push(() => this._redo())
+  }
+
+  private async _save(toolInfo: ToolInfo) {
     if (this.isCurrentEntryFull() || this.currentEntry === null) {
       this.currentEntry = {
         actions: [toolInfo],
@@ -190,7 +202,7 @@ export class CanvasHistory {
     return { key, entry: this.currentEntry }
   }
 
-  public async undo() {
+  private async _undo() {
     if (!this.canUndo()) {
       this.engine.callListeners(EventType.undo, { toolInfo: null, canUndo: false })
       return
@@ -229,13 +241,13 @@ export class CanvasHistory {
     this.engine.callListeners(EventType.undo, { toolInfo, canUndo: this.canUndo() })
   }
 
-  public async redo() {
+  private async _redo() {
     const toolInfo = this.redoStack.pop()
     if (!toolInfo) {
       this.engine.callListeners(EventType.redo, { toolInfo: null, canRedo: false })
       return
     }
-    const current = await this.save(toolInfo)
+    const current = await this._save(toolInfo)
     await this.drawHistoryEntry(current.entry)
     this.engine.callListeners(EventType.redo, { toolInfo, canRedo: this.canRedo() })
   }
@@ -319,8 +331,13 @@ export class CanvasHistory {
     })
   }
 
-  public clear() {
+  public async clear() {
     this.history = []
+    this.redoStack = []
+    this.currentEntry = null
+    this.hasTruncated = false
+    this.queue.clear()
+    await Promise.all([this.db.actions.clear(), this.db.blobs.clear()])
   }
 
   public canUndo() {
