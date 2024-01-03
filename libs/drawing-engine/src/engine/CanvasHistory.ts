@@ -316,6 +316,9 @@ export class CanvasHistory {
   }
 
   protected drawBlob(blob: Blob): Promise<HTMLImageElement> {
+    if (!blob) {
+      return Promise.reject(new Error("No blob"))
+    }
     const image = new Image()
     image.src = URL.createObjectURL(blob)
 
