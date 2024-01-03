@@ -91,7 +91,6 @@ export class DrawingEngine {
   }
 
   private listeners: Partial<DrawingEventListeners> = {}
-  protected history: CanvasHistory | null = null
 
   constructor(
     public gl: WebGLRenderingContext,
@@ -106,14 +105,6 @@ export class DrawingEngine {
       tool: defaultTool,
       prevTool: defaultTool,
     }
-
-    CanvasHistory.create(this, {
-      maxHistory: 10,
-      actionsPerHistory: 10,
-    }).then((history) => {
-      this.history = history
-      this.checkLoaded()
-    })
 
     this.savedDrawingLayer = this.makeLayer()
     this.activeDrawingLayer = this.makeLayer({ clearBeforeDrawing: true })
@@ -135,16 +126,6 @@ export class DrawingEngine {
       throw new Error("Canvas is not an HTMLCanvasElement")
     }
     return this.gl.canvas
-  }
-
-  public isLoaded() {
-    return this.history !== null
-  }
-
-  private checkLoaded() {
-    if (this.isLoaded()) {
-      this.callListeners(EventType.engineLoaded, undefined)
-    }
   }
 
   private makeLayer(options?: Partial<LayerSettings>) {
@@ -314,13 +295,5 @@ export class DrawingEngine {
     this.activeDrawingLayer.clear()
     this.savedDrawingLayer = copy
     this.render("draw")
-  }
-
-  public undo() {
-    return this.history?.undo()
-  }
-
-  public redo() {
-    return this.history?.redo()
   }
 }

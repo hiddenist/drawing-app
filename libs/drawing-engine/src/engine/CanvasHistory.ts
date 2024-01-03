@@ -84,7 +84,6 @@ export class CanvasHistory {
   protected currentEntry: HistoryEntry | null = null
   protected redoStack: Array<ToolInfo> = []
   protected hasTruncated = false
-  private queue: CallbackQueue = new CallbackQueue()
 
   private constructor(
     protected readonly engine: DrawingEngine,
@@ -280,7 +279,11 @@ export class CanvasHistory {
     this.engine._clear()
     if (!hasClear && blobId) {
       const blob = await this.db.blobs.get(blobId)
-      await this.drawBlob(blob)
+      if (!blob) {
+        console.warn("Could not get blob")
+      } else {
+        await this.drawBlob(blob)
+      }
     }
     await this.drawActions(filteredActions)
 
@@ -316,10 +319,10 @@ export class CanvasHistory {
   }
 
   protected drawBlob(blob: Blob): Promise<HTMLImageElement> {
-    if (!blob) {
-      return Promise.reject(new Error("No blob"))
-    }
     const image = new Image()
+    if (!blob) {
+      return Promise.resolve(image)
+    }
     image.src = URL.createObjectURL(blob)
 
     return new Promise<HTMLImageElement>((resolve, reject) => {

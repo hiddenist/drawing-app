@@ -1,6 +1,6 @@
 import "./style.css"
 
-import { WebDrawingEngine, EventType, ToolNames, ToolName } from "@libs/drawing-engine"
+import { QueuedDrawingEngine, EventType, ToolNames, ToolName } from "@libs/drawing-engine"
 import { ColorPicker } from "@libs/color-picker"
 import { Color } from "@libs/shared"
 
@@ -17,7 +17,7 @@ function main() {
   }
   const width = Math.min(window.innerWidth, 500)
   const height = Math.min(window.innerHeight, 500)
-  const engine = new WebDrawingEngine(canvasRoot, {
+  const engine = new QueuedDrawingEngine(canvasRoot, {
     width,
     height,
     pixelDensity: window.devicePixelRatio,
@@ -112,7 +112,7 @@ function makeToolbar(
     onUndo: () => void
     onRedo: () => void
 
-    addListener: WebDrawingEngine["addListener"]
+    addListener: QueuedDrawingEngine["addListener"]
   },
 ) {
   const localState = {
