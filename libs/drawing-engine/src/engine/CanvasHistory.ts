@@ -182,6 +182,7 @@ export class CanvasHistory {
     }
     this.currentEntry.blobId = await this.saveBlob(this.engine.htmlCanvas).catch(() => null)
     const key = await this.db.actions.add(this.currentEntry)
+    this.currentEntry.id = key
 
     this.history.unshift(key)
     this.truncateHistory()
