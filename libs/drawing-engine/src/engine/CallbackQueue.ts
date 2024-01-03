@@ -1,6 +1,5 @@
 export class CallbackQueue {
   private queue: Array<() => void | Promise<void>> = []
-  private isProcessing = false
   private promise: Promise<void> | null = null
 
   public push(action: () => void | Promise<void>) {
@@ -9,19 +8,19 @@ export class CallbackQueue {
   }
 
   private async processQueue() {
-    if (this.isProcessing) {
-      return this.promise
-    }
+    await this.promise
     this.promise = new Promise(async (resolve) => {
-      this.isProcessing = true
       while (this.queue.length > 0) {
         const action = this.queue.shift()
         if (!action) {
           return
         }
-        await Promise.resolve(action())
+        try {
+          await Promise.resolve(action())
+        } catch (e) {
+          console.error(e)
+        }
       }
-      this.isProcessing = false
       resolve()
     })
     return this.promise
