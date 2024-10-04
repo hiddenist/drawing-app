@@ -6,7 +6,7 @@ This is a 2d web-based drawing application. I started this as a hobby project, b
 
 Check out the app here: [hiddenist.github.io/drawing-app](https://hiddenist.github.io/drawing-app/)
 
-The app is missing a number of features, most notably an undo or eraser tool. If you have an idea you want to see added, feel free to [create and issue](https://github.com/hiddenist/drawing-app/issues/new) to request it. Thanks for checking this out!
+The app is missing a number of features, most notably though there are only a few history states and no soft brushes. If you have an idea you want to see added, feel free to [create and issue](https://github.com/hiddenist/drawing-app/issues/new) to request it. Thanks for checking this out!
 
 ## Local Setup
 
