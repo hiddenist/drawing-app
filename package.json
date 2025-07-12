@@ -18,7 +18,7 @@
     "@libs/shared": "workspace:*",
     "@types/node": "^22.11.0",
     "typescript": "^5.2.2",
-    "vite": "^5.0.5",
+    "vite": "^5.4.19",
     "vite-plugin-plain-text": "^1.4.2",
     "vitest": "^0.34.6",
     "prettier": "^3.1.0"
