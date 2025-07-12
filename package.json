@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@10.13.1",
   "scripts": {
     "dev": "pnpm --filter web run dev",
     "build": "pnpm --filter web run build",
@@ -15,7 +16,7 @@
   },
   "devDependencies": {
     "@libs/shared": "workspace:*",
-    "@types/node": "^20.9.4",
+    "@types/node": "^22.11.0",
     "typescript": "^5.2.2",
     "vite": "^5.0.5",
     "vite-plugin-plain-text": "^1.4.2",
