@@ -1,10 +1,10 @@
 import { Database } from "../engine/Database"
-
-interface HistoryEntry {
-  id?: IDBValidKey
-  actions: Array<any>
-  timestamp: number
-}
+import type { 
+  WorkerMessage, 
+  WorkerResponse, 
+  HistoryEntry,
+  SerializedHistoryState 
+} from "./types"
 
 enum HistoryStores {
   actions = "actions",
@@ -14,20 +14,6 @@ interface HistorySchema {
   [HistoryStores.actions]: HistoryEntry
 }
 
-interface WorkerMessage {
-  id: string
-  type: 'SAVE_ACTION' | 'LOAD_RECENT' | 'CLEAR_HISTORY' | 'DELETE_OLD' | 'FLUSH_BATCH'
-  data?: any
-}
-
-interface WorkerResponse {
-  id?: string
-  type: string
-  data?: any
-  error?: string
-  success?: boolean
-  unknownError?: unknown
-}
 
 class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
   static readonly name = "drawing_history"
@@ -67,6 +53,7 @@ class HistoryWorker {
   private batchTimeout: NodeJS.Timeout | null = null
   private readonly BATCH_SIZE = 5
   private readonly BATCH_DELAY = 100 // ms - reduced for more responsive saving
+  private readonly STATE_KEY = 'current_state' // Fixed key for current state
 
   async init() {
     try {
@@ -87,14 +74,31 @@ class HistoryWorker {
     try {
       switch (type) {
         case 'SAVE_ACTION':
-          await this.batchSaveAction(data.action)
-          this.postMessage({ id, type: 'ACTION_QUEUED', success: true })
+          if (data?.action) {
+            await this.batchSaveAction(data.action)
+            this.postMessage({ id, type: 'ACTION_QUEUED', success: true })
+          } else {
+            this.postMessage({ id, type: 'ERROR', error: 'No action provided' })
+          }
           break
 
+        case 'SAVE_STATE':
+          if (data?.state) {
+            await this.saveState(data.state)
+            this.postMessage({ id, type: 'STATE_SAVED', success: true })
+          } else {
+            this.postMessage({ id, type: 'ERROR', error: 'No state provided' })
+          }
+          break
 
         case 'LOAD_RECENT':
-          const entries = await this.loadRecentEntries(data.limit || 10)
+          const entries = await this.loadRecentEntries(data?.limit || 10)
           this.postMessage({ id, type: 'RECENT_LOADED', data: { entries }, success: true })
+          break
+
+        case 'LOAD_STATE':
+          const state = await this.loadState()
+          this.postMessage({ id, type: 'STATE_LOADED', data: { state: state || undefined }, success: true })
           break
 
         case 'CLEAR_HISTORY':
@@ -103,7 +107,7 @@ class HistoryWorker {
           break
 
         case 'DELETE_OLD':
-          await this.deleteOldEntries(data.keepCount || 50)
+          await this.deleteOldEntries(data?.keepCount || 50)
           this.postMessage({ id, type: 'OLD_DELETED', success: true })
           break
 
@@ -159,13 +163,19 @@ class HistoryWorker {
       this.batchTimeout = null
     }
 
+    // For backward compatibility - convert actions to a simple state
     const entry: HistoryEntry = {
-      actions: actionsToSave,
+      state: {
+        actions: actionsToSave.map((action, index) => ({ id: index + 1, action })),
+        currentIndex: actionsToSave.length
+      },
       timestamp: Date.now(),
     }
 
     const id = await this.db.actions.add(entry)
-    this.postMessage({ type: 'BATCH_SAVED', data: { id, actionCount: actionsToSave.length } })
+    // Convert IDBValidKey to our restricted type - in practice this will be a number from autoIncrement
+    const safeId = typeof id === 'string' || typeof id === 'number' ? id : String(id)
+    this.postMessage({ type: 'BATCH_SAVED', data: { id: safeId, actionCount: actionsToSave.length } })
   }
 
 
@@ -187,6 +197,30 @@ class HistoryWorker {
     if (this.batchTimeout) {
       clearTimeout(this.batchTimeout)
       this.batchTimeout = null
+    }
+  }
+
+  private async saveState(state: SerializedHistoryState) {
+    if (!this.db) throw new Error('Database not initialized')
+
+    const entry: HistoryEntry = {
+      state,
+      timestamp: Date.now(),
+    }
+
+    // Always use the same key for current state - this will overwrite previous state
+    await this.db.actions.put({ ...entry, id: this.STATE_KEY })
+  }
+
+  private async loadState(): Promise<SerializedHistoryState | null> {
+    if (!this.db) throw new Error('Database not initialized')
+
+    try {
+      const entry = await this.db.actions.get(this.STATE_KEY)
+      return entry?.state || null
+    } catch (error) {
+      console.warn('Failed to load state:', error)
+      return null
     }
   }
 

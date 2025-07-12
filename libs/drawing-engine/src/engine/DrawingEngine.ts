@@ -127,9 +127,7 @@ export class DrawingEngine {
   private async initHistory() {
     try {
       // Try to create persistent history first
-      this.history = await CanvasHistoryPersistent.create(this, {
-        maxPersistentHistory: 1024,
-      })
+      this.history = await CanvasHistoryPersistent.create(this)
       console.log('Initialized persistent history')
     } catch (error) {
       console.warn('Failed to initialize persistent history, falling back to memory-only mode:', error)

@@ -1,37 +1,18 @@
-import { CanvasHistory, ToolInfo } from "./CanvasHistory"
+import { CanvasHistory, ToolInfo, HistoryAction, HistoryState } from "./CanvasHistory"
 import { DrawingEngine } from "./DrawingEngine"
 import { Color } from "@libs/shared"
 import { LineDrawInfo } from "../tools/LineTool"
+import { InputPoint } from "../tools/InputPoint"
+import type {
+  SerializedColor,
+  SerializedToolInfo,
+  SerializedLineDrawInfo,
+  SerializedHistoryState,
+  WorkerMessage,
+  WorkerResponse
+} from "../workers/types"
 
-// Types for serialized data (what gets stored in IndexedDB)
-interface SerializedColor {
-  r?: number
-  g?: number
-  b?: number
-  vector?: Uint8ClampedArray | number[]
-}
 
-type SerializedLineDrawInfo = {
-  tool: Exclude<LineDrawInfo["tool"], "eyedropper">
-  path: LineDrawInfo["path"]
-  options: Omit<LineDrawInfo["options"], "color"> & {
-    color: SerializedColor | Color  // Could be either after deserialization
-  }
-}
-
-type SerializedToolInfo = SerializedLineDrawInfo | { tool: "clear" }
-
-interface WorkerResponse {
-  id?: string
-  type: string
-  data?: any
-  error?: string
-  success?: boolean
-}
-
-interface HistoryOptions {
-  maxPersistentHistory: number
-}
 
 /**
  * Extends CanvasHistory with IndexedDB persistence via Web Worker
@@ -42,19 +23,13 @@ export class CanvasHistoryPersistent extends CanvasHistory {
   private isWorkerReady = false
   private pendingRequests = new Map<string, { resolve: Function; reject: Function }>()
 
-  constructor(
-    engine: DrawingEngine,
-    private options: HistoryOptions = { maxPersistentHistory: 1000 }
-  ) {
+  constructor(engine: DrawingEngine) {
     super(engine)
     this.initWorker()
   }
 
-  static async create(engine: DrawingEngine, options: Partial<HistoryOptions> = {}): Promise<CanvasHistoryPersistent> {
-    const history = new CanvasHistoryPersistent(engine, {
-      maxPersistentHistory: 1000,
-      ...options,
-    })
+  static async create(engine: DrawingEngine): Promise<CanvasHistoryPersistent> {
+    const history = new CanvasHistoryPersistent(engine)
 
     // Wait for worker to be ready or timeout
     try {
@@ -140,17 +115,21 @@ export class CanvasHistoryPersistent extends CanvasHistory {
     }
   }
 
-  private sendToWorker(type: string, data?: any): Promise<WorkerResponse> {
-    if (!this.worker || !this.isWorkerReady) {
-      return Promise.reject(new Error('Worker not available'))
-    }
-
-    const id = crypto.randomUUID()
-
+  private sendToWorker<T extends WorkerMessage>(
+    type: T['type'],
+    data?: T['data']
+  ): Promise<WorkerResponse> {
     return new Promise((resolve, reject) => {
+      if (!this.worker || !this.isWorkerReady) {
+        return reject(new Error('Worker not available'))
+
+      }
+      const id = crypto.randomUUID()
+
       this.pendingRequests.set(id, { resolve, reject })
 
-      this.worker!.postMessage({ id, type, data })
+      const message: WorkerMessage = { id, type, data }
+      this.worker.postMessage(message)
 
       // Timeout after 10 seconds
       setTimeout(() => {
@@ -167,25 +146,47 @@ export class CanvasHistoryPersistent extends CanvasHistory {
     // Check if we're branching from undo (redo stack has items)
     const hadRedoItems = this.getRedoLength() > 0
 
-    // Call parent for memory handling
+    // Call parent for memory handling (this will update currentIndex and handle branching)
     super.add(toolInfo)
 
-    // If we branched from undo, we need to rebuild persistence to match new timeline
+    // Always rebuild persistence to match current timeline since parent handles branching
     if (hadRedoItems) {
-      console.log('Branching from undo - rebuilding persistence from current memory timeline')
+      console.log('Branching detected - rebuilding persistence from current memory timeline')
       this.rebuildPersistenceFromMemory()
     } else {
-      // Normal case - just persist the new action
-      this.persistAction(toolInfo)
+      // Normal case - persist the current state
+      this.persistCurrentState()
     }
   }
 
-  private persistAction(toolInfo: ToolInfo) {
+  // Override undo to also persist the new state
+  public undo(): boolean {
+    const result = super.undo()
+    if (result) {
+      // Persist the new current state after undo
+      this.persistCurrentState()
+    }
+    return result
+  }
+
+  // Override redo to also persist the new state
+  public redo(): boolean {
+    const result = super.redo()
+    if (result) {
+      // Persist the new current state after redo
+      this.persistCurrentState()
+    }
+    return result
+  }
+
+  private persistCurrentState() {
     if (!this.isWorkerReady) return
 
-    this.sendToWorker('SAVE_ACTION', { action: toolInfo })
+    const currentState = this.getHistoryState()
+    const serializedState = this.serializeHistoryState(currentState)
+    this.sendToWorker('SAVE_STATE', { state: serializedState })
       .catch(error => {
-        console.warn('Failed to persist action:', error)
+        console.warn('Failed to persist state:', error)
         // App continues working even if persistence fails
       })
   }
@@ -195,19 +196,17 @@ export class CanvasHistoryPersistent extends CanvasHistory {
 
     console.log('Rebuilding persistence from current memory timeline')
 
-    // Clear all persistent history and rebuild from current memory state
+    // Clear all persistent history and save current state
     this.sendToWorker('CLEAR_HISTORY')
       .then(() => {
-        // Re-persist all current memory actions in order
-        // Note: debugMemoryHistory now only contains ToolInfo since we fixed the base class
-        const currentMemory = this.debugMemoryHistory
-        console.log(`Rebuilding persistence with ${currentMemory.length} actions`)
+        const currentState = this.getHistoryState()
+        console.log(`Rebuilding persistence with ${currentState.actions.length} actions, index: ${currentState.currentIndex}`)
 
-        for (const action of currentMemory) {
-          this.persistAction(action)
-        }
-
-        console.log(`Rebuilt persistence with ${currentMemory.length} actions`)
+        const serializedState = this.serializeHistoryState(currentState)
+        return this.sendToWorker('SAVE_STATE', { state: serializedState })
+      })
+      .then(() => {
+        console.log('Rebuilt persistence successfully')
       })
       .catch(error => {
         console.warn('Failed to rebuild persistence:', error)
@@ -218,29 +217,29 @@ export class CanvasHistoryPersistent extends CanvasHistory {
     if (!this.isWorkerReady) return
 
     try {
-      const response = await this.sendToWorker('LOAD_RECENT', { limit: this.options.maxPersistentHistory })
-      const entries = response.data?.entries || []
+      const response = await this.sendToWorker('LOAD_STATE')
+      const serializedState = response.data?.state
 
-      // Flatten actions from all entries, maintaining chronological order
-      const serializedActions: SerializedToolInfo[] = []
-
-      if (entries && entries.length > 0) {
-        // Since entries are sorted newest first, we need to reverse them to get chronological order
-        const chronologicalEntries = [...entries].reverse()
-
-        for (const entry of chronologicalEntries) {
-          // Actions from IndexedDB are serialized
-          serializedActions.push(...(entry.actions || []))
-        }
+      if (!serializedState) {
+        console.log('No persistent history found')
+        return
       }
 
-      console.log(`Loaded ${serializedActions.length} actions from persistent storage`)
+      console.log(`Loading ${serializedState.actions.length} actions from persistent storage, index: ${serializedState.currentIndex}`)
 
-      // Convert serialized actions to proper ToolInfo before passing to parent
-      const deserializedActions: ToolInfo[] = serializedActions.map(action => this.convertToToolInfo(action))
+      // Convert serialized actions to proper HistoryActions
+      const deserializedActions: HistoryAction[] = serializedState.actions.map(serializedAction => ({
+        id: serializedAction.id,
+        action: this.convertToToolInfo(serializedAction.action)
+      }))
+
+      const historyState: HistoryState = {
+        actions: deserializedActions,
+        currentIndex: serializedState.currentIndex
+      }
 
       // Load into memory using parent method
-      this.loadHistory(deserializedActions)
+      this.loadHistory(historyState)
     } catch (error) {
       console.warn('Failed to load recent history:', error)
     }
@@ -262,6 +261,10 @@ export class CanvasHistoryPersistent extends CanvasHistory {
     if (this.isWorkerReady) {
       try {
         await this.sendToWorker('CLEAR_HISTORY')
+        // Save the empty state
+        const emptyState = this.getHistoryState()
+        const serializedEmptyState = this.serializeHistoryState(emptyState)
+        await this.sendToWorker('SAVE_STATE', { state: serializedEmptyState })
       } catch (error) {
         console.warn('Failed to clear persistent history:', error)
       }
@@ -277,7 +280,61 @@ export class CanvasHistoryPersistent extends CanvasHistory {
     this.pendingRequests.clear()
   }
 
-  // Conversion methods for handling serialized data
+  // Serialization methods for converting between frontend and worker types
+  private serializeColor(color: Color): SerializedColor {
+    return {
+      r: color.r,
+      g: color.g,
+      b: color.b
+    }
+  }
+
+  private serializeToolInfo(toolInfo: ToolInfo): SerializedToolInfo {
+    if (toolInfo.tool === 'clear') {
+      return { tool: 'clear' }
+    }
+
+    // Only serialize brush and eraser tools (eyedropper doesn't get stored)
+    if (toolInfo.tool === 'eyedropper') {
+      throw new Error('Eyedropper tool should not be serialized')
+    }
+
+    return {
+      tool: toolInfo.tool,
+      path: toolInfo.path.map(point => [point[0], point[1], point[2]]),
+      options: {
+        color: this.serializeColor(toolInfo.options.color),
+        opacity: toolInfo.options.opacity,
+        diameter: toolInfo.options.diameter
+      }
+    }
+  }
+
+  private serializeHistoryState(historyState: HistoryState): SerializedHistoryState {
+    return {
+      actions: historyState.actions.map(action => ({
+        id: action.id,
+        action: this.serializeToolInfo(action.action)
+      })),
+      currentIndex: historyState.currentIndex
+    }
+  }
+
+  // Type guards and conversion methods
+  private isSerializedLineDrawInfo(action: SerializedToolInfo): action is SerializedLineDrawInfo {
+    return action.tool !== 'clear'
+  }
+
+  private convertSerializedPath(serializedPath: Array<[number, number, number?]>): InputPoint[] {
+    return serializedPath.map(point => {
+      const inputPoint: InputPoint = [point[0], point[1]]
+      if (point[2] !== undefined) {
+        inputPoint[2] = point[2]
+      }
+      return inputPoint
+    })
+  }
+
   private isSerializedColor(color: any): color is SerializedColor {
     return color && typeof color === 'object' && !(color instanceof Color)
   }
@@ -309,15 +366,21 @@ export class CanvasHistoryPersistent extends CanvasHistory {
       return action
     }
 
-    // It's a line action - check if it needs color conversion
-    const lineAction = action as SerializedLineDrawInfo
+    // Use type guard to ensure we have a line action
+    if (!this.isSerializedLineDrawInfo(action)) {
+      throw new Error('Expected SerializedLineDrawInfo but got clear action')
+    }
+
+    const lineAction = action
+    const convertedPath = this.convertSerializedPath(lineAction.path)
+
     if (lineAction.options.color && this.isSerializedColor(lineAction.options.color)) {
       // Need to convert serialized color back to Color instance
       const color = this.convertSerializedColor(lineAction.options.color)
 
       const result: LineDrawInfo = {
         tool: lineAction.tool,
-        path: lineAction.path,
+        path: convertedPath,
         options: {
           ...lineAction.options,
           color
@@ -327,12 +390,13 @@ export class CanvasHistoryPersistent extends CanvasHistory {
     }
 
     // Already a proper ToolInfo with Color instance
-    if (lineAction.options.color instanceof Color) {
+    const color = lineAction.options.color
+    if (color && !this.isSerializedColor(color)) {
       const result: LineDrawInfo = {
         tool: lineAction.tool,
-        path: lineAction.path,
+        path: convertedPath,
         options: {
-          color: lineAction.options.color,
+          color: color,
           opacity: lineAction.options.opacity,
           diameter: lineAction.options.diameter
         }
@@ -343,7 +407,7 @@ export class CanvasHistoryPersistent extends CanvasHistory {
     // Fallback - shouldn't happen, but create with black color
     const result: LineDrawInfo = {
       tool: lineAction.tool,
-      path: lineAction.path,
+      path: convertedPath,
       options: {
         color: Color.BLACK,
         opacity: lineAction.options.opacity,
