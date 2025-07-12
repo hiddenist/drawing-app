@@ -57,7 +57,7 @@ export class ValueSaturationGradientColorProgram extends BaseGradientColorProgra
 
   protected setUniforms() {
     this.gl.uniform1f(this.getUniformLocation("uHue"), this.hue)
-    this.gl.uniform3fv(this.getUniformLocation("uSelectedColor"), this.selectedColor?.vec3 ?? [-1, -1, -1])
+    this.gl.uniform3fv(this.getUniformLocation("uSelectedColor"), this.selectedColor?.vector ?? [-1, -1, -1])
     this.gl.uniform2fv(this.getUniformLocation("uMarkerPosition"), this.markerPosition ?? [-1, -1])
   }
 
