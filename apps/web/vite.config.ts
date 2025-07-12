@@ -11,6 +11,9 @@ export default defineConfig({
   server: {
     host: true,
   },
+  worker: {
+    format: 'es',
+  },
   esbuild: {
     jsxFactory: "createDomElement",
     jsxFragment: "createDomFragment",

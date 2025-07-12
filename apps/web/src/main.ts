@@ -271,9 +271,6 @@ function makeToolbar(
   clearButton.innerText = "Clear"
   clearButton.addEventListener("click", (e) => {
     e.preventDefault()
-    if (!confirm("Are you sure you want to clear the canvas?")) {
-      return
-    }
     options.onClear()
     setHasDrawn(false)
   })

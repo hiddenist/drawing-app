@@ -5,10 +5,10 @@ import { Color } from "@libs/shared"
 import { Layer, LayerSettings } from "./Layer"
 import { SourceImage } from "../utils/image/SourceImage"
 import { ToolName, ToolNames } from "../exports"
-import { LineDrawInfo, LineTool } from "../tools/LineTool"
+import { LineTool } from "../tools/LineTool"
 import { InputPoint } from "../tools/InputPoint"
 import { EyeDropperTool } from "../tools/EyeDropperTool"
-import { CanvasHistory, HistoryState } from "./CanvasHistory"
+import { CanvasHistoryOptimized, ToolInfo } from "./CanvasHistoryOptimized"
 
 interface DrawingEngineState {
   color: Color
@@ -27,8 +27,6 @@ export interface DrawingEngineOptions {
   pixelDensity?: number
 }
 
-type ToolInfo = LineDrawInfo
-
 export enum EventType {
   draw = "draw",
   undo = "undo",
@@ -45,8 +43,8 @@ export enum EventType {
 
 export interface DrawingEngineEventMap {
   [EventType.draw]: ToolInfo
-  [EventType.undo]: { toolInfo: HistoryState["toolInfo"] | null; canUndo: boolean }
-  [EventType.redo]: { toolInfo: HistoryState["toolInfo"] | null; canRedo: boolean }
+  [EventType.undo]: { toolInfo: ToolInfo | null; canUndo: boolean }
+  [EventType.redo]: { toolInfo: ToolInfo | null; canRedo: boolean }
   [EventType.pickColor]: { color: Color }
   [EventType.previewColor]: { color: Color | null }
   [EventType.clear]: undefined
@@ -89,7 +87,7 @@ export class DrawingEngine {
   }
 
   private listeners: Partial<DrawingEventListeners> = {}
-  protected history: CanvasHistory
+  protected history: CanvasHistoryOptimized | null = null
 
   constructor(
     public gl: WebGLRenderingContext,
@@ -105,9 +103,8 @@ export class DrawingEngine {
       prevTool: defaultTool,
     }
 
-    this.history = new CanvasHistory(this, {
-      maxHistory: 10,
-    })
+    // Initialize history asynchronously
+    this.initHistory()
 
     this.savedDrawingLayer = this.makeLayer()
     this.activeDrawingLayer = this.makeLayer({ clearBeforeDrawing: true })
@@ -122,6 +119,19 @@ export class DrawingEngine {
     }
 
     this.callListeners(EventType.changeTool, { tool: this.state.tool })
+  }
+
+  private async initHistory() {
+    try {
+      this.history = await CanvasHistoryOptimized.create(this, {
+        maxMemoryHistory: 200,
+        maxPersistentHistory: 1000,
+        snapshotInterval: 25,
+      })
+    } catch (error) {
+      console.warn('Failed to initialize optimized history, falling back to memory-only mode:', error)
+      // Could implement a fallback to the old CanvasHistory here if needed
+    }
   }
 
   private makeLayer(options?: Partial<LayerSettings>) {
@@ -198,6 +208,8 @@ export class DrawingEngine {
     this._clear()
     this.program.draw(this.activeDrawingLayer, this.savedDrawingLayer)
 
+    // Add clear action to history
+    this.addHistory({ tool: "clear" })
     this.callListeners(EventType.clear, undefined)
   }
 
@@ -262,6 +274,10 @@ export class DrawingEngine {
     this.program[mode](this.activeDrawingLayer, this.savedDrawingLayer)
   }
 
+  public forceRender(mode: "erase" | "draw" = "draw") {
+    this.render(mode)
+  }
+
   public addListener<E extends EventType>(eventName: E, cb: DrawingEventHandler<E>) {
     let listeners = this.listeners[eventName]
     if (!listeners) {
@@ -293,19 +309,41 @@ export class DrawingEngine {
     this.render("draw")
   }
 
+  public drawToActiveLayer(drawCallback: () => void, toolName: ToolName) {
+    this.program.createTextureImage(this.activeDrawingLayer, drawCallback)
+    const mode = this.getDrawMode(toolName)
+    const copy = this.program.mergeDown(this.activeDrawingLayer, this.savedDrawingLayer, mode)
+    this.savedDrawingLayer.clear()
+    this.activeDrawingLayer.clear()
+    this.savedDrawingLayer = copy
+  }
+
   public addHistory(toolInfo: ToolInfo) {
-    this.history.save(toolInfo)
+    this.history?.add(toolInfo)
   }
 
   public undo() {
-    return this.history.undo()
+    return this.history?.undo() ?? false
   }
 
   public redo() {
-    return this.history.redo()
+    return this.history?.redo() ?? false
   }
 
-  public getHistory() {
-    return this.history.getHistory()
+  public canUndo(): boolean {
+    return this.history?.canUndo() ?? false
+  }
+
+  public canRedo(): boolean {
+    return this.history?.canRedo() ?? false
+  }
+
+  public clearHistory() {
+    return this.history?.clear()
+  }
+
+  // Debug access to history
+  public get historyDebug() {
+    return this.history
   }
 }
