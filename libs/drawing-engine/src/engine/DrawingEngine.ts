@@ -8,7 +8,8 @@ import { ToolName, ToolNames } from "../exports"
 import { LineTool } from "../tools/LineTool"
 import { InputPoint } from "../tools/InputPoint"
 import { EyeDropperTool } from "../tools/EyeDropperTool"
-import { CanvasHistoryOptimized, ToolInfo } from "./CanvasHistoryOptimized"
+import { CanvasHistory, ToolInfo } from "./CanvasHistory"
+import { CanvasHistoryPersistent } from "./CanvasHistoryPersistent"
 
 interface DrawingEngineState {
   color: Color
@@ -39,6 +40,7 @@ export enum EventType {
   move = "move",
   release = "release",
   cancel = "cancel",
+  historyReady = "historyReady",
 }
 
 export interface DrawingEngineEventMap {
@@ -53,6 +55,7 @@ export interface DrawingEngineEventMap {
   [EventType.move]: { positions: ReadonlyArray<InputPoint>; isPressed: boolean }
   [EventType.release]: { position: Readonly<InputPoint> }
   [EventType.cancel]: undefined
+  [EventType.historyReady]: { hasHistory: boolean; canUndo: boolean; canRedo: boolean }
 }
 export type DrawingEngineEvent<T extends EventType> = {
   eventName: T
@@ -87,7 +90,7 @@ export class DrawingEngine {
   }
 
   private listeners: Partial<DrawingEventListeners> = {}
-  protected history: CanvasHistoryOptimized | null = null
+  protected history: CanvasHistory | null = null
 
   constructor(
     public gl: WebGLRenderingContext,
@@ -123,15 +126,24 @@ export class DrawingEngine {
 
   private async initHistory() {
     try {
-      this.history = await CanvasHistoryOptimized.create(this, {
-        maxMemoryHistory: 200,
-        maxPersistentHistory: 1000,
-        snapshotInterval: 25,
+      // Try to create persistent history first
+      this.history = await CanvasHistoryPersistent.create(this, {
+        maxPersistentHistory: 1024,
       })
+      console.log('Initialized persistent history')
     } catch (error) {
-      console.warn('Failed to initialize optimized history, falling back to memory-only mode:', error)
-      // Could implement a fallback to the old CanvasHistory here if needed
+      console.warn('Failed to initialize persistent history, falling back to memory-only mode:', error)
+      // Fallback to memory-only history
+      this.history = new CanvasHistory(this)
+      console.log('Initialized memory-only history')
     }
+
+    // Notify that history is ready
+    this.callListeners(EventType.historyReady, {
+      hasHistory: this.history.hasHistory(),
+      canUndo: this.history.canUndo(),
+      canRedo: this.history.canRedo()
+    })
   }
 
   private makeLayer(options?: Partial<LayerSettings>) {
@@ -323,11 +335,31 @@ export class DrawingEngine {
   }
 
   public undo() {
-    return this.history?.undo() ?? false
+    const result = this.history?.undo() ?? false
+
+    if (result) {
+      // Fire undo event with current state
+      this.callListeners(EventType.undo, {
+        toolInfo: null, // We could get the last action if needed
+        canUndo: this.canUndo()
+      })
+    }
+
+    return result
   }
 
   public redo() {
-    return this.history?.redo() ?? false
+    const result = this.history?.redo() ?? false
+
+    if (result) {
+      // Fire redo event with current state
+      this.callListeners(EventType.redo, {
+        toolInfo: null, // We could get the current action if needed
+        canRedo: this.canRedo()
+      })
+    }
+
+    return result
   }
 
   public canUndo(): boolean {
@@ -339,8 +371,9 @@ export class DrawingEngine {
   }
 
   public clearHistory() {
-    return this.history?.clear()
+    return this.history?.clearHistory()
   }
+
 
   // Debug access to history
   public get historyDebug() {

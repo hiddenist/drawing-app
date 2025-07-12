@@ -243,6 +243,7 @@ function makeToolbar(
   redoButton.innerText = "Redo"
   undoButton.disabled = true
   redoButton.disabled = true
+
   inputTray.append(undoButton)
   inputTray.append(redoButton)
   undoButton.addEventListener("click", (e) => {
@@ -264,6 +265,21 @@ function makeToolbar(
   options.addListener(EventType.redo, ({ canRedo }) => {
     undoButton.disabled = false
     redoButton.disabled = !canRedo
+  })
+  options.addListener(EventType.historyReady, ({ hasHistory, canUndo, canRedo }) => {
+    console.log('History ready - hasHistory:', hasHistory, 'canUndo:', canUndo, 'canRedo:', canRedo)
+
+    // Remove loading state and set proper labels
+    undoButton.innerText = "Undo"
+    redoButton.innerText = "Redo"
+
+    // Set button states based on history
+    undoButton.disabled = !canUndo
+    redoButton.disabled = !canRedo
+
+    if (hasHistory) {
+      setHasDrawn(true)
+    }
   })
 
   const clearButton = document.createElement("button")

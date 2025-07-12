@@ -2,24 +2,21 @@ import { Database } from "../engine/Database"
 
 interface HistoryEntry {
   id?: IDBValidKey
-  blobId: IDBValidKey | null
   actions: Array<any>
   timestamp: number
 }
 
 enum HistoryStores {
   actions = "actions",
-  blobs = "blobs",
 }
 
 interface HistorySchema {
   [HistoryStores.actions]: HistoryEntry
-  [HistoryStores.blobs]: Blob
 }
 
 interface WorkerMessage {
   id: string
-  type: 'SAVE_ACTION' | 'SAVE_SNAPSHOT' | 'LOAD_RECENT' | 'CLEAR_HISTORY' | 'DELETE_OLD' | 'FLUSH_BATCH'
+  type: 'SAVE_ACTION' | 'LOAD_RECENT' | 'CLEAR_HISTORY' | 'DELETE_OLD' | 'FLUSH_BATCH'
   data?: any
 }
 
@@ -35,7 +32,6 @@ interface WorkerResponse {
 class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
   static readonly name = "drawing_history"
   public actions = this.getStore(HistoryStores.actions)
-  public blobs = this.getStore(HistoryStores.blobs)
 
   protected static schema = {
     [HistoryStores.actions]: {
@@ -43,21 +39,11 @@ class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
       autoIncrement: true,
       fields: {
         timestamp: { unique: false },
-        blobId: { unique: false },
       },
-    },
-    [HistoryStores.blobs]: {
-      autoIncrement: true,
     },
   } as const
 
   public async deleteEntry(key: IDBValidKey) {
-    const entry = await this.actions.get(key)
-    if (!entry) return
-
-    if (entry.blobId) {
-      await this.blobs.delete(entry.blobId)
-    }
     return this.actions.delete(key)
   }
 
@@ -66,13 +52,10 @@ class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
       await Database.createDb(
         HistoryDatabase.name,
         async (db, resolve) => {
-          await Promise.all([
-            Database.createObjectStoreAsync(db, HistoryStores.actions, this.schema[HistoryStores.actions]),
-            Database.createObjectStoreAsync(db, HistoryStores.blobs, this.schema[HistoryStores.blobs]),
-          ])
+          await Database.createObjectStoreAsync(db, HistoryStores.actions, this.schema[HistoryStores.actions])
           resolve()
         },
-        1,
+        3, // Increment version to trigger schema migration
       ),
     )
   }
@@ -108,10 +91,6 @@ class HistoryWorker {
           this.postMessage({ id, type: 'ACTION_QUEUED', success: true })
           break
 
-        case 'SAVE_SNAPSHOT':
-          const blobId = await this.saveSnapshot(data.blob)
-          this.postMessage({ id, type: 'SNAPSHOT_SAVED', data: { blobId }, success: true })
-          break
 
         case 'LOAD_RECENT':
           const entries = await this.loadRecentEntries(data.limit || 10)
@@ -132,6 +111,7 @@ class HistoryWorker {
           await this.flushBatch()
           this.postMessage({ id, type: 'BATCH_FLUSHED', success: true })
           break
+
 
         default:
           this.postMessage({ id, type: 'ERROR', error: `Unknown message type: ${type}` })
@@ -181,7 +161,6 @@ class HistoryWorker {
 
     const entry: HistoryEntry = {
       actions: actionsToSave,
-      blobId: null,
       timestamp: Date.now(),
     }
 
@@ -189,10 +168,6 @@ class HistoryWorker {
     this.postMessage({ type: 'BATCH_SAVED', data: { id, actionCount: actionsToSave.length } })
   }
 
-  private async saveSnapshot(blob: Blob): Promise<IDBValidKey> {
-    if (!this.db) throw new Error('Database not initialized')
-    return this.db.blobs.add(blob)
-  }
 
   private async loadRecentEntries(limit: number): Promise<HistoryEntry[]> {
     if (!this.db) throw new Error('Database not initialized')
@@ -206,10 +181,7 @@ class HistoryWorker {
   private async clearHistory() {
     if (!this.db) throw new Error('Database not initialized')
 
-    await Promise.all([
-      this.db.actions.clear(),
-      this.db.blobs.clear()
-    ])
+    await this.db.actions.clear()
 
     this.currentBatch = []
     if (this.batchTimeout) {
@@ -230,6 +202,7 @@ class HistoryWorker {
       await this.db.deleteEntry(key)
     }
   }
+
 
   private postMessage(message: WorkerResponse) {
     self.postMessage(message)
