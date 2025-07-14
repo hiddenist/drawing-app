@@ -5,10 +5,11 @@ import { Color } from "@libs/shared"
 import { Layer, LayerSettings } from "./Layer"
 import { SourceImage } from "../utils/image/SourceImage"
 import { ToolName, ToolNames } from "../exports"
-import { LineDrawInfo, LineTool } from "../tools/LineTool"
+import { LineTool } from "../tools/LineTool"
 import { InputPoint } from "../tools/InputPoint"
 import { EyeDropperTool } from "../tools/EyeDropperTool"
-import { CanvasHistory, HistoryState } from "./CanvasHistory"
+import { CanvasHistory, ToolInfo } from "./CanvasHistory"
+import { CanvasHistoryPersistent } from "./CanvasHistoryPersistent"
 
 interface DrawingEngineState {
   color: Color
@@ -27,8 +28,6 @@ export interface DrawingEngineOptions {
   pixelDensity?: number
 }
 
-type ToolInfo = LineDrawInfo
-
 export enum EventType {
   draw = "draw",
   undo = "undo",
@@ -41,12 +40,13 @@ export enum EventType {
   move = "move",
   release = "release",
   cancel = "cancel",
+  historyReady = "historyReady",
 }
 
 export interface DrawingEngineEventMap {
   [EventType.draw]: ToolInfo
-  [EventType.undo]: { toolInfo: HistoryState["toolInfo"] | null; canUndo: boolean }
-  [EventType.redo]: { toolInfo: HistoryState["toolInfo"] | null; canRedo: boolean }
+  [EventType.undo]: { toolInfo: ToolInfo | null; canUndo: boolean }
+  [EventType.redo]: { toolInfo: ToolInfo | null; canRedo: boolean }
   [EventType.pickColor]: { color: Color }
   [EventType.previewColor]: { color: Color | null }
   [EventType.clear]: undefined
@@ -55,6 +55,7 @@ export interface DrawingEngineEventMap {
   [EventType.move]: { positions: ReadonlyArray<InputPoint>; isPressed: boolean }
   [EventType.release]: { position: Readonly<InputPoint> }
   [EventType.cancel]: undefined
+  [EventType.historyReady]: { hasHistory: boolean; canUndo: boolean; canRedo: boolean }
 }
 export type DrawingEngineEvent<T extends EventType> = {
   eventName: T
@@ -89,7 +90,7 @@ export class DrawingEngine {
   }
 
   private listeners: Partial<DrawingEventListeners> = {}
-  protected history: CanvasHistory
+  protected history: CanvasHistory | null = null
 
   constructor(
     public gl: WebGLRenderingContext,
@@ -105,9 +106,8 @@ export class DrawingEngine {
       prevTool: defaultTool,
     }
 
-    this.history = new CanvasHistory(this, {
-      maxHistory: 10,
-    })
+    // Initialize history asynchronously
+    this.initHistory()
 
     this.savedDrawingLayer = this.makeLayer()
     this.activeDrawingLayer = this.makeLayer({ clearBeforeDrawing: true })
@@ -122,6 +122,26 @@ export class DrawingEngine {
     }
 
     this.callListeners(EventType.changeTool, { tool: this.state.tool })
+  }
+
+  private async initHistory() {
+    try {
+      // Try to create persistent history first
+      this.history = await CanvasHistoryPersistent.create(this)
+      console.log('Initialized persistent history')
+    } catch (error) {
+      console.warn('Failed to initialize persistent history, falling back to memory-only mode:', error)
+      // Fallback to memory-only history
+      this.history = new CanvasHistory(this)
+      console.log('Initialized memory-only history')
+    }
+
+    // Notify that history is ready
+    this.callListeners(EventType.historyReady, {
+      hasHistory: this.history.hasHistory(),
+      canUndo: this.history.canUndo(),
+      canRedo: this.history.canRedo()
+    })
   }
 
   private makeLayer(options?: Partial<LayerSettings>) {
@@ -198,6 +218,8 @@ export class DrawingEngine {
     this._clear()
     this.program.draw(this.activeDrawingLayer, this.savedDrawingLayer)
 
+    // Add clear action to history
+    this.addHistory({ tool: "clear" })
     this.callListeners(EventType.clear, undefined)
   }
 
@@ -262,6 +284,10 @@ export class DrawingEngine {
     this.program[mode](this.activeDrawingLayer, this.savedDrawingLayer)
   }
 
+  public forceRender(mode: "erase" | "draw" = "draw") {
+    this.render(mode)
+  }
+
   public addListener<E extends EventType>(eventName: E, cb: DrawingEventHandler<E>) {
     let listeners = this.listeners[eventName]
     if (!listeners) {
@@ -293,19 +319,62 @@ export class DrawingEngine {
     this.render("draw")
   }
 
+  public drawToActiveLayer(drawCallback: () => void, toolName: ToolName) {
+    this.program.createTextureImage(this.activeDrawingLayer, drawCallback)
+    const mode = this.getDrawMode(toolName)
+    const copy = this.program.mergeDown(this.activeDrawingLayer, this.savedDrawingLayer, mode)
+    this.savedDrawingLayer.clear()
+    this.activeDrawingLayer.clear()
+    this.savedDrawingLayer = copy
+  }
+
   public addHistory(toolInfo: ToolInfo) {
-    this.history.save(toolInfo)
+    this.history?.add(toolInfo)
   }
 
   public undo() {
-    return this.history.undo()
+    const result = this.history?.undo() ?? false
+
+    if (result) {
+      // Fire undo event with current state
+      this.callListeners(EventType.undo, {
+        toolInfo: null, // We could get the last action if needed
+        canUndo: this.canUndo()
+      })
+    }
+
+    return result
   }
 
   public redo() {
-    return this.history.redo()
+    const result = this.history?.redo() ?? false
+
+    if (result) {
+      // Fire redo event with current state
+      this.callListeners(EventType.redo, {
+        toolInfo: null, // We could get the current action if needed
+        canRedo: this.canRedo()
+      })
+    }
+
+    return result
   }
 
-  public getHistory() {
-    return this.history.getHistory()
+  public canUndo(): boolean {
+    return this.history?.canUndo() ?? false
+  }
+
+  public canRedo(): boolean {
+    return this.history?.canRedo() ?? false
+  }
+
+  public clearHistory() {
+    return this.history?.clearHistory()
+  }
+
+
+  // Debug access to history
+  public get historyDebug() {
+    return this.history
   }
 }
