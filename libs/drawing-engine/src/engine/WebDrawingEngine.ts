@@ -182,7 +182,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
         event,
         position: this.getCanvasPosition(event),
       })
-    })
+    }, { passive: false })
   }
 
   private getCanvasPosition(event: Event): Vec2 {
