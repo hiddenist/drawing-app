@@ -9,8 +9,8 @@ export interface SerializedColor {
 }
 
 export interface SerializedLineDrawInfo {
-  tool: 'brush' | 'eraser'  // Exclude eyedropper since it doesn't get stored
-  path: Array<[number, number, number?]>  // Matches InputPoint tuple structure
+  tool: "brush" | "eraser" // Exclude eyedropper since it doesn't get stored
+  path: Array<[number, number, number?]> // Matches InputPoint tuple structure
   options: {
     color: SerializedColor
     opacity: number
@@ -19,7 +19,7 @@ export interface SerializedLineDrawInfo {
 }
 
 export interface SerializedClearInfo {
-  tool: 'clear'
+  tool: "clear"
 }
 
 export type SerializedToolInfo = SerializedLineDrawInfo | SerializedClearInfo
@@ -39,7 +39,7 @@ export interface SerializedHistoryState {
 // Worker message types
 export interface WorkerMessage {
   id: string
-  type: 'SAVE_ACTION' | 'SAVE_STATE' | 'LOAD_RECENT' | 'LOAD_STATE' | 'CLEAR_HISTORY' | 'DELETE_OLD' | 'FLUSH_BATCH'
+  type: "SAVE_ACTION" | "SAVE_STATE" | "LOAD_RECENT" | "LOAD_STATE" | "CLEAR_HISTORY" | "DELETE_OLD" | "FLUSH_BATCH"
   data?: {
     action?: SerializedToolInfo
     state?: SerializedHistoryState

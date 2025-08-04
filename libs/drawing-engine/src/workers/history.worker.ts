@@ -1,10 +1,5 @@
 import { Database } from "../engine/Database"
-import type { 
-  WorkerMessage, 
-  WorkerResponse, 
-  HistoryEntry,
-  SerializedHistoryState 
-} from "./types"
+import type { WorkerMessage, WorkerResponse, HistoryEntry, SerializedHistoryState } from "./types"
 
 enum HistoryStores {
   actions = "actions",
@@ -13,7 +8,6 @@ enum HistoryStores {
 interface HistorySchema {
   [HistoryStores.actions]: HistoryEntry
 }
-
 
 class HistoryDatabase extends Database<HistoryStores, HistorySchema> {
   static readonly name = "drawing_history"
@@ -53,17 +47,17 @@ class HistoryWorker {
   private batchTimeout: NodeJS.Timeout | null = null
   private readonly BATCH_SIZE = 5
   private readonly BATCH_DELAY = 100 // ms - reduced for more responsive saving
-  private readonly STATE_KEY = 'current_state' // Fixed key for current state
+  private readonly STATE_KEY = "current_state" // Fixed key for current state
 
   async init() {
     try {
       this.db = await HistoryDatabase.create()
-      this.postMessage({ type: 'WORKER_READY', success: true })
+      this.postMessage({ type: "WORKER_READY", success: true })
     } catch (error) {
       if (error instanceof Error) {
-        this.postMessage({ type: 'WORKER_ERROR', error: error.message })
+        this.postMessage({ type: "WORKER_ERROR", error: error.message })
       } else {
-        this.postMessage({ type: 'WORKER_ERROR', error: 'Unknown error occurred', unknownError: error })
+        this.postMessage({ type: "WORKER_ERROR", error: "Unknown error occurred", unknownError: error })
       }
     }
   }
@@ -73,62 +67,61 @@ class HistoryWorker {
 
     try {
       switch (type) {
-        case 'SAVE_ACTION':
+        case "SAVE_ACTION":
           if (data?.action) {
             await this.batchSaveAction(data.action)
-            this.postMessage({ id, type: 'ACTION_QUEUED', success: true })
+            this.postMessage({ id, type: "ACTION_QUEUED", success: true })
           } else {
-            this.postMessage({ id, type: 'ERROR', error: 'No action provided' })
+            this.postMessage({ id, type: "ERROR", error: "No action provided" })
           }
           break
 
-        case 'SAVE_STATE':
+        case "SAVE_STATE":
           if (data?.state) {
             await this.saveState(data.state)
-            this.postMessage({ id, type: 'STATE_SAVED', success: true })
+            this.postMessage({ id, type: "STATE_SAVED", success: true })
           } else {
-            this.postMessage({ id, type: 'ERROR', error: 'No state provided' })
+            this.postMessage({ id, type: "ERROR", error: "No state provided" })
           }
           break
 
-        case 'LOAD_RECENT':
+        case "LOAD_RECENT":
           const entries = await this.loadRecentEntries(data?.limit || 10)
-          this.postMessage({ id, type: 'RECENT_LOADED', data: { entries }, success: true })
+          this.postMessage({ id, type: "RECENT_LOADED", data: { entries }, success: true })
           break
 
-        case 'LOAD_STATE':
+        case "LOAD_STATE":
           const state = await this.loadState()
-          this.postMessage({ id, type: 'STATE_LOADED', data: { state: state || undefined }, success: true })
+          this.postMessage({ id, type: "STATE_LOADED", data: { state: state || undefined }, success: true })
           break
 
-        case 'CLEAR_HISTORY':
+        case "CLEAR_HISTORY":
           await this.clearHistory()
-          this.postMessage({ id, type: 'HISTORY_CLEARED', success: true })
+          this.postMessage({ id, type: "HISTORY_CLEARED", success: true })
           break
 
-        case 'DELETE_OLD':
+        case "DELETE_OLD":
           await this.deleteOldEntries(data?.keepCount || 50)
-          this.postMessage({ id, type: 'OLD_DELETED', success: true })
+          this.postMessage({ id, type: "OLD_DELETED", success: true })
           break
 
-        case 'FLUSH_BATCH':
+        case "FLUSH_BATCH":
           await this.flushBatch()
-          this.postMessage({ id, type: 'BATCH_FLUSHED', success: true })
+          this.postMessage({ id, type: "BATCH_FLUSHED", success: true })
           break
-
 
         default:
-          this.postMessage({ id, type: 'ERROR', error: `Unknown message type: ${type}` })
+          this.postMessage({ id, type: "ERROR", error: `Unknown message type: ${type}` })
       }
     } catch (error) {
       if (error instanceof Error) {
-      this.postMessage({
-        id,
-        type: 'ERROR',
-          error: error.message || 'Unknown error occurred',
+        this.postMessage({
+          id,
+          type: "ERROR",
+          error: error.message || "Unknown error occurred",
         })
       } else {
-        this.postMessage({ id, type: 'ERROR', error: 'Unknown error occurred', unknownError: error })
+        this.postMessage({ id, type: "ERROR", error: "Unknown error occurred", unknownError: error })
       }
     }
   }
@@ -167,29 +160,26 @@ class HistoryWorker {
     const entry: HistoryEntry = {
       state: {
         actions: actionsToSave.map((action, index) => ({ id: index + 1, action })),
-        currentIndex: actionsToSave.length
+        currentIndex: actionsToSave.length,
       },
       timestamp: Date.now(),
     }
 
     const id = await this.db.actions.add(entry)
     // Convert IDBValidKey to our restricted type - in practice this will be a number from autoIncrement
-    const safeId = typeof id === 'string' || typeof id === 'number' ? id : String(id)
-    this.postMessage({ type: 'BATCH_SAVED', data: { id: safeId, actionCount: actionsToSave.length } })
+    const safeId = typeof id === "string" || typeof id === "number" ? id : String(id)
+    this.postMessage({ type: "BATCH_SAVED", data: { id: safeId, actionCount: actionsToSave.length } })
   }
 
-
   private async loadRecentEntries(limit: number): Promise<HistoryEntry[]> {
-    if (!this.db) throw new Error('Database not initialized')
+    if (!this.db) throw new Error("Database not initialized")
 
     const allEntries = await this.db.actions.getAll()
-    return allEntries
-      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-      .slice(0, limit)
+    return allEntries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, limit)
   }
 
   private async clearHistory() {
-    if (!this.db) throw new Error('Database not initialized')
+    if (!this.db) throw new Error("Database not initialized")
 
     await this.db.actions.clear()
 
@@ -201,7 +191,7 @@ class HistoryWorker {
   }
 
   private async saveState(state: SerializedHistoryState) {
-    if (!this.db) throw new Error('Database not initialized')
+    if (!this.db) throw new Error("Database not initialized")
 
     const entry: HistoryEntry = {
       state,
@@ -213,19 +203,19 @@ class HistoryWorker {
   }
 
   private async loadState(): Promise<SerializedHistoryState | null> {
-    if (!this.db) throw new Error('Database not initialized')
+    if (!this.db) throw new Error("Database not initialized")
 
     try {
       const entry = await this.db.actions.get(this.STATE_KEY)
       return entry?.state || null
     } catch (error) {
-      console.warn('Failed to load state:', error)
+      console.warn("Failed to load state:", error)
       return null
     }
   }
 
   private async deleteOldEntries(keepCount: number) {
-    if (!this.db) throw new Error('Database not initialized')
+    if (!this.db) throw new Error("Database not initialized")
 
     const allKeys = await this.db.actions.getAllKeys()
     if (allKeys.length <= keepCount) return
@@ -237,7 +227,6 @@ class HistoryWorker {
     }
   }
 
-
   private postMessage(message: WorkerResponse) {
     self.postMessage(message)
   }
@@ -247,6 +236,6 @@ class HistoryWorker {
 const worker = new HistoryWorker()
 worker.init()
 
-self.addEventListener('message', (e: MessageEvent<WorkerMessage>) => {
+self.addEventListener("message", (e: MessageEvent<WorkerMessage>) => {
   worker.handleMessage(e.data)
 })

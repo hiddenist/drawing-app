@@ -17,16 +17,12 @@ export interface HistoryState {
   currentIndex: number // ID of the current action (1-indexed, 0 = empty state)
 }
 
-
-
 export class CanvasHistory {
   private actions: HistoryAction[] = []
   private currentIndex: number = 0 // 0 means empty state, 1+ are action IDs
   private nextId: number = 1 // Next ID to assign
 
-  constructor(
-    protected readonly engine: DrawingEngine,
-  ) {
+  constructor(protected readonly engine: DrawingEngine) {
     this.setupEngineListeners()
   }
 
@@ -46,11 +42,11 @@ export class CanvasHistory {
     // Create new action with unique ID
     const newAction: HistoryAction = {
       id: this.nextId++,
-      action: toolInfo
+      action: toolInfo,
     }
 
     // Remove any actions after current position (branching timeline)
-    const currentActionIndex = this.actions.findIndex(a => a.id === this.currentIndex)
+    const currentActionIndex = this.actions.findIndex((a) => a.id === this.currentIndex)
     if (currentActionIndex >= 0) {
       this.actions = this.actions.slice(0, currentActionIndex + 1)
     }
@@ -59,20 +55,22 @@ export class CanvasHistory {
     this.actions.push(newAction)
     this.currentIndex = newAction.id
 
-    console.log(`Added action ${newAction.id}, current index: ${this.currentIndex}, total actions: ${this.actions.length}`)
+    console.log(
+      `Added action ${newAction.id}, current index: ${this.currentIndex}, total actions: ${this.actions.length}`,
+    )
   }
 
   public undo(): boolean {
-    console.log('=== UNDO START ===')
-    console.log('Current index:', this.currentIndex, 'Total actions:', this.actions.length)
+    console.log("=== UNDO START ===")
+    console.log("Current index:", this.currentIndex, "Total actions:", this.actions.length)
 
     if (this.currentIndex === 0) {
-      console.log('Already at empty state, nothing to undo')
+      console.log("Already at empty state, nothing to undo")
       return false
     }
 
     // Find the previous action
-    const currentActionIndex = this.actions.findIndex(a => a.id === this.currentIndex)
+    const currentActionIndex = this.actions.findIndex((a) => a.id === this.currentIndex)
     if (currentActionIndex <= 0) {
       // Go to empty state
       this.currentIndex = 0
@@ -81,32 +79,32 @@ export class CanvasHistory {
       this.currentIndex = this.actions[currentActionIndex - 1].id
     }
 
-    console.log('After undo, current index:', this.currentIndex)
+    console.log("After undo, current index:", this.currentIndex)
     this.redrawFromMemory()
-    console.log('=== UNDO END ===')
+    console.log("=== UNDO END ===")
 
     return true
   }
 
   public redo(): boolean {
-    console.log('=== REDO START ===')
-    console.log('Current index:', this.currentIndex, 'Total actions:', this.actions.length)
+    console.log("=== REDO START ===")
+    console.log("Current index:", this.currentIndex, "Total actions:", this.actions.length)
 
     // Find the next action after current
-    const currentActionIndex = this.actions.findIndex(a => a.id === this.currentIndex)
+    const currentActionIndex = this.actions.findIndex((a) => a.id === this.currentIndex)
     const nextIndex = currentActionIndex + 1
 
     if (nextIndex >= this.actions.length) {
-      console.log('No actions to redo')
+      console.log("No actions to redo")
       return false
     }
 
     // Move to next action
     this.currentIndex = this.actions[nextIndex].id
-    console.log('After redo, current index:', this.currentIndex)
-    
+    console.log("After redo, current index:", this.currentIndex)
+
     this.redrawFromMemory()
-    console.log('=== REDO END ===')
+    console.log("=== REDO END ===")
 
     return true
   }
@@ -116,7 +114,7 @@ export class CanvasHistory {
   }
 
   public canRedo(): boolean {
-    const currentActionIndex = this.actions.findIndex(a => a.id === this.currentIndex)
+    const currentActionIndex = this.actions.findIndex((a) => a.id === this.currentIndex)
     return currentActionIndex < this.actions.length - 1
   }
 
@@ -127,45 +125,45 @@ export class CanvasHistory {
     this.engine._clear()
   }
 
-
   private redrawFromMemory() {
-    console.log('=== REDRAW FROM MEMORY START ===')
-    console.log('Redrawing from memory, actions:', this.actions.length)
-    console.log('Current index:', this.currentIndex)
+    console.log("=== REDRAW FROM MEMORY START ===")
+    console.log("Redrawing from memory, actions:", this.actions.length)
+    console.log("Current index:", this.currentIndex)
 
-    console.log('About to clear canvas...')
+    console.log("About to clear canvas...")
     this.engine._clear()
-    console.log('Canvas cleared')
+    console.log("Canvas cleared")
 
     // Get actions to replay up to current index
     const actionsToReplay = this.getActionsToReplay()
-    console.log('Actions to replay:', actionsToReplay.length, 'up to index:', this.currentIndex)
-    console.log('Action types:', actionsToReplay.map(a => a.tool))
+    console.log("Actions to replay:", actionsToReplay.length, "up to index:", this.currentIndex)
+    console.log(
+      "Action types:",
+      actionsToReplay.map((a) => a.tool),
+    )
 
     if (actionsToReplay.length === 0) {
-      console.log('No actions to replay - canvas will remain clear')
+      console.log("No actions to replay - canvas will remain clear")
     } else {
       // Replay actions using proper layer management for each individual action
       for (const action of actionsToReplay) {
-        console.log('Executing action:', action.tool)
+        console.log("Executing action:", action.tool)
         this.executeAction(action)
       }
     }
 
     // Final render to display everything
-    console.log('About to force render...')
+    console.log("About to force render...")
     this.engine.forceRender("draw")
-    console.log('Force render complete')
+    console.log("Force render complete")
 
-    console.log('=== REDRAW FROM MEMORY END ===')
+    console.log("=== REDRAW FROM MEMORY END ===")
   }
 
   private getActionsToReplay(): ToolInfo[] {
     // Get actions up to current index
-    const currentActionIndex = this.actions.findIndex(a => a.id === this.currentIndex)
-    const actionsToReplay = currentActionIndex >= 0 
-      ? this.actions.slice(0, currentActionIndex + 1)
-      : []
+    const currentActionIndex = this.actions.findIndex((a) => a.id === this.currentIndex)
+    const actionsToReplay = currentActionIndex >= 0 ? this.actions.slice(0, currentActionIndex + 1) : []
 
     // Find the last clear action
     let lastClearIndex = -1
@@ -177,11 +175,9 @@ export class CanvasHistory {
     }
 
     // Return actions after the last clear (or all actions if no clear found)
-    const relevantActions = lastClearIndex === -1
-      ? actionsToReplay
-      : actionsToReplay.slice(lastClearIndex + 1)
+    const relevantActions = lastClearIndex === -1 ? actionsToReplay : actionsToReplay.slice(lastClearIndex + 1)
 
-    return relevantActions.map(a => a.action)
+    return relevantActions.map((a) => a.action)
   }
 
   private isLineDrawInfo(action: ToolInfo): action is LineDrawInfo {
@@ -197,14 +193,14 @@ export class CanvasHistory {
     // Execute line drawing action
     const tool = this.engine.tools[action.tool]
 
-    if (tool && 'drawFromHistory' in tool) {
+    if (tool && "drawFromHistory" in tool) {
       if (this.isLineDrawInfo(action)) {
         try {
           this.engine.drawToActiveLayer(() => {
             tool.drawFromHistory(action.path, action.options)
           }, action.tool)
         } catch (error) {
-          console.error('Error in drawFromHistory:', error)
+          console.error("Error in drawFromHistory:", error)
         }
       }
     }
@@ -214,12 +210,14 @@ export class CanvasHistory {
   public loadHistory(historyState: HistoryState) {
     this.actions = historyState.actions
     this.currentIndex = historyState.currentIndex
-    
+
     // Update nextId to be higher than any existing ID
-    this.nextId = Math.max(0, ...this.actions.map(a => a.id)) + 1
-    
-    console.log(`Loaded history: ${this.actions.length} actions, current index: ${this.currentIndex}, next ID: ${this.nextId}`)
-    
+    this.nextId = Math.max(0, ...this.actions.map((a) => a.id)) + 1
+
+    console.log(
+      `Loaded history: ${this.actions.length} actions, current index: ${this.currentIndex}, next ID: ${this.nextId}`,
+    )
+
     // Only redraw if we're not at empty state (currentIndex > 0)
     if (this.currentIndex > 0) {
       this.redrawFromMemory()
@@ -236,7 +234,7 @@ export class CanvasHistory {
   }
 
   public getRedoLength(): number {
-    const currentActionIndex = this.actions.findIndex(a => a.id === this.currentIndex)
+    const currentActionIndex = this.actions.findIndex((a) => a.id === this.currentIndex)
     return this.actions.length - 1 - currentActionIndex
   }
 
@@ -247,13 +245,13 @@ export class CanvasHistory {
   public getHistoryState(): HistoryState {
     return {
       actions: [...this.actions],
-      currentIndex: this.currentIndex
+      currentIndex: this.currentIndex,
     }
   }
 
   // Debug properties - only for debugging, not for business logic
   public get debugActions() {
-    return [...this.actions]  // Return copy
+    return [...this.actions] // Return copy
   }
 
   public get debugCurrentIndex() {

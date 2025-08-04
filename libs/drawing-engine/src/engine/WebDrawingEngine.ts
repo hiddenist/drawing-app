@@ -176,13 +176,17 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     handler?: (event: DrawingEvent<HTMLElementEventMap[K]>) => void,
     element: HTMLElement = this.root,
   ) {
-    element.addEventListener(eventName, (event) => {
-      event.preventDefault()
-      handler?.bind(this)({
-        event,
-        position: this.getCanvasPosition(event),
-      })
-    }, { passive: false })
+    element.addEventListener(
+      eventName,
+      (event) => {
+        event.preventDefault()
+        handler?.bind(this)({
+          event,
+          position: this.getCanvasPosition(event),
+        })
+      },
+      { passive: false },
+    )
   }
 
   private getCanvasPosition(event: Event): Vec2 {

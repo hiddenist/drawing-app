@@ -84,9 +84,13 @@ export class ColorPicker {
     })
 
     let lastMoveEvent: PointerEvent | null = null
-    canvas.addEventListener("touchmove", (e) => {
-      e.preventDefault()
-    }, { passive: false })
+    canvas.addEventListener(
+      "touchmove",
+      (e) => {
+        e.preventDefault()
+      },
+      { passive: false },
+    )
     canvas.addEventListener("pointermove", (e) => {
       const isClicking = e.buttons === 1
       if (!isClicking) {

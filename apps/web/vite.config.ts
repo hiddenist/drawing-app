@@ -12,7 +12,7 @@ export default defineConfig({
     host: true,
   },
   worker: {
-    format: 'es',
+    format: "es",
   },
   esbuild: {
     jsxFactory: "createDomElement",

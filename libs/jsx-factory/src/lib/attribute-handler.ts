@@ -5,7 +5,7 @@ import { escapeHtml } from "./escape-html"
 export interface SpecialAttribute {
   name: string
   value: any
-  type: 'ref' | 'style' | 'boolean' | 'regular'
+  type: "ref" | "style" | "boolean" | "regular"
 }
 
 export class AttributeHandler {
@@ -16,7 +16,7 @@ export class AttributeHandler {
     for (const [name, val] of Object.entries(attrs)) {
       const mappedName = escapeHtml(this.mapAttributeName(name))
       const special = this.categorizeAttribute(mappedName, val)
-      
+
       this.applyAttribute(element, special)
     }
   }
@@ -27,7 +27,7 @@ export class AttributeHandler {
   private mapAttributeName(name: string): string {
     const mappings = {
       tabIndex: "tabindex",
-      className: "class", 
+      className: "class",
       readOnly: "readonly",
     } as const
 
@@ -36,35 +36,35 @@ export class AttributeHandler {
 
   private categorizeAttribute(name: string, value: any): SpecialAttribute {
     if (name === "ref") {
-      return { name, value, type: 'ref' }
+      return { name, value, type: "ref" }
     }
-    
+
     if (name === "style") {
-      return { name, value, type: 'style' }
+      return { name, value, type: "style" }
     }
-    
+
     if (value === true) {
-      return { name, value, type: 'boolean' }
+      return { name, value, type: "boolean" }
     }
-    
-    return { name, value, type: 'regular' }
+
+    return { name, value, type: "regular" }
   }
 
   private applyAttribute(element: HTMLElement, attr: SpecialAttribute): void {
     switch (attr.type) {
-      case 'ref':
+      case "ref":
         this.applyRef(element, attr.value)
         break
-        
-      case 'style':
+
+      case "style":
         this.applyStyle(element, attr.value)
         break
-        
-      case 'boolean':
+
+      case "boolean":
         this.applyBooleanAttribute(element, attr.name)
         break
-        
-      case 'regular':
+
+      case "regular":
         this.applyRegularAttribute(element, attr.name, attr.value)
         break
     }

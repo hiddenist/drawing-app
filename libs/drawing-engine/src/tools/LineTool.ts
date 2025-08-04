@@ -140,7 +140,7 @@ export class LineTool {
 
     const pressure = this.options.pressureEnabled ? path.map(([, , pressure]) => pressure ?? 0.0) : undefined
     const points = path.map(([x, y]) => [x, y]).flat()
-    
+
     try {
       // Draw directly to the program without using engine.draw() to avoid clearing layers
       this.program.draw(
@@ -151,7 +151,7 @@ export class LineTool {
         options,
       )
     } catch (error) {
-      console.error('Error in LineTool.drawFromHistory:', error)
+      console.error("Error in LineTool.drawFromHistory:", error)
     }
   }
 

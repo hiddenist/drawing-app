@@ -128,19 +128,19 @@ export class DrawingEngine {
     try {
       // Try to create persistent history first
       this.history = await CanvasHistoryPersistent.create(this)
-      console.log('Initialized persistent history')
+      console.log("Initialized persistent history")
     } catch (error) {
-      console.warn('Failed to initialize persistent history, falling back to memory-only mode:', error)
+      console.warn("Failed to initialize persistent history, falling back to memory-only mode:", error)
       // Fallback to memory-only history
       this.history = new CanvasHistory(this)
-      console.log('Initialized memory-only history')
+      console.log("Initialized memory-only history")
     }
 
     // Notify that history is ready
     this.callListeners(EventType.historyReady, {
       hasHistory: this.history.hasHistory(),
       canUndo: this.history.canUndo(),
-      canRedo: this.history.canRedo()
+      canRedo: this.history.canRedo(),
     })
   }
 
@@ -339,7 +339,7 @@ export class DrawingEngine {
       // Fire undo event with current state
       this.callListeners(EventType.undo, {
         toolInfo: null, // We could get the last action if needed
-        canUndo: this.canUndo()
+        canUndo: this.canUndo(),
       })
     }
 
@@ -353,7 +353,7 @@ export class DrawingEngine {
       // Fire redo event with current state
       this.callListeners(EventType.redo, {
         toolInfo: null, // We could get the current action if needed
-        canRedo: this.canRedo()
+        canRedo: this.canRedo(),
       })
     }
 
@@ -371,7 +371,6 @@ export class DrawingEngine {
   public clearHistory() {
     return this.history?.clearHistory()
   }
-
 
   // Debug access to history
   public get historyDebug() {

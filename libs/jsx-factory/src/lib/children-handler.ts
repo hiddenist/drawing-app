@@ -23,7 +23,7 @@ export class ChildrenHandler {
   }
 
   private appendChild(element: HTMLElement, child: HTMLElement | string): void {
-    if (typeof child === 'string') {
+    if (typeof child === "string") {
       element.appendChild(document.createTextNode(child))
     } else if (child.nodeType != null) {
       // It's already a DOM node

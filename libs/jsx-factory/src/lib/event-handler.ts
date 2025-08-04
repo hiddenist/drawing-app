@@ -6,7 +6,7 @@ export interface EventOptions {
 }
 
 export interface ParsedEventAttribute {
-  type: 'event'
+  type: "event"
   eventName: string
   handler: EventListener
   options?: EventOptions
@@ -28,22 +28,27 @@ export class EventAttributeParser {
     // Second pass: categorize all attributes
     const categorizedAttrs = Object.entries(attrs)
       .map(([name, value]) => this.categorizeAttribute(name, value))
-      .filter(attr => attr != null)
+      .filter((attr) => attr != null)
 
-    const eventHandlers = categorizedAttrs
-      .filter((attr): attr is ParsedEventAttribute => attr.type === 'event')
+    const eventHandlers = categorizedAttrs.filter((attr): attr is ParsedEventAttribute => attr.type === "event")
 
     const nonEventAttrs = categorizedAttrs
-      .filter(attr => attr.type === 'regular')
-      .reduce((acc, attr) => {
-        acc[attr.name] = attr.value
-        return acc
-      }, {} as { [key: string]: any })
+      .filter((attr) => attr.type === "regular")
+      .reduce(
+        (acc, attr) => {
+          acc[attr.name] = attr.value
+          return acc
+        },
+        {} as { [key: string]: any },
+      )
 
     return { eventHandlers, nonEventAttrs }
   }
 
-  private categorizeAttribute(name: string, value: any): ParsedEventAttribute | { type: 'regular'; name: string; value: any } | null {
+  private categorizeAttribute(
+    name: string,
+    value: any,
+  ): ParsedEventAttribute | { type: "regular"; name: string; value: any } | null {
     // Skip event option attributes (already processed)
     if (this.isEventOptionAttribute(name)) {
       return null
@@ -53,18 +58,18 @@ export class EventAttributeParser {
     if (this.isEventHandler(name, value)) {
       const eventName = name.toLowerCase().slice(2)
       return {
-        type: 'event' as const,
+        type: "event" as const,
         eventName,
         handler: value,
-        options: this.getEventOptions(eventName)
+        options: this.getEventOptions(eventName),
       }
     }
 
     // Regular attributes
     return {
-      type: 'regular' as const,
+      type: "regular" as const,
       name,
-      value
+      value,
     }
   }
 
@@ -78,19 +83,22 @@ export class EventAttributeParser {
     }
   }
 
-  private parseEventOption(name: string, value: any): { eventName: string; optionType: 'passive' | 'capture'; value: any } | null {
+  private parseEventOption(
+    name: string,
+    value: any,
+  ): { eventName: string; optionType: "passive" | "capture"; value: any } | null {
     const match = name.toLowerCase().match(/^on([a-z]+)(passive|capture)$/)
 
     if (!match) return null
 
     return {
       eventName: match[1],
-      optionType: match[2] as 'passive' | 'capture',
-      value
+      optionType: match[2] as "passive" | "capture",
+      value,
     }
   }
 
-  private setEventOption(eventName: string, optionType: 'passive' | 'capture', value: any): void {
+  private setEventOption(eventName: string, optionType: "passive" | "capture", value: any): void {
     if (!this.eventOptions[eventName]) {
       this.eventOptions[eventName] = {}
     }
@@ -102,7 +110,7 @@ export class EventAttributeParser {
   }
 
   private isEventHandler(name: string, val: any): boolean {
-    return name.startsWith("on") && typeof val === 'function'
+    return name.startsWith("on") && typeof val === "function"
   }
 
   private getEventOptions(eventName: string): EventOptions | undefined {
@@ -117,7 +125,7 @@ export class EventAttributeParser {
   }
 
   private getDefaultEventOptions(eventName: string): EventOptions | undefined {
-    const scrollBlockingEvents = ['wheel', 'touchstart', 'touchmove', 'touchend']
+    const scrollBlockingEvents = ["wheel", "touchstart", "touchmove", "touchend"]
     const isScrollBlocking = scrollBlockingEvents.includes(eventName)
 
     return isScrollBlocking ? { passive: false } : undefined

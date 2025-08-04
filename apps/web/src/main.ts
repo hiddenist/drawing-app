@@ -267,7 +267,7 @@ function makeToolbar(
     redoButton.disabled = !canRedo
   })
   options.addListener(EventType.historyReady, ({ hasHistory, canUndo, canRedo }) => {
-    console.log('History ready - hasHistory:', hasHistory, 'canUndo:', canUndo, 'canRedo:', canRedo)
+    console.log("History ready - hasHistory:", hasHistory, "canUndo:", canUndo, "canRedo:", canRedo)
 
     // Remove loading state and set proper labels
     undoButton.innerText = "Undo"
