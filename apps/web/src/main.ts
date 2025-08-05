@@ -49,7 +49,7 @@ function main() {
       // Check if last action was already a clear (canvas already cleared)
       const actions = engine.getHistoryActions()
       const lastAction = actions.length > 0 ? actions[actions.length - 1].action : null
-      
+
       if (lastAction && lastAction.tool === "clear") {
         if (confirm("Canvas is already clear. Do you want to permanently clear all history?")) {
           engine.clearHistory()
@@ -279,7 +279,7 @@ function makeToolbar(
     // Check if last action was already a clear (canvas already cleared)
     const actions = options.engine.getHistoryActions()
     const lastAction = actions.length > 0 ? actions[actions.length - 1].action : null
-    
+
     if (lastAction && lastAction.tool === "clear") {
       if (confirm("Canvas is already clear. Do you want to permanently clear all history?")) {
         options.engine.clearHistory()
@@ -325,7 +325,7 @@ function makeToolbar(
         // Check if last action was already a clear (canvas already cleared)
         const actions = options.engine.getHistoryActions()
         const lastAction = actions.length > 0 ? actions[actions.length - 1].action : null
-        
+
         if (lastAction && lastAction.tool === "clear") {
           if (confirm("Canvas is already clear. Do you want to permanently clear all history?")) {
             options.engine.clearHistory()
