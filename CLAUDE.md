@@ -63,3 +63,12 @@ This is a WebGL-based drawing application structured as a monorepo with the foll
 - Custom shader programs in `*/shaders/` directories
 - Shader source maps generated for debugging
 - Programs extend from base classes in `@libs/shared`
+
+# important-instruction-reminders
+
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.
+NEVER use type assertions like `as any` that circumvent type safety.
+Avoid overusing the word "comprehensive" in descriptions and commit messages.

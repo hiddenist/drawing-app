@@ -208,6 +208,34 @@ aside canvas {
   flex: 1;
 }
 
+.toolbar .input-tray button {
+  padding: 0.5rem 1rem;
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.toolbar .input-tray button:hover:not(:disabled) {
+  background: #444;
+}
+
+.toolbar .input-tray button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar .input-tray .icon-button {
+  padding: 0.5rem;
+  min-width: 40px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .toolbar .recent-color-tray {
   display: flex;
   gap: 0.5rem;

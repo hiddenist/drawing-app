@@ -133,6 +133,28 @@ export class LineTool {
     }
   }
 
+  public drawFromHistory(path: LineDrawInfo["path"], options: LineDrawInfo["options"]) {
+    if (path.length < 2) {
+      return
+    }
+
+    const pressure = this.options.pressureEnabled ? path.map(([, , pressure]) => pressure ?? 0.0) : undefined
+    const points = path.map(([x, y]) => [x, y]).flat()
+
+    try {
+      // Draw directly to the program without using engine.draw() to avoid clearing layers
+      this.program.draw(
+        {
+          points: points,
+          pressure: pressure && this.hasPressure(pressure) ? pressure : undefined,
+        },
+        options,
+      )
+    } catch (error) {
+      console.error("Error in LineTool.drawFromHistory:", error)
+    }
+  }
+
   private addPosition(position: Readonly<InputPoint>) {
     this.addPositions([[...position]])
   }
