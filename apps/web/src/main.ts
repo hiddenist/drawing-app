@@ -5,6 +5,8 @@ import { ColorPicker } from "@libs/color-picker"
 import { Color } from "@libs/shared"
 
 import { SliderInput } from "./components/SliderInput"
+import { HistoryPanel } from "./components/HistoryPanel"
+import { ActionMenu } from "./components/ActionMenu"
 
 main()
 
@@ -34,6 +36,7 @@ function main() {
   }
   makeToolbar(sidebarRoot, {
     state,
+    engine,
     initialColor: engine.getCurrentColor(),
     initialOpacity: (engine.getOpacity() * 100) / 255,
 
@@ -43,6 +46,16 @@ function main() {
     },
 
     onClear() {
+      // Check if last action was already a clear (canvas already cleared)
+      const actions = engine.getHistoryActions()
+      const lastAction = actions.length > 0 ? actions[actions.length - 1].action : null
+      
+      if (lastAction && lastAction.tool === "clear") {
+        if (confirm("Canvas is already clear. Do you want to permanently clear all history?")) {
+          engine.clearHistory()
+        }
+        return
+      }
       engine.clearCanvas()
     },
     onSetOpacity(opacity) {
@@ -58,8 +71,8 @@ function main() {
     onSetTool(tool) {
       engine.setTool(tool)
     },
-    onLoadImage(image) {
-      engine.loadImage(image)
+    onLoadImage(image, imageName) {
+      engine.loadImage(image, imageName)
     },
     onExport(name) {
       const url = engine.getDataUri()
@@ -94,6 +107,7 @@ function makeToolbar(
   root: HTMLElement,
   options: {
     state: { hasDrawn: boolean }
+    engine: WebDrawingEngine
     initialColor?: Color
     initialOpacity?: number
     initialTool?: ToolName
@@ -107,7 +121,7 @@ function makeToolbar(
     onSetColor: (color: Color) => void
     onSetTool: (tool: ToolName) => void
     onExport: (name: string) => void
-    onLoadImage: (image: HTMLImageElement) => void
+    onLoadImage: (image: HTMLImageElement, imageName?: string) => void
 
     onUndo: () => void
     onRedo: () => void
@@ -115,9 +129,6 @@ function makeToolbar(
     addListener: WebDrawingEngine["addListener"]
   },
 ) {
-  const localState = {
-    title: "My Drawing",
-  }
   const toolbar = document.createElement("div")
   toolbar.classList.add("toolbar")
   root.append(toolbar)
@@ -209,40 +220,21 @@ function makeToolbar(
       image.src = result
     }
     image.onload = () => {
-      options.onLoadImage(image)
+      options.onLoadImage(image, file.name)
     }
     reader.readAsDataURL(file)
   })
 
-  const exportButton = document.createElement("button")
-  exportButton.classList.add("export-button")
-  const setExportButtonTitle = () => {
-    exportButton.innerText = options.state.hasDrawn ? "Export" : "Import"
-  }
-  hasDrawnCallbacks.add(setExportButtonTitle)
-  setExportButtonTitle()
-  exportButton.style.minWidth = "6chr"
-  exportButton.addEventListener("click", () => {
-    if (!options.state.hasDrawn) {
-      importInput.click()
-      return
-    }
-    const title = prompt("What would you like to name the image?", localState.title)
-    if (!title) return
-    localState.title = title
-    const filename = title.replace(/[^a-z0-9]/gi, "_").toLowerCase()
-    options.onExport(`${filename || "drawing"}.png`)
-  })
-  inputTray.append(exportButton)
-
   const undoButton = document.createElement("button")
   const redoButton = document.createElement("button")
-  undoButton.classList.add("undo-button")
-  redoButton.classList.add("redo-button")
-  undoButton.innerText = "Undo"
-  redoButton.innerText = "Redo"
+  undoButton.classList.add("undo-button", "icon-button")
+  redoButton.classList.add("redo-button", "icon-button")
+  undoButton.innerHTML = "↶"
+  redoButton.innerHTML = "↷"
   undoButton.disabled = true
   redoButton.disabled = true
+  undoButton.title = "Undo"
+  redoButton.title = "Redo"
 
   inputTray.append(undoButton)
   inputTray.append(redoButton)
@@ -269,10 +261,6 @@ function makeToolbar(
   options.addListener(EventType.historyReady, ({ hasHistory, canUndo, canRedo }) => {
     console.log("History ready - hasHistory:", hasHistory, "canUndo:", canUndo, "canRedo:", canRedo)
 
-    // Remove loading state and set proper labels
-    undoButton.innerText = "Undo"
-    redoButton.innerText = "Redo"
-
     // Set button states based on history
     undoButton.disabled = !canUndo
     redoButton.disabled = !canRedo
@@ -283,10 +271,22 @@ function makeToolbar(
   })
 
   const clearButton = document.createElement("button")
-  clearButton.classList.add("clear-button")
-  clearButton.innerText = "Clear"
+  clearButton.classList.add("clear-button", "icon-button")
+  clearButton.innerHTML = "🗑"
+  clearButton.title = "Clear Canvas"
   clearButton.addEventListener("click", (e) => {
     e.preventDefault()
+    // Check if last action was already a clear (canvas already cleared)
+    const actions = options.engine.getHistoryActions()
+    const lastAction = actions.length > 0 ? actions[actions.length - 1].action : null
+    
+    if (lastAction && lastAction.tool === "clear") {
+      if (confirm("Canvas is already clear. Do you want to permanently clear all history?")) {
+        options.engine.clearHistory()
+        setHasDrawn(false)
+      }
+      return
+    }
     options.onClear()
     setHasDrawn(false)
   })
@@ -294,6 +294,101 @@ function makeToolbar(
   options.addListener(EventType.draw, () => {
     setHasDrawn(true)
   })
+
+  const menuButton = document.createElement("button")
+  menuButton.classList.add("menu-button", "icon-button")
+  menuButton.innerHTML = "☰"
+  menuButton.title = "Menu"
+  menuButton.addEventListener("click", (e) => {
+    e.preventDefault()
+    openActionMenu()
+  })
+  inputTray.append(menuButton)
+
+  function openActionMenu() {
+    // Create overlay
+    const overlay = document.createElement("div")
+    overlay.classList.add("action-menu-overlay")
+
+    // Get current undo/redo state
+    const canUndo = options.engine.canUndo()
+    const canRedo = options.engine.canRedo()
+
+    // Create action menu
+    const menu = ActionMenu({
+      onClose: () => {
+        closeActionMenu()
+      },
+      onUndo: options.onUndo,
+      onRedo: options.onRedo,
+      onClear: () => {
+        // Check if last action was already a clear (canvas already cleared)
+        const actions = options.engine.getHistoryActions()
+        const lastAction = actions.length > 0 ? actions[actions.length - 1].action : null
+        
+        if (lastAction && lastAction.tool === "clear") {
+          if (confirm("Canvas is already clear. Do you want to permanently clear all history?")) {
+            options.engine.clearHistory()
+            setHasDrawn(false)
+          }
+          return
+        }
+        options.onClear()
+        setHasDrawn(false)
+      },
+      onHistory: openHistoryPanel,
+      onExport: options.onExport,
+      onImport: () => {
+        importInput.click()
+      },
+      canUndo,
+      canRedo,
+    })
+
+    function closeActionMenu() {
+      menu.cleanup()
+      overlay.remove()
+    }
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        closeActionMenu()
+      }
+    })
+
+    // Put menu inside overlay
+    overlay.appendChild(menu)
+    document.body.appendChild(overlay)
+  }
+
+  function openHistoryPanel() {
+    // Create overlay
+    const overlay = document.createElement("div")
+    overlay.classList.add("history-overlay")
+
+    // Create history panel
+    const panel = HistoryPanel({
+      engine: options.engine,
+      onClose: () => {
+        closePanel()
+      },
+    })
+
+    function closePanel() {
+      panel.cleanup()
+      overlay.remove()
+    }
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        closePanel()
+      }
+    })
+
+    // Put panel inside overlay
+    overlay.appendChild(panel)
+    document.body.appendChild(overlay)
+  }
 
   const opacitySlider = SliderInput({
     className: "opacity-slider",

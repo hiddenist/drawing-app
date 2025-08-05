@@ -41,6 +41,7 @@ export enum EventType {
   release = "release",
   cancel = "cancel",
   historyReady = "historyReady",
+  historyDeleted = "historyDeleted",
 }
 
 export interface DrawingEngineEventMap {
@@ -56,6 +57,7 @@ export interface DrawingEngineEventMap {
   [EventType.release]: { position: Readonly<InputPoint> }
   [EventType.cancel]: undefined
   [EventType.historyReady]: { hasHistory: boolean; canUndo: boolean; canRedo: boolean }
+  [EventType.historyDeleted]: { actionId: number; remainingActions: number }
 }
 export type DrawingEngineEvent<T extends EventType> = {
   eventName: T
@@ -262,10 +264,56 @@ export class DrawingEngine {
     return this
   }
 
-  public loadImage(image: SourceImage) {
+  public loadImage(image: SourceImage, imageName?: string) {
     const imageLayer = new Layer(this.gl, { ...this.activeDrawingLayer.settings }, image)
     this.activeDrawingLayer = imageLayer
     this.commitToSavedLayer()
+
+    // Convert image to base64 for history storage
+    const imageData = this.imageToBase64(image)
+
+    // Add import action to history
+    this.addHistory({ tool: "import", imageName, imageData })
+  }
+
+  public loadImageFromHistory(image: SourceImage) {
+    const imageLayer = new Layer(this.gl, { ...this.activeDrawingLayer.settings }, image)
+    this.activeDrawingLayer = imageLayer
+    this.commitToSavedLayer()
+    this.render("draw")
+  }
+
+  private imageToBase64(image: SourceImage): string {
+    // If it's already a data URL, return it as is
+    if (image instanceof HTMLImageElement && image.src.startsWith("data:")) {
+      return image.src
+    }
+
+    // Create a canvas to convert the image to base64
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
+    if (!ctx) {
+      throw new Error("Failed to get 2D context for image conversion")
+    }
+
+    // Set canvas size to match image
+    if (image instanceof HTMLImageElement) {
+      canvas.width = image.naturalWidth || image.width
+      canvas.height = image.naturalHeight || image.height
+    } else if (image instanceof HTMLCanvasElement) {
+      canvas.width = image.width
+      canvas.height = image.height
+    } else {
+      // For other types, use a default size
+      canvas.width = 300
+      canvas.height = 150
+    }
+
+    // Draw the image onto the canvas
+    ctx.drawImage(image, 0, 0)
+
+    // Convert to base64
+    return canvas.toDataURL("image/png")
   }
 
   public resizeCanvas(width: number, height: number) {
@@ -370,6 +418,24 @@ export class DrawingEngine {
 
   public clearHistory() {
     return this.history?.clearHistory()
+  }
+
+  public deleteHistoryAction(actionId: number): boolean {
+    const result = this.history?.deleteAction(actionId) ?? false
+
+    if (result) {
+      // Fire delete event
+      this.callListeners(EventType.historyDeleted, {
+        actionId,
+        remainingActions: this.history?.getHistoryLength() ?? 0,
+      })
+    }
+
+    return result
+  }
+
+  public getHistoryActions() {
+    return this.history?.getAllActions() ?? []
   }
 
   // Debug access to history

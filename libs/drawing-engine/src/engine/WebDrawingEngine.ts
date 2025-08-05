@@ -96,14 +96,14 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     return this
   }
 
-  public loadImage(image: SourceImage): void {
+  public loadImage(image: SourceImage, imageName?: string): void {
     // const size = getImageDimensions(image) ?? { width: 0, height: 0 }
     // if (size.width > this.canvas.width || size.height > this.canvas.height) {
     //   if (confirm("The image is larger than the canvas. Do you want to resize the canvas?")) {
     //     this.resizeCanvas(size.width / this.pixelDensity, size.height / this.pixelDensity)
     //   }
     // }
-    super.loadImage(image)
+    super.loadImage(image, imageName)
   }
 
   private bindBrowserEvents() {

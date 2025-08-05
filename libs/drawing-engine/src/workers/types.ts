@@ -22,7 +22,13 @@ export interface SerializedClearInfo {
   tool: "clear"
 }
 
-export type SerializedToolInfo = SerializedLineDrawInfo | SerializedClearInfo
+export interface SerializedImportInfo {
+  tool: "import"
+  imageName?: string
+  imageData: string
+}
+
+export type SerializedToolInfo = SerializedLineDrawInfo | SerializedClearInfo | SerializedImportInfo
 
 // Serialized history action with ID
 export interface SerializedHistoryAction {
@@ -39,12 +45,21 @@ export interface SerializedHistoryState {
 // Worker message types
 export interface WorkerMessage {
   id: string
-  type: "SAVE_ACTION" | "SAVE_STATE" | "LOAD_RECENT" | "LOAD_STATE" | "CLEAR_HISTORY" | "DELETE_OLD" | "FLUSH_BATCH"
+  type:
+    | "SAVE_ACTION"
+    | "SAVE_STATE"
+    | "LOAD_RECENT"
+    | "LOAD_STATE"
+    | "CLEAR_HISTORY"
+    | "DELETE_OLD"
+    | "FLUSH_BATCH"
+    | "DELETE_ACTION"
   data?: {
     action?: SerializedToolInfo
     state?: SerializedHistoryState
     limit?: number
     keepCount?: number
+    actionId?: number
   }
 }
 

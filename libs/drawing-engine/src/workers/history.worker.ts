@@ -110,6 +110,15 @@ class HistoryWorker {
           this.postMessage({ id, type: "BATCH_FLUSHED", success: true })
           break
 
+        case "DELETE_ACTION":
+          if (data?.actionId !== undefined) {
+            await this.deleteActionFromState(data.actionId)
+            this.postMessage({ id, type: "ACTION_DELETED", success: true })
+          } else {
+            this.postMessage({ id, type: "ERROR", error: "No action ID provided" })
+          }
+          break
+
         default:
           this.postMessage({ id, type: "ERROR", error: `Unknown message type: ${type}` })
       }
@@ -225,6 +234,49 @@ class HistoryWorker {
     for (const key of keysToDelete) {
       await this.db.deleteEntry(key)
     }
+  }
+
+  private async deleteActionFromState(actionId: number) {
+    if (!this.db) throw new Error("Database not initialized")
+
+    // Load current state
+    const currentState = await this.loadState()
+    if (!currentState) {
+      console.warn("No state found to delete action from")
+      return
+    }
+
+    // Find and remove the action
+    const actionIndex = currentState.actions.findIndex((a) => a.id === actionId)
+    if (actionIndex === -1) {
+      console.warn(`Action with ID ${actionId} not found in state`)
+      return
+    }
+
+    // Remove the action
+    currentState.actions.splice(actionIndex, 1)
+
+    // Adjust current index if needed (similar logic to base class)
+    if (currentState.currentIndex === actionId) {
+      // If we're deleting the current action, move to the previous one
+      if (actionIndex > 0) {
+        currentState.currentIndex = currentState.actions[actionIndex - 1].id
+      } else {
+        // If we deleted the first action, move to empty state or next action
+        currentState.currentIndex = currentState.actions.length > 0 ? currentState.actions[0].id : 0
+      }
+    } else if (currentState.currentIndex > actionId) {
+      // Current index remains the same ID, but we need to check if it still exists
+      const currentStillExists = currentState.actions.some((a) => a.id === currentState.currentIndex)
+      if (!currentStillExists) {
+        // Find the closest previous action
+        const validActions = currentState.actions.filter((a) => a.id < currentState.currentIndex)
+        currentState.currentIndex = validActions.length > 0 ? validActions[validActions.length - 1].id : 0
+      }
+    }
+
+    // Save the updated state
+    await this.saveState(currentState)
   }
 
   private postMessage(message: WorkerResponse) {

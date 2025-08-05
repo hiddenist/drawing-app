@@ -265,6 +265,23 @@ export class CanvasHistoryPersistent extends CanvasHistory {
     }
   }
 
+  // Override deleteAction to also update persistence
+  public deleteAction(actionId: number): boolean {
+    // Call parent to handle memory deletion and redraw
+    const result = super.deleteAction(actionId)
+
+    if (result && this.isWorkerReady) {
+      // Update persistence to match memory state
+      this.sendToWorker("DELETE_ACTION", { actionId }).catch((error) => {
+        console.warn("Failed to delete action from persistence:", error)
+        // Consider rebuilding persistence from memory if delete fails
+        this.rebuildPersistenceFromMemory()
+      })
+    }
+
+    return result
+  }
+
   // Cleanup method
   public dispose() {
     if (this.worker) {
@@ -286,6 +303,10 @@ export class CanvasHistoryPersistent extends CanvasHistory {
   private serializeToolInfo(toolInfo: ToolInfo): SerializedToolInfo {
     if (toolInfo.tool === "clear") {
       return { tool: "clear" }
+    }
+
+    if (toolInfo.tool === "import") {
+      return { tool: "import", imageName: toolInfo.imageName, imageData: toolInfo.imageData }
     }
 
     // Only serialize brush and eraser tools (eyedropper doesn't get stored)
@@ -316,7 +337,7 @@ export class CanvasHistoryPersistent extends CanvasHistory {
 
   // Type guards and conversion methods
   private isSerializedLineDrawInfo(action: SerializedToolInfo): action is SerializedLineDrawInfo {
-    return action.tool !== "clear"
+    return action.tool !== "clear" && action.tool !== "import"
   }
 
   private convertSerializedPath(serializedPath: Array<[number, number, number?]>): InputPoint[] {
@@ -352,9 +373,13 @@ export class CanvasHistoryPersistent extends CanvasHistory {
       return action
     }
 
+    if (action.tool === "import") {
+      return action
+    }
+
     // Use type guard to ensure we have a line action
     if (!this.isSerializedLineDrawInfo(action)) {
-      throw new Error("Expected SerializedLineDrawInfo but got clear action")
+      throw new Error("Expected SerializedLineDrawInfo but got non-line action")
     }
 
     const lineAction = action

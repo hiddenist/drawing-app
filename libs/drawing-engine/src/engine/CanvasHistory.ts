@@ -3,7 +3,8 @@ import { LineDrawInfo } from "../tools/LineTool"
 import { DrawingEngine, EventType } from "./DrawingEngine"
 
 type ClearInfo = { tool: "clear" }
-export type ToolInfo = LineDrawInfo | ClearInfo
+type ImportInfo = { tool: "import"; imageName?: string; imageData: string }
+export type ToolInfo = LineDrawInfo | ClearInfo | ImportInfo
 
 // History action with unique ID
 export interface HistoryAction {
@@ -181,12 +182,23 @@ export class CanvasHistory {
   }
 
   private isLineDrawInfo(action: ToolInfo): action is LineDrawInfo {
-    return action.tool !== "clear"
+    return action.tool !== "clear" && action.tool !== "import"
   }
 
   private executeAction(action: ToolInfo) {
     if (action.tool === "clear") {
       // Clear action - already handled by _clear above
+      return
+    }
+
+    if (action.tool === "import") {
+      // Import action - recreate image from stored data
+      const importAction = action as ImportInfo
+      const image = new Image()
+      image.onload = () => {
+        this.engine.loadImageFromHistory(image)
+      }
+      image.src = importAction.imageData
       return
     }
 
@@ -247,6 +259,50 @@ export class CanvasHistory {
       actions: [...this.actions],
       currentIndex: this.currentIndex,
     }
+  }
+
+  // Delete a specific action by ID
+  public deleteAction(actionId: number): boolean {
+    const actionIndex = this.actions.findIndex((a) => a.id === actionId)
+    if (actionIndex === -1) {
+      console.warn(`Action with ID ${actionId} not found`)
+      return false
+    }
+
+    console.log(`Deleting action ${actionId} at index ${actionIndex}`)
+
+    // Remove the action
+    this.actions.splice(actionIndex, 1)
+
+    // Adjust current index if needed
+    if (this.currentIndex === actionId) {
+      // If we're deleting the current action, move to the previous one
+      if (actionIndex > 0) {
+        this.currentIndex = this.actions[actionIndex - 1].id
+      } else {
+        // If we deleted the first action, move to empty state or next action
+        this.currentIndex = this.actions.length > 0 ? this.actions[0].id : 0
+      }
+    } else if (this.currentIndex > actionId) {
+      // Current index remains the same ID, but we need to check if it still exists
+      const currentStillExists = this.actions.some((a) => a.id === this.currentIndex)
+      if (!currentStillExists) {
+        // Find the closest previous action
+        const validActions = this.actions.filter((a) => a.id < this.currentIndex)
+        this.currentIndex = validActions.length > 0 ? validActions[validActions.length - 1].id : 0
+      }
+    }
+
+    // Redraw to reflect the change
+    this.redrawFromMemory()
+
+    console.log(`After deletion: ${this.actions.length} actions remaining, current index: ${this.currentIndex}`)
+    return true
+  }
+
+  // Get all actions for display/management
+  public getAllActions(): ReadonlyArray<HistoryAction> {
+    return [...this.actions]
   }
 
   // Debug properties - only for debugging, not for business logic
