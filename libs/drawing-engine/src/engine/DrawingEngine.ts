@@ -95,7 +95,7 @@ export class DrawingEngine {
   protected history: CanvasHistory | null = null
 
   constructor(
-    public gl: WebGLRenderingContext,
+    public gl: WebGL2RenderingContext,
     protected readonly options: DrawingEngineOptions,
   ) {
     this.state = {
