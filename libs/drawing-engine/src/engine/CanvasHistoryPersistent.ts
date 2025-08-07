@@ -2,11 +2,13 @@ import { CanvasHistory, ToolInfo, HistoryAction, HistoryState } from "./CanvasHi
 import { DrawingEngine } from "./DrawingEngine"
 import { Color } from "@libs/shared"
 import { LineDrawInfo } from "../tools/LineTool"
+import { SoftBrushDrawInfo } from "../tools/SoftBrushTool"
 import { InputPoint } from "../tools/InputPoint"
 import type {
   SerializedColor,
   SerializedToolInfo,
   SerializedLineDrawInfo,
+  SerializedSoftBrushDrawInfo,
   SerializedHistoryState,
   WorkerMessage,
   WorkerResponse,
@@ -309,18 +311,38 @@ export class CanvasHistoryPersistent extends CanvasHistory {
       return { tool: "import", imageName: toolInfo.imageName, imageData: toolInfo.imageData }
     }
 
-    // Only serialize brush and eraser tools (eyedropper doesn't get stored)
+    // Only serialize brush, eraser, and soft brush tools (eyedropper doesn't get stored)
     if (toolInfo.tool === "eyedropper") {
       throw new Error("Eyedropper tool should not be serialized")
     }
 
+    if (toolInfo.tool === "softBrush") {
+      const softBrushInfo = toolInfo as SoftBrushDrawInfo
+      return {
+        tool: "softBrush",
+        strokePoints: softBrushInfo.strokePoints.map((point) => ({
+          x: point.x,
+          y: point.y,
+          radius: point.radius,
+          hardness: point.hardness,
+          flow: point.flow,
+        })),
+        options: {
+          color: this.serializeColor(softBrushInfo.options.color),
+          opacity: softBrushInfo.options.opacity,
+        },
+      }
+    }
+
+    // Must be line drawing tool (brush or eraser)
+    const lineDrawInfo = toolInfo as LineDrawInfo
     return {
-      tool: toolInfo.tool,
-      path: toolInfo.path.map((point) => [point[0], point[1], point[2]]),
+      tool: lineDrawInfo.tool as "brush" | "eraser",
+      path: lineDrawInfo.path.map((point) => [point[0], point[1], point[2]]),
       options: {
-        color: this.serializeColor(toolInfo.options.color),
-        opacity: toolInfo.options.opacity,
-        diameter: toolInfo.options.diameter,
+        color: this.serializeColor(lineDrawInfo.options.color),
+        opacity: lineDrawInfo.options.opacity,
+        diameter: lineDrawInfo.options.diameter,
       },
     }
   }
@@ -337,7 +359,11 @@ export class CanvasHistoryPersistent extends CanvasHistory {
 
   // Type guards and conversion methods
   private isSerializedLineDrawInfo(action: SerializedToolInfo): action is SerializedLineDrawInfo {
-    return action.tool !== "clear" && action.tool !== "import"
+    return action.tool === "brush" || action.tool === "eraser"
+  }
+
+  private isSerializedSoftBrushDrawInfo(action: SerializedToolInfo): action is SerializedSoftBrushDrawInfo {
+    return action.tool === "softBrush"
   }
 
   private convertSerializedPath(serializedPath: Array<[number, number, number?]>): InputPoint[] {
@@ -377,37 +403,46 @@ export class CanvasHistoryPersistent extends CanvasHistory {
       return action
     }
 
-    // Use type guard to ensure we have a line action
-    if (!this.isSerializedLineDrawInfo(action)) {
-      throw new Error("Expected SerializedLineDrawInfo but got non-line action")
-    }
+    if (this.isSerializedLineDrawInfo(action)) {
+      const lineAction = action
+      const convertedPath = this.convertSerializedPath(lineAction.path)
 
-    const lineAction = action
-    const convertedPath = this.convertSerializedPath(lineAction.path)
+      if (lineAction.options.color && this.isSerializedColor(lineAction.options.color)) {
+        // Need to convert serialized color back to Color instance
+        const color = this.convertSerializedColor(lineAction.options.color)
 
-    if (lineAction.options.color && this.isSerializedColor(lineAction.options.color)) {
-      // Need to convert serialized color back to Color instance
-      const color = this.convertSerializedColor(lineAction.options.color)
-
-      const result: LineDrawInfo = {
-        tool: lineAction.tool,
-        path: convertedPath,
-        options: {
-          ...lineAction.options,
-          color,
-        },
+        const result: LineDrawInfo = {
+          tool: lineAction.tool,
+          path: convertedPath,
+          options: {
+            ...lineAction.options,
+            color,
+          },
+        }
+        return result
       }
-      return result
-    }
 
-    // Already a proper ToolInfo with Color instance
-    const color = lineAction.options.color
-    if (color && !this.isSerializedColor(color)) {
+      // Already a proper ToolInfo with Color instance
+      const color = lineAction.options.color
+      if (color && !this.isSerializedColor(color)) {
+        const result: LineDrawInfo = {
+          tool: lineAction.tool,
+          path: convertedPath,
+          options: {
+            color: color,
+            opacity: lineAction.options.opacity,
+            diameter: lineAction.options.diameter,
+          },
+        }
+        return result
+      }
+
+      // Fallback - shouldn't happen, but create with black color
       const result: LineDrawInfo = {
         tool: lineAction.tool,
         path: convertedPath,
         options: {
-          color: color,
+          color: Color.BLACK,
           opacity: lineAction.options.opacity,
           diameter: lineAction.options.diameter,
         },
@@ -415,17 +450,69 @@ export class CanvasHistoryPersistent extends CanvasHistory {
       return result
     }
 
-    // Fallback - shouldn't happen, but create with black color
-    const result: LineDrawInfo = {
-      tool: lineAction.tool,
-      path: convertedPath,
-      options: {
-        color: Color.BLACK,
-        opacity: lineAction.options.opacity,
-        diameter: lineAction.options.diameter,
-      },
+    if (this.isSerializedSoftBrushDrawInfo(action)) {
+      const softBrushAction = action
+
+      if (softBrushAction.options.color && this.isSerializedColor(softBrushAction.options.color)) {
+        // Need to convert serialized color back to Color instance
+        const color = this.convertSerializedColor(softBrushAction.options.color)
+
+        const result: SoftBrushDrawInfo = {
+          tool: "softBrush",
+          strokePoints: softBrushAction.strokePoints.map((point) => ({
+            x: point.x,
+            y: point.y,
+            radius: point.radius,
+            hardness: point.hardness,
+            flow: point.flow,
+          })),
+          options: {
+            ...softBrushAction.options,
+            color,
+          },
+        }
+        return result
+      }
+
+      // Already a proper ToolInfo with Color instance
+      const color = softBrushAction.options.color
+      if (color && !this.isSerializedColor(color)) {
+        const result: SoftBrushDrawInfo = {
+          tool: "softBrush",
+          strokePoints: softBrushAction.strokePoints.map((point) => ({
+            x: point.x,
+            y: point.y,
+            radius: point.radius,
+            hardness: point.hardness,
+            flow: point.flow,
+          })),
+          options: {
+            color: color,
+            opacity: softBrushAction.options.opacity,
+          },
+        }
+        return result
+      }
+
+      // Fallback - shouldn't happen, but create with black color
+      const result: SoftBrushDrawInfo = {
+        tool: "softBrush",
+        strokePoints: softBrushAction.strokePoints.map((point) => ({
+          x: point.x,
+          y: point.y,
+          radius: point.radius,
+          hardness: point.hardness,
+          flow: point.flow,
+        })),
+        options: {
+          color: Color.BLACK,
+          opacity: softBrushAction.options.opacity,
+        },
+      }
+      return result
     }
-    return result
+
+    throw new Error("Unknown tool action type")
   }
 
   // Debug access

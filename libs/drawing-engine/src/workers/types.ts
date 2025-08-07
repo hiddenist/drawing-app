@@ -18,6 +18,21 @@ export interface SerializedLineDrawInfo {
   }
 }
 
+export interface SerializedSoftBrushDrawInfo {
+  tool: "softBrush"
+  strokePoints: Array<{
+    x: number
+    y: number
+    radius: number
+    hardness: number
+    flow: number
+  }>
+  options: {
+    color: SerializedColor
+    opacity: number
+  }
+}
+
 export interface SerializedClearInfo {
   tool: "clear"
 }
@@ -28,7 +43,11 @@ export interface SerializedImportInfo {
   imageData: string
 }
 
-export type SerializedToolInfo = SerializedLineDrawInfo | SerializedClearInfo | SerializedImportInfo
+export type SerializedToolInfo =
+  | SerializedLineDrawInfo
+  | SerializedSoftBrushDrawInfo
+  | SerializedClearInfo
+  | SerializedImportInfo
 
 // Serialized history action with ID
 export interface SerializedHistoryAction {

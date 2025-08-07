@@ -1,5 +1,6 @@
 export const ToolNames = {
   brush: "brush",
+  softBrush: "softBrush",
   eyedropper: "eyedropper",
   eraser: "eraser",
 } as const

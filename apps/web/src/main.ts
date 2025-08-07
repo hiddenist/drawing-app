@@ -27,6 +27,7 @@ function main() {
 
   const tools = [
     { value: ToolNames.brush, label: "Brush" },
+    { value: ToolNames.softBrush, label: "Soft Brush" },
     { value: ToolNames.eyedropper, label: "Grab Color" },
     { value: ToolNames.eraser, label: "Eraser" },
   ] as const
@@ -426,6 +427,73 @@ function makeToolbar(
   })
 
   toolbar.append(weightSlider)
+
+  // Soft brush specific controls
+  const flowSlider = SliderInput({
+    className: "flow-slider",
+    label: "Flow",
+    initialValue: 15, // 15%
+    labelAppend: "%",
+    min: 1,
+    max: 100,
+    controlRef: {},
+    getDisplayValue: (value) => value.toFixed(0),
+    onChange(value) {
+      if ("setFlow" in options.engine.activeTool) {
+        options.engine.activeTool.setFlow(value / 100)
+      }
+    },
+  })
+  flowSlider.style.display = "none" // Hidden by default
+
+  const hardnessSlider = SliderInput({
+    className: "hardness-slider",
+    label: "Hardness",
+    initialValue: 0, // 0%
+    labelAppend: "%",
+    min: 0,
+    max: 100,
+    controlRef: {},
+    getDisplayValue: (value) => value.toFixed(0),
+    onChange(value) {
+      if ("setHardness" in options.engine.activeTool) {
+        options.engine.activeTool.setHardness(value / 100)
+      }
+    },
+  })
+  hardnessSlider.style.display = "none" // Hidden by default
+
+  toolbar.append(flowSlider)
+  toolbar.append(hardnessSlider)
+
+  // Show/hide soft brush controls based on tool selection
+  options.addListener(EventType.changeTool, ({ tool }) => {
+    if (tool === ToolNames.softBrush) {
+      flowSlider.style.display = ""
+      hardnessSlider.style.display = ""
+      // Update slider values from tool
+      if ("getFlow" in options.engine.activeTool && "getHardness" in options.engine.activeTool) {
+        const flowValue = options.engine.activeTool.getFlow() * 100
+        const hardnessValue = options.engine.activeTool.getHardness() * 100
+        const flowInput = flowSlider.querySelector("input") as HTMLInputElement
+        const flowDisplay = flowSlider.querySelector(".value") as HTMLElement
+        const hardnessInput = hardnessSlider.querySelector("input") as HTMLInputElement
+        const hardnessDisplay = hardnessSlider.querySelector(".value") as HTMLElement
+
+        if (flowInput && flowDisplay) {
+          flowInput.value = flowValue.toString()
+          flowDisplay.textContent = flowValue.toFixed(0) + "%"
+        }
+        if (hardnessInput && hardnessDisplay) {
+          hardnessInput.value = hardnessValue.toString()
+          hardnessDisplay.textContent = hardnessValue.toFixed(0) + "%"
+        }
+      }
+    } else {
+      flowSlider.style.display = "none"
+      hardnessSlider.style.display = "none"
+    }
+  })
 
   return toolbar
 }
