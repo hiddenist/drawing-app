@@ -1,10 +1,11 @@
 /// <reference types="vite/types/importMeta.d.ts" />
 import { LineDrawInfo } from "../tools/LineTool"
+import { SoftBrushDrawInfo } from "../tools/SoftBrushTool"
 import { DrawingEngine, EventType } from "./DrawingEngine"
 
 type ClearInfo = { tool: "clear" }
 type ImportInfo = { tool: "import"; imageName?: string; imageData: string }
-export type ToolInfo = LineDrawInfo | ClearInfo | ImportInfo
+export type ToolInfo = LineDrawInfo | SoftBrushDrawInfo | ClearInfo | ImportInfo
 
 // History action with unique ID
 export interface HistoryAction {
@@ -182,7 +183,11 @@ export class CanvasHistory {
   }
 
   private isLineDrawInfo(action: ToolInfo): action is LineDrawInfo {
-    return action.tool !== "clear" && action.tool !== "import"
+    return action.tool === "brush" || action.tool === "eraser"
+  }
+
+  private isSoftBrushDrawInfo(action: ToolInfo): action is SoftBrushDrawInfo {
+    return action.tool === "softBrush" || action.tool === "softEraser"
   }
 
   private executeAction(action: ToolInfo) {
@@ -202,17 +207,34 @@ export class CanvasHistory {
       return
     }
 
-    // Execute line drawing action
+    // Execute drawing action
     const tool = this.engine.tools[action.tool]
 
     if (tool && "drawFromHistory" in tool) {
       if (this.isLineDrawInfo(action)) {
+        const lineTool = tool as {
+          drawFromHistory: (path: LineDrawInfo["path"], options: LineDrawInfo["options"]) => void
+        }
         try {
           this.engine.drawToActiveLayer(() => {
-            tool.drawFromHistory(action.path, action.options)
+            lineTool.drawFromHistory(action.path, action.options)
           }, action.tool)
         } catch (error) {
           console.error("Error in drawFromHistory:", error)
+        }
+      } else if (this.isSoftBrushDrawInfo(action)) {
+        const softBrushTool = tool as {
+          drawFromHistory: (
+            strokePoints: SoftBrushDrawInfo["strokePoints"],
+            options: SoftBrushDrawInfo["options"],
+          ) => void
+        }
+        try {
+          this.engine.drawToActiveLayer(() => {
+            softBrushTool.drawFromHistory(action.strokePoints, action.options)
+          }, action.tool)
+        } catch (error) {
+          console.error("Error in SoftBrushTool drawFromHistory:", error)
         }
       }
     }

@@ -16,25 +16,25 @@ export class HueGradientColorProgram extends BaseGradientColorProgram<
   keyof typeof ATTRIBUTE_NAMES
 > {
   private saturation: number = 100
-  constructor(gl: WebGLRenderingContext) {
+  constructor(gl: WebGL2RenderingContext) {
     const program = HueGradientColorProgram.createProgramStatic(gl)
     const programInfo = HueGradientColorProgram.createProgramInfoStatic(gl, program)
     super(programInfo, "aPosition", "uResolution")
   }
 
-  protected static createProgramStatic(gl: WebGLRenderingContext): WebGLProgram {
+  protected static createProgramStatic(gl: WebGL2RenderingContext): WebGLProgram {
     return WebGLProgramBuilder.create(gl, vertexSource, fragmentSource)
   }
 
-  protected createProgram(gl: WebGLRenderingContext): WebGLProgram {
+  protected createProgram(gl: WebGL2RenderingContext): WebGLProgram {
     return HueGradientColorProgram.createProgramStatic(gl)
   }
 
-  protected static createProgramInfoStatic(gl: WebGLRenderingContext, program: WebGLProgram) {
+  protected static createProgramInfoStatic(gl: WebGL2RenderingContext, program: WebGLProgram) {
     return BaseProgram.getProgramInfo(gl, program, UNIFORM_NAMES, ATTRIBUTE_NAMES)
   }
 
-  protected createProgramInfo(context: WebGLRenderingContext, program: WebGLProgram) {
+  protected createProgramInfo(context: WebGL2RenderingContext, program: WebGLProgram) {
     return HueGradientColorProgram.createProgramInfoStatic(context, program)
   }
 

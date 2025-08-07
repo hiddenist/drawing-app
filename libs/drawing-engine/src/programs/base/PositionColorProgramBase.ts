@@ -11,26 +11,26 @@ export abstract class PositionColorProgramBase extends BaseProgram<
   keyof typeof UNIFORM_NAMES,
   keyof typeof ATTRIBUTE_NAMES
 > {
-  constructor(gl: WebGLRenderingContext, pixelDensity: number) {
+  constructor(gl: WebGL2RenderingContext, pixelDensity: number) {
     super(
       PositionColorProgramBase.createContextStatic(gl, PositionColorProgramBase.createProgramStatic(gl)),
       pixelDensity,
     )
   }
 
-  protected static createProgramStatic(gl: WebGLRenderingContext): WebGLProgram {
+  protected static createProgramStatic(gl: WebGL2RenderingContext): WebGLProgram {
     return WebGLProgramBuilder.createFromSourceMap(gl, sourceMap, VERTEX_SHADER, FRAGMENT_SHADER)
   }
 
-  protected createProgram(gl: WebGLRenderingContext): WebGLProgram {
+  protected createProgram(gl: WebGL2RenderingContext): WebGLProgram {
     return PositionColorProgramBase.createProgramStatic(gl)
   }
 
-  protected static createContextStatic(context: WebGLRenderingContext, program: WebGLProgram) {
+  protected static createContextStatic(context: WebGL2RenderingContext, program: WebGLProgram) {
     return BaseProgram.getProgramInfo(context, program, UNIFORM_NAMES, ATTRIBUTE_NAMES)
   }
 
-  protected createProgramInfo(context: WebGLRenderingContext, program: WebGLProgram) {
+  protected createProgramInfo(context: WebGL2RenderingContext, program: WebGLProgram) {
     return PositionColorProgramBase.createContextStatic(context, program)
   }
 

@@ -1,7 +1,7 @@
 import { Color, Vec2 } from "../exports"
 
 export interface ProgramInfo<UniformNames extends string, AttributeNames extends string> {
-  gl: WebGLRenderingContext
+  gl: WebGL2RenderingContext
   program: WebGLProgram
   uniforms: Record<UniformNames, WebGLUniformLocation>
   attributes: Record<
@@ -19,7 +19,7 @@ export type AttributeInfo = {
 }
 
 export interface IBaseProgram {
-  readonly gl: WebGLRenderingContext
+  readonly gl: WebGL2RenderingContext
   useProgram(): this
   syncCanvasSize(): this
   getCanvasSize(): { width: number; height: number }
@@ -46,10 +46,10 @@ export abstract class BaseProgram<
     this.syncCanvasSize()
   }
 
-  protected abstract createProgramInfo(context: WebGLRenderingContext, program: WebGLProgram): ExtendableProgramInfo
+  protected abstract createProgramInfo(context: WebGL2RenderingContext, program: WebGLProgram): ExtendableProgramInfo
 
   protected static getProgramInfo<UniformNames extends string, AttributeNames extends string>(
-    gl: WebGLRenderingContext,
+    gl: WebGL2RenderingContext,
     program: WebGLProgram,
     uniformNames: Record<UniformNames, string>,
     attributeNames: Record<AttributeNames, string>,
@@ -75,7 +75,7 @@ export abstract class BaseProgram<
     }
   }
 
-  static getColorAtPosition(gl: WebGLRenderingContext, [x, y]: Readonly<Vec2>): Color | null {
+  static getColorAtPosition(gl: WebGL2RenderingContext, [x, y]: Readonly<Vec2>): Color | null {
     const pixelData = new Uint8Array(4)
 
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1)
@@ -94,7 +94,7 @@ export abstract class BaseProgram<
     return new Color(pixelData[0], pixelData[1], pixelData[2])
   }
 
-  public get gl(): WebGLRenderingContext {
+  public get gl(): WebGL2RenderingContext {
     return this._programInfo.gl
   }
 
@@ -135,7 +135,7 @@ export abstract class BaseProgram<
     return this._programInfo.program
   }
 
-  protected abstract createProgram(context: WebGLRenderingContext): WebGLProgram
+  protected abstract createProgram(context: WebGL2RenderingContext): WebGLProgram
 
   protected getUniformLocation(name: UniformNames): WebGLUniformLocation {
     return this._programInfo.uniforms[name]
@@ -160,7 +160,7 @@ export abstract class BaseProgram<
 
   private static _getUniformLocationOrThrow(
     name: string,
-    gl: WebGLRenderingContext,
+    gl: WebGL2RenderingContext,
     program: WebGLProgram,
   ): WebGLUniformLocation {
     const uniformLocation = gl.getUniformLocation(program, name)
