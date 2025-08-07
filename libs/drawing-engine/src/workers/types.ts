@@ -19,7 +19,7 @@ export interface SerializedLineDrawInfo {
 }
 
 export interface SerializedSoftBrushDrawInfo {
-  tool: "softBrush"
+  tool: "softBrush" | "softEraser"
   strokePoints: Array<{
     x: number
     y: number

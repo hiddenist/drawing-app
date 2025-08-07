@@ -187,7 +187,7 @@ export class CanvasHistory {
   }
 
   private isSoftBrushDrawInfo(action: ToolInfo): action is SoftBrushDrawInfo {
-    return action.tool === "softBrush"
+    return action.tool === "softBrush" || action.tool === "softEraser"
   }
 
   private executeAction(action: ToolInfo) {

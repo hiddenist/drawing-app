@@ -94,6 +94,9 @@ export function HistoryPanel({ engine, onClose }: HistoryPanelProps): HistoryPan
     } else if (action.action.tool === "softBrush") {
       const softBrushAction = action.action as { tool: "softBrush"; strokePoints: any[] }
       return `Soft brush stroke (${softBrushAction.strokePoints.length} points)`
+    } else if (action.action.tool === "softEraser") {
+      const softEraserAction = action.action as { tool: "softEraser"; strokePoints: any[] }
+      return `Soft eraser stroke (${softEraserAction.strokePoints.length} points)`
     }
     return action.action.tool
   }

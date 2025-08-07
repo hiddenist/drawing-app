@@ -30,6 +30,7 @@ function main() {
     { value: ToolNames.softBrush, label: "Soft Brush" },
     { value: ToolNames.eyedropper, label: "Grab Color" },
     { value: ToolNames.eraser, label: "Eraser" },
+    { value: ToolNames.softEraser, label: "Soft Eraser" },
   ] as const
 
   const state = {
@@ -468,7 +469,7 @@ function makeToolbar(
 
   // Show/hide soft brush controls based on tool selection
   options.addListener(EventType.changeTool, ({ tool }) => {
-    if (tool === ToolNames.softBrush) {
+    if (tool === ToolNames.softBrush || tool === ToolNames.softEraser) {
       flowSlider.style.display = ""
       hardnessSlider.style.display = ""
       // Update slider values from tool

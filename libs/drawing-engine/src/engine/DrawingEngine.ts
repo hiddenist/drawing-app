@@ -91,6 +91,7 @@ export class DrawingEngine {
     [ToolNames.brush]: LineTool
     [ToolNames.softBrush]: SoftBrushTool
     [ToolNames.eraser]: LineTool
+    [ToolNames.softEraser]: SoftBrushTool
     [ToolNames.eyedropper]: EyeDropperTool
   }
 
@@ -125,6 +126,7 @@ export class DrawingEngine {
       [ToolNames.brush]: new LineTool(this, lineProgram, ToolNames.brush),
       [ToolNames.softBrush]: new SoftBrushTool(this, softBrushProgram, ToolNames.softBrush),
       [ToolNames.eraser]: new LineTool(this, lineProgram, ToolNames.eraser),
+      [ToolNames.softEraser]: new SoftBrushTool(this, softBrushProgram, ToolNames.softEraser),
       [ToolNames.eyedropper]: new EyeDropperTool(this),
     }
 
@@ -174,6 +176,7 @@ export class DrawingEngine {
   protected getDrawMode(tool = this.getCurrentToolName()) {
     switch (tool) {
       case ToolNames.eraser:
+      case ToolNames.softEraser:
         return "erase"
       default:
         return "draw"

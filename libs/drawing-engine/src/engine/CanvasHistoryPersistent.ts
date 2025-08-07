@@ -316,10 +316,10 @@ export class CanvasHistoryPersistent extends CanvasHistory {
       throw new Error("Eyedropper tool should not be serialized")
     }
 
-    if (toolInfo.tool === "softBrush") {
+    if (toolInfo.tool === "softBrush" || toolInfo.tool === "softEraser") {
       const softBrushInfo = toolInfo as SoftBrushDrawInfo
       return {
-        tool: "softBrush",
+        tool: softBrushInfo.tool as "softBrush" | "softEraser",
         strokePoints: softBrushInfo.strokePoints.map((point) => ({
           x: point.x,
           y: point.y,
@@ -363,7 +363,7 @@ export class CanvasHistoryPersistent extends CanvasHistory {
   }
 
   private isSerializedSoftBrushDrawInfo(action: SerializedToolInfo): action is SerializedSoftBrushDrawInfo {
-    return action.tool === "softBrush"
+    return action.tool === "softBrush" || action.tool === "softEraser"
   }
 
   private convertSerializedPath(serializedPath: Array<[number, number, number?]>): InputPoint[] {
@@ -458,7 +458,7 @@ export class CanvasHistoryPersistent extends CanvasHistory {
         const color = this.convertSerializedColor(softBrushAction.options.color)
 
         const result: SoftBrushDrawInfo = {
-          tool: "softBrush",
+          tool: softBrushAction.tool,
           strokePoints: softBrushAction.strokePoints.map((point) => ({
             x: point.x,
             y: point.y,
@@ -478,7 +478,7 @@ export class CanvasHistoryPersistent extends CanvasHistory {
       const color = softBrushAction.options.color
       if (color && !this.isSerializedColor(color)) {
         const result: SoftBrushDrawInfo = {
-          tool: "softBrush",
+          tool: softBrushAction.tool,
           strokePoints: softBrushAction.strokePoints.map((point) => ({
             x: point.x,
             y: point.y,
