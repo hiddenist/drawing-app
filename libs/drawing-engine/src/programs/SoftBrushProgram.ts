@@ -21,12 +21,9 @@ export interface SoftBrushOptions {
 
 export class SoftBrushProgram extends BaseProgram<keyof typeof UNIFORM_NAMES, keyof typeof ATTRIBUTE_NAMES> {
   private strokeTexture: WebGLTexture | null = null
-  private framebuffer: WebGLFramebuffer | null = null
-  private renderTexture: WebGLTexture | null = null
 
   constructor(gl: WebGL2RenderingContext, pixelDensity: number) {
     super(SoftBrushProgram.createContextStatic(gl, SoftBrushProgram.createProgramStatic(gl)), pixelDensity)
-    this.setupFramebuffer()
   }
 
   protected static createProgramStatic(gl: WebGL2RenderingContext): WebGLProgram {
@@ -45,58 +42,8 @@ export class SoftBrushProgram extends BaseProgram<keyof typeof UNIFORM_NAMES, ke
     return SoftBrushProgram.createContextStatic(context, program)
   }
 
-  private setupFramebuffer() {
-    this.framebuffer = this.gl.createFramebuffer()
-    this.renderTexture = this.gl.createTexture()
-
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.renderTexture)
-    this.gl.texImage2D(
-      this.gl.TEXTURE_2D,
-      0,
-      this.gl.RGBA,
-      this.gl.canvas.width,
-      this.gl.canvas.height,
-      0,
-      this.gl.RGBA,
-      this.gl.UNSIGNED_BYTE,
-      null,
-    )
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR)
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR)
-
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer)
-    this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER,
-      this.gl.COLOR_ATTACHMENT0,
-      this.gl.TEXTURE_2D,
-      this.renderTexture,
-      0,
-    )
-
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null)
-    this.gl.bindTexture(this.gl.TEXTURE_2D, null)
-  }
-
   public syncCanvasSize(): typeof this {
     super.syncCanvasSize()
-
-    // Resize render texture if canvas size changed
-    if (this.renderTexture) {
-      this.gl.bindTexture(this.gl.TEXTURE_2D, this.renderTexture)
-      this.gl.texImage2D(
-        this.gl.TEXTURE_2D,
-        0,
-        this.gl.RGBA,
-        this.gl.canvas.width,
-        this.gl.canvas.height,
-        0,
-        this.gl.RGBA,
-        this.gl.UNSIGNED_BYTE,
-        null,
-      )
-      this.gl.bindTexture(this.gl.TEXTURE_2D, null)
-    }
-
     this.gl.uniform2f(this.getUniformLocation("canvasSize"), this.gl.canvas.width, this.gl.canvas.height)
     return this
   }
@@ -213,14 +160,6 @@ export class SoftBrushProgram extends BaseProgram<keyof typeof UNIFORM_NAMES, ke
     if (this.strokeTexture) {
       this.gl.deleteTexture(this.strokeTexture)
       this.strokeTexture = null
-    }
-    if (this.renderTexture) {
-      this.gl.deleteTexture(this.renderTexture)
-      this.renderTexture = null
-    }
-    if (this.framebuffer) {
-      this.gl.deleteFramebuffer(this.framebuffer)
-      this.framebuffer = null
     }
   }
 }
