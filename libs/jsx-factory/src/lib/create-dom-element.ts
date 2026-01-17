@@ -1,7 +1,6 @@
+import { AttributeMapper } from "./attribute-mapper"
+import { escapeHtml } from "./escape-html"
 import { FunctionComponent } from "../../types/function-component"
-import { EventAttributeParser, attachEventListeners } from "./event-handler"
-import { AttributeHandler } from "./attribute-handler"
-import { ChildrenHandler } from "./children-handler"
 
 export function createDomElement(
   tag: FunctionComponent | string,
@@ -9,29 +8,47 @@ export function createDomElement(
   ...children: (HTMLElement | string)[]
 ): HTMLElement {
   attrs = attrs || {}
+  const stack: any[] = [...children]
 
   // Support for components(ish)
   if (typeof tag === "function") {
-    attrs.children = children
+    attrs.children = stack
     return tag(attrs)
   }
 
-  const element = document.createElement(tag)
+  const elm = document.createElement(tag)
 
-  // Parse and separate event handlers from other attributes
-  const eventParser = new EventAttributeParser()
-  const { eventHandlers, nonEventAttrs } = eventParser.parseEventAttributes(attrs)
-
-  // Apply event listeners
-  attachEventListeners(element, eventHandlers)
-
-  // Apply other attributes
-  const attributeHandler = new AttributeHandler()
-  attributeHandler.applyAttributes(element, nonEventAttrs)
+  // Add attributes
+  for (let [name, val] of Object.entries(attrs)) {
+    name = escapeHtml(AttributeMapper(name))
+    if (name.startsWith("on") && name.toLowerCase() in window) {
+      elm.addEventListener(name.toLowerCase().slice(2), val)
+    } else if (name === "ref") {
+      val(elm)
+    } else if (name === "style") {
+      Object.assign(elm.style, val)
+    } else if (val === true) {
+      elm.setAttribute(name, name)
+    } else if (val !== false && val != null) {
+      elm.setAttribute(name, escapeHtml(val))
+    } else if (val === false) {
+      elm.removeAttribute(name)
+    }
+  }
 
   // Append children
-  const childrenHandler = new ChildrenHandler()
-  childrenHandler.appendChildren(element, children)
+  while (stack.length) {
+    const child = stack.shift()
 
-  return element
+    if (child == null) continue
+
+    // Is child a leaf?
+    if (!Array.isArray(child)) {
+      elm.appendChild((child as HTMLElement).nodeType == null ? document.createTextNode(child.toString()) : child)
+    } else {
+      stack.push(...child)
+    }
+  }
+
+  return elm
 }
