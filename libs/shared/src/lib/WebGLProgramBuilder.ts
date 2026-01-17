@@ -5,7 +5,7 @@ export class WebGLProgramBuilder {
   private static sourceMapCache: SourceCacheEntry<any>[] = []
 
   protected constructor(
-    protected readonly gl: WebGL2RenderingContext,
+    protected readonly gl: WebGLRenderingContext,
     vertexShaderSource: string,
     fragmentShaderSource: string,
   ) {
@@ -47,7 +47,7 @@ export class WebGLProgramBuilder {
   }
 
   public static createFromSourceMap<T extends string>(
-    gl: WebGL2RenderingContext,
+    gl: WebGLRenderingContext,
     sourceMap: Readonly<Record<T, string>>,
     vertexShaderSource: T,
     fragmentShaderSource: T,
@@ -73,7 +73,7 @@ export class WebGLProgramBuilder {
   }
 
   public static create(
-    gl: WebGL2RenderingContext,
+    gl: WebGLRenderingContext,
     vertexShaderSource: string,
     fragmentShaderSource: string,
   ): WebGLProgram {

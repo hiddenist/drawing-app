@@ -2,8 +2,6 @@ import positionVertexSource from "./position.vertex.glsl"
 import colorFragmentSource from "./color.fragment.glsl"
 import textureVertexSource from "./texture.vertex.glsl"
 import textureFragmentSource from "./texture.fragment.glsl"
-import softVertexSource from "./soft.vertex.glsl"
-import softFragmentSource from "./soft.fragment.glsl"
 import normalizeCoords from "./inc/normalizeCoords.glsl"
 
 /**
@@ -17,8 +15,6 @@ const sourceMap = {
   "color.fragment": colorFragmentSource,
   "texture.vertex": textureVertexSource,
   "texture.fragment": textureFragmentSource,
-  "soft.vertex": softVertexSource,
-  "soft.fragment": softFragmentSource,
   normalizeCoords,
 }
 export default sourceMap
@@ -49,14 +45,6 @@ export const uniformNames = {
     background: "uBackgroundTexture",
     isEraseMode: "uIsEraseMode",
   },
-  "soft.vertex": {},
-  "soft.fragment": {
-    strokeData: "u_strokeData",
-    numPoints: "u_numPoints",
-    opacity: "u_opacity",
-    color: "u_color",
-    canvasSize: "u_canvasSize",
-  },
 } as const satisfies Readonly<Partial<NameMap>>
 
 export const attributeNames = {
@@ -66,9 +54,5 @@ export const attributeNames = {
   "texture.vertex": {
     position: "aPosition",
     textureCoordinates: "aTexcoord",
-  },
-  "soft.vertex": {
-    position: "a_position",
-    texCoord: "a_texCoord",
   },
 } as const satisfies Readonly<Partial<NameMap>>

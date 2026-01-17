@@ -1,13 +1,11 @@
 import { TextureDrawingProgram } from "../programs/TextureDrawingProgram"
 import { LineDrawingProgram } from "../programs/LineDrawingProgram"
-import { SoftBrushProgram } from "../programs/SoftBrushProgram"
 import type { Vec2 } from "@libs/shared"
 import { Color } from "@libs/shared"
 import { Layer, LayerSettings } from "./Layer"
 import { SourceImage } from "../utils/image/SourceImage"
 import { ToolName, ToolNames } from "../exports"
 import { LineTool } from "../tools/LineTool"
-import { SoftBrushTool } from "../tools/SoftBrushTool"
 import { InputPoint } from "../tools/InputPoint"
 import { EyeDropperTool } from "../tools/EyeDropperTool"
 import { CanvasHistory, ToolInfo } from "./CanvasHistory"
@@ -89,9 +87,7 @@ export class DrawingEngine {
 
   public readonly tools: {
     [ToolNames.brush]: LineTool
-    [ToolNames.softBrush]: SoftBrushTool
     [ToolNames.eraser]: LineTool
-    [ToolNames.softEraser]: SoftBrushTool
     [ToolNames.eyedropper]: EyeDropperTool
   }
 
@@ -99,7 +95,7 @@ export class DrawingEngine {
   protected history: CanvasHistory | null = null
 
   constructor(
-    public gl: WebGL2RenderingContext,
+    public gl: WebGLRenderingContext,
     protected readonly options: DrawingEngineOptions,
   ) {
     this.state = {
@@ -121,12 +117,9 @@ export class DrawingEngine {
     this.program = new TextureDrawingProgram(gl, this.state.pixelDensity)
 
     const lineProgram = new LineDrawingProgram(gl, this.state.pixelDensity)
-    const softBrushProgram = new SoftBrushProgram(gl, this.state.pixelDensity)
     this.tools = {
       [ToolNames.brush]: new LineTool(this, lineProgram, ToolNames.brush),
-      [ToolNames.softBrush]: new SoftBrushTool(this, softBrushProgram, ToolNames.softBrush),
       [ToolNames.eraser]: new LineTool(this, lineProgram, ToolNames.eraser),
-      [ToolNames.softEraser]: new SoftBrushTool(this, softBrushProgram, ToolNames.softEraser),
       [ToolNames.eyedropper]: new EyeDropperTool(this),
     }
 
@@ -176,7 +169,6 @@ export class DrawingEngine {
   protected getDrawMode(tool = this.getCurrentToolName()) {
     switch (tool) {
       case ToolNames.eraser:
-      case ToolNames.softEraser:
         return "erase"
       default:
         return "draw"

@@ -6,12 +6,12 @@ export interface LayerSettings {
 }
 
 export class Layer {
-  protected readonly _gl: WebGL2RenderingContext
+  protected readonly _gl: WebGLRenderingContext
   protected _texture?: WebGLTexture
   protected _frameBuffer?: WebGLFramebuffer
 
   public constructor(
-    gl: WebGL2RenderingContext,
+    gl: WebGLRenderingContext,
     protected _settings: LayerSettings = {},
     fromSource?: SourceImage,
   ) {
@@ -26,7 +26,7 @@ export class Layer {
     return this._settings
   }
 
-  protected createTexture(gl: WebGL2RenderingContext, source?: SourceImage) {
+  protected createTexture(gl: WebGLRenderingContext, source?: SourceImage) {
     const texture = gl.createTexture()
     if (!texture) {
       throw new Error("Could not create texture")
@@ -56,7 +56,7 @@ export class Layer {
     return texture
   }
 
-  protected createFrameBuffer(gl: WebGL2RenderingContext) {
+  protected createFrameBuffer(gl: WebGLRenderingContext) {
     const frameBuffer = gl.createFramebuffer()
     if (!frameBuffer) {
       throw new Error("Could not create framebuffer")

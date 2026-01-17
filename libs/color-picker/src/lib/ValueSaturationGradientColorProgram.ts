@@ -21,25 +21,25 @@ export class ValueSaturationGradientColorProgram extends BaseGradientColorProgra
   private selectedColor?: Color
   private markerPosition?: [x: number, y: number]
 
-  constructor(gl: WebGL2RenderingContext) {
+  constructor(gl: WebGLRenderingContext) {
     const program = ValueSaturationGradientColorProgram.createProgramStatic(gl)
     const programInfo = ValueSaturationGradientColorProgram.createProgramInfoStatic(gl, program)
     super(programInfo, "aPosition", "uResolution")
   }
 
-  protected static createProgramStatic(gl: WebGL2RenderingContext): WebGLProgram {
+  protected static createProgramStatic(gl: WebGLRenderingContext): WebGLProgram {
     return WebGLProgramBuilder.create(gl, vertexSource, fragmentSource)
   }
 
-  protected createProgram(gl: WebGL2RenderingContext): WebGLProgram {
+  protected createProgram(gl: WebGLRenderingContext): WebGLProgram {
     return ValueSaturationGradientColorProgram.createProgramStatic(gl)
   }
 
-  protected static createProgramInfoStatic(gl: WebGL2RenderingContext, program: WebGLProgram) {
+  protected static createProgramInfoStatic(gl: WebGLRenderingContext, program: WebGLProgram) {
     return BaseProgram.getProgramInfo(gl, program, UNIFORM_NAMES, ATTRIBUTE_NAMES)
   }
 
-  protected createProgramInfo(context: WebGL2RenderingContext, program: WebGLProgram) {
+  protected createProgramInfo(context: WebGLRenderingContext, program: WebGLProgram) {
     return ValueSaturationGradientColorProgram.createProgramInfoStatic(context, program)
   }
 

@@ -2,7 +2,7 @@ import { Layer } from "../engine/Layer"
 import { TextureProgramBase } from "./base/TextureProgramBase"
 
 export class TextureDrawingProgram extends TextureProgramBase {
-  constructor(gl: WebGL2RenderingContext, pixelDensity: number) {
+  constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
   }
 

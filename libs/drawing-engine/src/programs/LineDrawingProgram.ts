@@ -9,7 +9,7 @@ export interface LineInfo {
 }
 
 export class LineDrawingProgram extends PositionColorProgramBase {
-  constructor(gl: WebGL2RenderingContext, pixelDensity: number) {
+  constructor(gl: WebGLRenderingContext, pixelDensity: number) {
     super(gl, pixelDensity)
   }
 
