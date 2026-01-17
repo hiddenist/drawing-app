@@ -96,14 +96,14 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     return this
   }
 
-  public loadImage(image: SourceImage, imageName?: string): void {
+  public loadImage(image: SourceImage): void {
     // const size = getImageDimensions(image) ?? { width: 0, height: 0 }
     // if (size.width > this.canvas.width || size.height > this.canvas.height) {
     //   if (confirm("The image is larger than the canvas. Do you want to resize the canvas?")) {
     //     this.resizeCanvas(size.width / this.pixelDensity, size.height / this.pixelDensity)
     //   }
     // }
-    super.loadImage(image, imageName)
+    super.loadImage(image)
   }
 
   private bindBrowserEvents() {
@@ -176,17 +176,13 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     handler?: (event: DrawingEvent<HTMLElementEventMap[K]>) => void,
     element: HTMLElement = this.root,
   ) {
-    element.addEventListener(
-      eventName,
-      (event) => {
-        event.preventDefault()
-        handler?.bind(this)({
-          event,
-          position: this.getCanvasPosition(event),
-        })
-      },
-      { passive: false },
-    )
+    element.addEventListener(eventName, (event) => {
+      event.preventDefault()
+      handler?.bind(this)({
+        event,
+        position: this.getCanvasPosition(event),
+      })
+    })
   }
 
   private getCanvasPosition(event: Event): Vec2 {
