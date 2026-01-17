@@ -86,17 +86,9 @@ export function HistoryPanel({ engine, onClose }: HistoryPanelProps): HistoryPan
       const importAction = action.action as { tool: "import"; imageName?: string }
       return `Import image${importAction.imageName ? `: ${importAction.imageName}` : ""}`
     } else if (action.action.tool === "brush") {
-      const brushAction = action.action as { tool: "brush"; path: any[] }
-      return `Brush stroke (${brushAction.path.length} points)`
+      return `Brush stroke (${action.action.path.length} points)`
     } else if (action.action.tool === "eraser") {
-      const eraserAction = action.action as { tool: "eraser"; path: any[] }
-      return `Eraser stroke (${eraserAction.path.length} points)`
-    } else if (action.action.tool === "softBrush") {
-      const softBrushAction = action.action as { tool: "softBrush"; strokePoints: any[] }
-      return `Soft brush stroke (${softBrushAction.strokePoints.length} points)`
-    } else if (action.action.tool === "softEraser") {
-      const softEraserAction = action.action as { tool: "softEraser"; strokePoints: any[] }
-      return `Soft eraser stroke (${softEraserAction.strokePoints.length} points)`
+      return `Eraser stroke (${action.action.path.length} points)`
     }
     return action.action.tool
   }

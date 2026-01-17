@@ -1,5 +1,4 @@
-#version 300 es
-in vec2 aPosition;
+attribute vec2 aPosition;
 
 #require "normalizeCoords";
 

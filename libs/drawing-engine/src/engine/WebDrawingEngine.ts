@@ -57,12 +57,12 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
     canvas.height = height * pixelDensity
     container.appendChild(canvas)
 
-    const gl = canvas.getContext("webgl2", {
+    const gl = canvas.getContext("webgl", {
       premultipliedAlpha: true,
       preserveDrawingBuffer: true,
     })
     if (!gl) {
-      throw new Error("Could not get WebGL 2.0 context. WebGL 2.0 is required.")
+      throw new Error("Could not get canvas context")
     }
 
     gl.clearColor(0, 0, 0, 0)
@@ -112,12 +112,7 @@ export class WebDrawingEngine extends DrawingEngine implements IWebDrawingEngine
         return
       }
       this.handlePointerDown(position)
-      if (
-        this.getCurrentToolName() === ToolNames.brush ||
-        this.getCurrentToolName() === ToolNames.softBrush ||
-        this.getCurrentToolName() === ToolNames.eraser ||
-        this.getCurrentToolName() === ToolNames.softEraser
-      ) {
+      if (this.getCurrentToolName() === ToolNames.brush) {
         this.canvas.style.setProperty("cursor", "none")
       }
     })
